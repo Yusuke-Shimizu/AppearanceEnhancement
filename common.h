@@ -33,6 +33,7 @@
 #define BOOL_WHITE 1
 
 #define SLEEP_TIME 1000    // スリープ時間(ms)
+#define MAX_WINDOW_SIZE 10000   // ウィンドウの最大値
 
 enum stripeDirection {Vertical, Horizon};   // {縦，横}
 

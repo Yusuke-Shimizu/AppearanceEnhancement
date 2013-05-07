@@ -44,15 +44,15 @@ void printPatternMap(bool *map, const Size* const mapSize){
     }
 }
 
-// 層数の計算
-int calcLayerNumber(const int length){
+// グレイコードに必要なビット数の計算
+int calcBitCodeNumber(const int length){
     // error processing
     if (length < 2) {
         ERROR_PRINT(length);
     }
     
     int layerNum = 1;
-    for (int thresh = 2; thresh < 10000; thresh *= 2) {
+    for (int thresh = 2; thresh < MAX_WINDOW_SIZE; thresh *= 2) {
         if (thresh >= length) {
             break;
         } else {
@@ -83,15 +83,25 @@ void makePureBinaryCode(bool *pattern, const unsigned int patternSize, const uns
         ERROR_PRINT(divideNum);
         cout << "divideNum(" << divideNum << ") is more than patternSize(" << patternSize << ")" << endl;
         return;
-    }else if (divideNum > patternSize){ // if divideNum / 2 < patternSize < divideNum then divideNum is patternSize
+    }/*else if (divideNum > patternSize){ // if divideNum / 2 < patternSize < divideNum then divideNum is patternSize
         divideNum = patternSize;
+    }*/
+    
+    // patternSizeを2の累乗に落とし込む
+    int patternSizeTo2Pow = 0;
+    for (int thresh = 2; thresh < MAX_WINDOW_SIZE; thresh *= 2) {
+        if (thresh >= patternSize) {
+            patternSizeTo2Pow = thresh;
+            break;
+        }
     }
-
+    _print2(patternSize, patternSizeTo2Pow);
+    
     // コード生成
     bool bit = WHITE;
     for (int i = 0, threshStep = 1; i < patternSize; ++ i) {
         // 分割数に応じてビットを反転
-        if ((i + 1) > patternSize * threshStep / (double)divideNum ) {
+        if ((i + 1) > patternSizeTo2Pow * threshStep / (double)divideNum ) {
             threshStep ++;
             bit = !bit;
         }
@@ -99,6 +109,8 @@ void makePureBinaryCode(bool *pattern, const unsigned int patternSize, const uns
         // ビットの決定
         pattern[i] = bit;
     }
+    _print(divideNum);
+    printCurrentPattern(pattern, patternSize);
 }
 
 // グレイコードパターンの生成
@@ -190,43 +202,6 @@ void map2image(Mat *image, const bool* const map, const Size* const mapSize){
     }
 }
 
-// 引数で与えたコードを横に引いてMatに代入
-// make Mat from....
-// if内が
-void makePatternImage(const bool* pattern, Mat *image, const Size *imageSize, const stripeDirection direction){
-    // define black and white
-    const unsigned char BLACK = 0, WHITE = 255; // 後で色配列に変更する(スカラーschlor?)
-    
-    // bool配列に従って色を入れる
-    int patternStep = 0, locX = 0;
-    for (MatIterator_<Vec3b> imageItr = image->begin<Vec3b>();
-         imageItr != image->end<Vec3b>();
-         ++ imageItr, ++ locX) {
-
-        // 縦・横どちらの縞模様かを判別
-        if (direction == Vertical) {  // 縦縞
-            // if patternStep is over imageSize, do initialize
-            if ((++ patternStep) >= imageSize->width) {
-                patternStep = 0;
-            }
-        } else {        // 横縞
-            if (locX >= imageSize->width) {
-                ++ patternStep;
-                locX = 0;
-            }
-        }
-        // switing white or black using GrayCode
-        unsigned char color = 0;
-        if (pattern[patternStep]) {
-            color = WHITE;
-        } else {
-            color = BLACK;
-        }
-        setColor(imageItr, color);
-    }
-
-}
-
 //  アクセスマップに任意の層に従ってビットを挿入する
 // accessMap    : 生成するアクセスマップ
 // mapSize      : accessMapの大きさ
@@ -235,13 +210,13 @@ void makePatternImage(const bool* pattern, Mat *image, const Size *imageSize, co
 // addBitPos    : 追加するビットの位置
 void insertAccessMap(bool* accessMap, const Size* const mapSize, const int bitDepth, const bool* const patternMap, const int addBitPos){
     // 全画素に入れていく
-    //for (int y = 0; y < mapSize->height; ++ y) {
-        //for (int x = 0; x < mapSize->width; ++ x) {
-            //int currentPos = y * mapSize->width + x;
+    for (int y = 0; y < mapSize->height; ++ y) {
+        for (int x = 0; x < mapSize->width; ++ x) {
+            int currentPos = y * mapSize->width + x;
             // accessMap : 各画素にbitDepthビット入っているので，その分進める
-            //*(accessMap + addBitPos + currentPos * bitDepth) = *(patternMap + currentPos);
-        //}
-    //}
+            *(accessMap + addBitPos + currentPos * bitDepth) = *(patternMap + currentPos);
+        }
+    }
 }
 
 // ネガポジ画像を用いて二値化画像を生成
@@ -291,7 +266,7 @@ void createBinaryMap(Mat *binaryMap, const Size* const mapSize, const unsigned i
     //projectionImage.release();
     
     // create access map
-    const Size layerSize(calcLayerNumber(mapSize->width), calcLayerNumber(mapSize->height));    // 層の個数
+    const Size layerSize(calcBitCodeNumber(mapSize->width), calcBitCodeNumber(mapSize->height));    // 層の個数
     // (縦層+横層)*全画素数
     const int accessBitNum = layerSize.width + layerSize.height;  // アクセスに必要なビット数
     const int pixelNum = mapSize->width * mapSize->height;        // 全画素数
@@ -301,16 +276,19 @@ void createBinaryMap(Mat *binaryMap, const Size* const mapSize, const unsigned i
     } else {
         forwardNum = 0;
     }
-    bool accessMapProjector[accessBitNum * pixelNum];   // プロジェクタのアクセスマップ
+    //bool accessMapProjector[accessBitNum * pixelNum];   // プロジェクタのアクセスマップ
     //bool accessMapCamera[accessBitNum * pixelNum];      // カメラのアクセスマップ
-    for (int i = 0; i < accessBitNum * pixelNum; ++ i) {
-        //accessMapProjector[i] = BOOL_BLACK;
-    }
-    //insertAccessMap(accessMapProjector, mapSize, accessBitNum, patternMap, forwardNum);
+    bool *accessMapProjector = (bool*)malloc(sizeof(bool) * accessBitNum * pixelNum);      // プロジェクタのアクセスマップ
+    bool *accessMapCamera = (bool*)malloc(sizeof(bool) * accessBitNum * pixelNum);      // カメラのアクセスマップ
+    
+    
+    //	insertAccessMap(accessMapProjector, mapSize, accessBitNum, patternMap, forwardNum);
     
     //free(accessMapProjector);
     // create binary map
-    
+    // アクセスマップの解放
+	free(accessMapProjector);
+	free(accessMapCamera);
 }
 
 // ルックアップテーブルの生成
@@ -341,7 +319,7 @@ int main(int argc, const char * argv[])
     // init projection image
     Size projectionSize(PRJ_SIZE_WIDTH, PRJ_SIZE_HEIGHT);
     Mat projectionImage = cv::Mat::zeros(projectionSize, CV_8UC3);
-    Size layerSize(calcLayerNumber(projectionSize.width), calcLayerNumber(projectionSize.height));
+    Size layerSize(calcBitCodeNumber(projectionSize.width), calcBitCodeNumber(projectionSize.height));
     
     // init gray code image
     for (int timeStep = 1; timeStep <= layerSize.width; ++ timeStep) {
