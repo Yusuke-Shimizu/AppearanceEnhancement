@@ -35,10 +35,23 @@ void printCurrentPattern(const bool *pattern, const int patternSize){
 }
 
 // バイナリマップの表示
-void printPatternMap(bool *map, const Size* const mapSize){
+void printPatternMap(const bool* const map, const Size* const mapSize){
     for (int y = 0; y < mapSize->height; ++ y) {
-        for (int x = 0; x < mapSize->width; ++ x, ++ map) {
-            cout << *map;
+        for (int x = 0; x < mapSize->width; ++ x) {
+            cout << *(map + y * mapSize->width + x);
+        }
+        cout << endl;
+    }
+}
+
+// アクセスマップの表示
+void printAccessMap(const bool* const accessMap, const Size* const mapSize, const int mapDepth){
+    for (int y = 0; y < mapSize->height; ++ y) {
+        for (int x = 0; x < mapSize->width; ++ x) {
+            for (int d = 0; d < mapDepth; ++ d) {
+                cout << *(accessMap + (y * mapSize->width + x) * mapDepth + d);
+            }
+            cout << " ";
         }
         cout << endl;
     }
@@ -83,9 +96,7 @@ void makePureBinaryCode(bool *pattern, const unsigned int patternSize, const uns
         ERROR_PRINT(divideNum);
         cout << "divideNum(" << divideNum << ") is more than patternSize(" << patternSize << ")" << endl;
         return;
-    }/*else if (divideNum > patternSize){ // if divideNum / 2 < patternSize < divideNum then divideNum is patternSize
-        divideNum = patternSize;
-    }*/
+    }
     
     // patternSizeを2の累乗に落とし込む
     int patternSizeTo2Pow = 0;
@@ -95,7 +106,6 @@ void makePureBinaryCode(bool *pattern, const unsigned int patternSize, const uns
             break;
         }
     }
-    _print2(patternSize, patternSizeTo2Pow);
     
     // コード生成
     bool bit = WHITE;
@@ -109,8 +119,6 @@ void makePureBinaryCode(bool *pattern, const unsigned int patternSize, const uns
         // ビットの決定
         pattern[i] = bit;
     }
-    _print(divideNum);
-    printCurrentPattern(pattern, patternSize);
 }
 
 // グレイコードパターンの生成
@@ -158,7 +166,7 @@ void makeNegaCodePattern(bool *pattern, const bool *posiPattern, const unsigned 
 // pattern      : パターン
 // mapSize      : patternMapの大きさ
 // direction    : 縞模様の向き（縦か横）
-void pattern2map(bool *map, const bool* pattern, const Size* const mapSize, const stripeDirection direction){
+void pattern2map(bool *map, const bool* const pattern, const Size* const mapSize, const stripeDirection direction){
     // bool配列に従って色を入れる
     for (int y = 0; y < mapSize->height; ++ y) {
         for (int x = 0; x < mapSize->width; ++ x, ++ map) {
@@ -202,22 +210,29 @@ void map2image(Mat *image, const bool* const map, const Size* const mapSize){
     }
 }
 
-//  アクセスマップに任意の層に従ってビットを挿入する
-// accessMap    : 生成するアクセスマップ
-// mapSize      : accessMapの大きさ
-// bitDepth     : accessMapのビットの深さ
-// patternMap   : 参照するパターンマップ
-// addBitPos    : 追加するビットの位置
-void insertAccessMap(bool* accessMap, const Size* const mapSize, const int bitDepth, const bool* const patternMap, const int addBitPos){
-    // 全画素に入れていく
+// 画像からパターンマップを生成する
+// map      : 生成するパターンマップ
+// image    : 参照する画像
+// mapSize  : 上二つの大きさ
+void image2map(bool* const map, Mat* const image, const Size* const mapSize){
+    // init iterator
+    MatIterator_<char> imageItr = image->begin<char>();
+    
+    // パターンマップを参照し画像を生成
     for (int y = 0; y < mapSize->height; ++ y) {
-        for (int x = 0; x < mapSize->width; ++ x) {
-            int currentPos = y * mapSize->width + x;
-            // accessMap : 各画素にbitDepthビット入っているので，その分進める
-            *(accessMap + addBitPos + currentPos * bitDepth) = *(patternMap + currentPos);
+        for (int x = 0; x < mapSize->width; ++ x, ++ imageItr) {
+            // 画像を参照し色を決定
+            cout << (int)*imageItr;
+            if (*imageItr >= 0) {
+                map[y * mapSize->width + x] = BOOL_WHITE;
+            } else {
+                map[y * mapSize->width + x] = BOOL_BLACK;
+            }
         }
+        cout << endl;
     }
 }
+
 
 // ネガポジ画像を用いて二値化画像を生成
 // make binary image using posi and nega image
@@ -225,17 +240,7 @@ void insertAccessMap(bool* accessMap, const Size* const mapSize, const int bitDe
 // layerNum     : 層番号
 // mapSize      : 投影サイズ
 // RorC         : 縦縞か横縞かのフラグ(enumにした方がよさげ)
-void createBinaryMap(Mat *binaryMap, const Size* const mapSize, const unsigned int layerNum, const stripeDirection direction){
-    // error process
-    if (binaryMap->rows != mapSize->height || binaryMap->cols != mapSize->width) {
-        ERROR_PRINT(binaryMap->rows);
-        ERROR_PRINT(binaryMap->cols);
-        ERROR_PRINT(mapSize->width);
-        ERROR_PRINT(mapSize->height);
-        
-        return;
-    }
-    
+void createBinaryMap(bool *binaryMap, const Size* const mapSize, const unsigned int layerNum, const stripeDirection direction){
     // init pattern array
     int patternSize = 0;                                    // パターンの大きさ
     if (direction == Vertical) {
@@ -244,7 +249,6 @@ void createBinaryMap(Mat *binaryMap, const Size* const mapSize, const unsigned i
         patternSize = mapSize->height;
     }
     bool posiPattern[patternSize];                          // グレイコードパターンを入れる配列
-    bool patternMap[mapSize->width * mapSize->height];      // 投影するパターンマップ
     Mat projectionImage = Mat::zeros(*mapSize, CV_8UC3);    // 投影画像
     Mat capturedImage;                                      // 撮影画像
     _print2(mapSize->width, mapSize->height);
@@ -253,42 +257,79 @@ void createBinaryMap(Mat *binaryMap, const Size* const mapSize, const unsigned i
     // init gray code image
     makeGrayCodePattern(posiPattern, patternSize, layerNum);
     //printCurrentPattern(posiPattern, patternSize);
-    //cout << endl;
-    pattern2map(patternMap, posiPattern, mapSize, direction);
-    //printPatternMap(patternMap, mapSize);
-    map2image(&projectionImage, patternMap, mapSize);
     
-    // projection and shot posi image
-    imshow("projection", projectionImage);  // posi pattern
-    waitKey(SLEEP_TIME);
-    imshow("projection", ~projectionImage); // nega pattern
-    waitKey(SLEEP_TIME);
-    //projectionImage.release();
-    
-    // create access map
-    const Size layerSize(calcBitCodeNumber(mapSize->width), calcBitCodeNumber(mapSize->height));    // 層の個数
-    // (縦層+横層)*全画素数
-    const int accessBitNum = layerSize.width + layerSize.height;  // アクセスに必要なビット数
-    const int pixelNum = mapSize->width * mapSize->height;        // 全画素数
-    int forwardNum = 0;   // 初期ビットの位置
-    if (direction == Horizon) {
-        forwardNum = layerSize.width;
-    } else {
-        forwardNum = 0;
+    // make binary map
+    pattern2map(binaryMap, posiPattern, mapSize, direction);
+}
+
+//  アクセスマップに任意の層に従ってビットを挿入する
+// accessMap    : 生成するアクセスマップ
+// mapSize      : accessMapの大きさ
+// bitDepth     : accessMapのビットの深さ
+// patternMap   : 参照するパターンマップ
+// offsetBit    : 追加するビットの位置
+void insertAccessMap(bool* accessMap, const Size* const mapSize, const int bitDepth, const bool* const patternMap, const int offsetBit){
+    // 全画素に入れていく
+    for (int y = 0; y < mapSize->height; ++ y) {
+        for (int x = 0; x < mapSize->width; ++ x) {
+            int currentPos = y * mapSize->width + x;
+            // offsetBit : 各画素にbitDepthビット入っているので，その分進める
+            *(accessMap + offsetBit + currentPos * bitDepth) = *(patternMap + currentPos);
+        }
     }
-    //bool accessMapProjector[accessBitNum * pixelNum];   // プロジェクタのアクセスマップ
-    //bool accessMapCamera[accessBitNum * pixelNum];      // カメラのアクセスマップ
-    bool *accessMapProjector = (bool*)malloc(sizeof(bool) * accessBitNum * pixelNum);      // プロジェクタのアクセスマップ
-    bool *accessMapCamera = (bool*)malloc(sizeof(bool) * accessBitNum * pixelNum);      // カメラのアクセスマップ
+}
+
+// プロカムの空間コードを追加していく
+// spatialCodeProjector : プロジェクタの空間コード格納ポインタ
+// spatialCodeCamera    : カメラの空間コード格納ポインタ
+// patternLayerNum  : 投影パターンの層番号
+// offsetBit        : 追加するビットの位置
+// direction        : 縞の方向
+// camera           : カメラのストリーム
+void addSpatialCodeOfProCam(bool* const spatialCodeProjector, bool* const spatialCodeCamera, const Size* const projectorSize, const Size* const cameraSize, const int patternLayerNum, const int offset, const stripeDirection direction, VideoCapture *camera){
+    // init
+    Mat projectionImage = cv::Mat::zeros(*projectorSize, CV_8UC3);
+    Size layerSize(calcBitCodeNumber(projectorSize->width), calcBitCodeNumber(projectorSize->height));
+    const int accessBitNum = layerSize.width + layerSize.height;  // アクセスに必要なビット数
+
+    // バイナリマップを作成
+    bool *binaryMap = (bool*)malloc(sizeof(bool) * projectorSize->width * projectorSize->height);      // カメラのアクセスマップ
+    createBinaryMap(binaryMap, projectorSize, patternLayerNum, direction);
     
+    // バイナリマップから画像を生成
+    map2image(&projectionImage, binaryMap, projectorSize);
     
-    //	insertAccessMap(accessMapProjector, mapSize, accessBitNum, patternMap, forwardNum);
+    // 画像を投影・撮影し二値化画像を取得
+    // projection and shot posi image
+    // posi
+    Mat posiImage, negaImage;
+    imshow("projection", projectionImage);  // posi pattern
+    *camera >> posiImage;
+    cvtColor(posiImage, posiImage, CV_BGR2GRAY);    // グレー化
+    waitKey(SLEEP_TIME);
+    // nega
+    imshow("projection", ~projectionImage); // nega pattern
+    *camera >> negaImage;
+    cvtColor(negaImage, negaImage, CV_BGR2GRAY);    // グレー化
+    waitKey(SLEEP_TIME);
+    // ポジネガ画像の差分
+    /*
+     
+     ここの差分で多分unsignedになってて０以下が作れない
+     作りたい！
+     
+     */
+    Mat diffPosiNega = posiImage - negaImage;
+    image2map(spatialCodeCamera, &diffPosiNega, cameraSize);
+    printPatternMap(spatialCodeCamera, cameraSize);
     
-    //free(accessMapProjector);
-    // create binary map
-    // アクセスマップの解放
-	free(accessMapProjector);
-	free(accessMapCamera);
+    // プロジェクタとカメラのアクセスマップの生成
+    insertAccessMap(spatialCodeProjector, projectorSize, accessBitNum, binaryMap, offset);
+    printAccessMap(spatialCodeProjector, projectorSize, accessBitNum);
+    
+    // free
+    free(binaryMap);
+
 }
 
 // ルックアップテーブルの生成
@@ -307,27 +348,42 @@ void createLookUpTable(){
 int main(int argc, const char * argv[])
 {
     // init camera
-    cv::VideoCapture camera(0);
+    VideoCapture camera(0);
     if( !camera.isOpened() ){
         std::cerr << "ERROR : camera is not opened !!" << std::endl;
         return 1;
     }
-    Mat frame;
+    Mat frame;                                  // カメラ画像
     camera >> frame;
-    Size cameraSize(frame.cols, frame.rows);
+    Size cameraSize(frame.cols, frame.rows);    // カメラの大きさ
+    //imshow("camera image", frame);
     
     // init projection image
     Size projectionSize(PRJ_SIZE_WIDTH, PRJ_SIZE_HEIGHT);
     Mat projectionImage = cv::Mat::zeros(projectionSize, CV_8UC3);
     Size layerSize(calcBitCodeNumber(projectionSize.width), calcBitCodeNumber(projectionSize.height));
+    const int accessBitNum = layerSize.width + layerSize.height;  // アクセスに必要なビット数
+    const int pixelNumProjector = projectionSize.width * projectionSize.height;        // 全画素数
+    const int pixelNumCamera = cameraSize.width * cameraSize.height;        // 全画素数
+
+    // (縦層+横層)*全画素数
+    bool *accessMapProjector = (bool*)malloc(sizeof(bool) * accessBitNum * pixelNumProjector);      // プロジェクタのアクセスマップ
+    bool *accessMapCamera = (bool*)malloc(sizeof(bool) * accessBitNum * pixelNumCamera);      // カメラのアクセスマップ
+    memset(accessMapProjector, 0, sizeof(bool) * accessBitNum * pixelNumProjector);
+    memset(accessMapCamera, 0, sizeof(bool) * accessBitNum * pixelNumCamera);
     
-    // init gray code image
-    for (int timeStep = 1; timeStep <= layerSize.width; ++ timeStep) {
-        createBinaryMap(&projectionImage, &projectionSize, timeStep, Vertical);
+    //
+    int offset = 0; // 初期ビットの位置
+    for (int timeStep = 1; timeStep <= layerSize.width; ++ timeStep, ++ offset) {
+        addSpatialCodeOfProCam(accessMapProjector, accessMapCamera, &projectionSize, &cameraSize, timeStep, offset, Vertical, &camera);
     }
-    for (int timeStep = 1; timeStep <= layerSize.height; ++ timeStep) {
-        createBinaryMap(&projectionImage, &projectionSize, timeStep, Horizon);
+    for (int timeStep = 1; timeStep <= layerSize.height; ++ timeStep, ++ offset) {
+        addSpatialCodeOfProCam(accessMapProjector, accessMapCamera, &projectionSize, &cameraSize, timeStep, offset, Horizon, &camera);
     }
+    
+    // アクセスマップの解放
+	free(accessMapProjector);
+	free(accessMapCamera);
     
     return 0;
 }

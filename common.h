@@ -22,12 +22,12 @@
 // 定義
 //#define PRJ_SIZE_WIDTH 512
 //#define PRJ_SIZE_HEIGHT 512
-#define PRJ_SIZE_WIDTH 800
-#define PRJ_SIZE_HEIGHT 700
+//#define PRJ_SIZE_WIDTH 800
+//#define PRJ_SIZE_HEIGHT 700
 //#define PRJ_SIZE_WIDTH 1024
 //#define PRJ_SIZE_HEIGHT 768
-//#define PRJ_SIZE_WIDTH 10
-//#define PRJ_SIZE_HEIGHT 7
+#define PRJ_SIZE_WIDTH 10
+#define PRJ_SIZE_HEIGHT 7
 
 #define BOOL_BLACK 0
 #define BOOL_WHITE 1
