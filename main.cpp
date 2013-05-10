@@ -206,14 +206,14 @@ void map2image(Mat *image, const bool* const map, const Size* const mapSize){
 // mapSize  : 上二つの大きさ
 void image2map(bool* const map, Mat* const image, const Size* const mapSize){
     // init iterator
-    MatIterator_<char> imageItr = image->begin<char>();
+    MatIterator_<int> imageItr = image->begin<int>();
     
     // パターンマップを参照し画像を生成
     for (int y = 0; y < mapSize->height; ++ y) {
         for (int x = 0; x < mapSize->width; ++ x, ++ imageItr) {
             // 画像を参照し色を決定
             //cout << (int)*imageItr;
-            if (*imageItr >= 0) {
+            if (*imageItr >= -30) {
                 map[y * mapSize->width + x] = BOOL_WHITE;
             } else {
                 map[y * mapSize->width + x] = BOOL_BLACK;
@@ -283,11 +283,12 @@ void addSpatialCodeOfProCam(bool* const spatialCodeProjector, bool* const spatia
     const int accessBitNum = layerSize.width + layerSize.height;  // アクセスに必要なビット数
 
     // バイナリマップを作成
-    bool *binaryMap = (bool*)malloc(sizeof(bool) * projectorSize->width * projectorSize->height);      // カメラのアクセスマップ
-    createBinaryMap(binaryMap, projectorSize, patternLayerNum, direction);
+    bool *binaryMapProjector = (bool*)malloc(sizeof(bool) * projectorSize->width * projectorSize->height);      // プロジェクタのアクセスマップ
+    bool *binaryMapCamera = (bool*)malloc(sizeof(bool) * cameraSize->width * cameraSize->height);      // カメラのアクセスマップ
+    createBinaryMap(binaryMapProjector, projectorSize, patternLayerNum, direction);
     
     // バイナリマップから画像を生成
-    map2image(&projectionImage, binaryMap, projectorSize);
+    map2image(&projectionImage, binaryMapProjector, projectorSize);
     
     // 画像を投影・撮影し二値化画像を取得
     // projection and shot posi image
@@ -309,19 +310,27 @@ void addSpatialCodeOfProCam(bool* const spatialCodeProjector, bool* const spatia
      作りたい！
      
      */
-    //Mat diffPosiNega = posiImage - negaImage;
-    Mat diffPosiNega = Mat::zeros(posiImage.rows, posiImage.cols, CV_16S);
-    diffPosiNega = posiImage - negaImage;
-    image2map(spatialCodeCamera, &diffPosiNega, cameraSize);
-    printPatternMap(spatialCodeCamera, cameraSize);
+    // ポジネガ投影の撮影像の差分を作成し二値化する
+    Mat diffPosiNega = Mat::zeros(posiImage.rows, posiImage.cols, CV_16SC1);
+    printMatPropaty(&posiImage);cout << endl;
+    printMatPropaty(&negaImage);cout << endl;
+    printMatPropaty(&diffPosiNega);cout << endl;
+    subMat(&diffPosiNega, &posiImage, &negaImage);
+    //image2map(spatialCodeCamera, &diffPosiNega, cameraSize);
+    image2map(binaryMapCamera, &diffPosiNega, cameraSize);
+    printPatternMap(binaryMapCamera, cameraSize);
+    //imshow("diff image", diffPosiNega);
+    //cout << posiImage - negaImage << endl;
+    //cout << diffPosiNega << endl;
     
     // プロジェクタとカメラのアクセスマップの生成
-    insertAccessMap(spatialCodeProjector, projectorSize, accessBitNum, binaryMap, offset);
+    insertAccessMap(spatialCodeProjector, projectorSize, accessBitNum, binaryMapProjector, offset); // プロジェクタの空間コードを追加
+    insertAccessMap(spatialCodeCamera, cameraSize, accessBitNum, binaryMapCamera, offset);  // カメラの空間コードを追加
     printAccessMap(spatialCodeProjector, projectorSize, accessBitNum);
     
     // free
-    free(binaryMap);
-
+    free(binaryMapProjector);
+    free(binaryMapCamera);
 }
 
 // ルックアップテーブルの生成
@@ -359,12 +368,12 @@ int main(int argc, const char * argv[])
     const int pixelNumCamera = cameraSize.width * cameraSize.height;        // 全画素数
 
     // (縦層+横層)*全画素数
-    bool *accessMapProjector = (bool*)malloc(sizeof(bool) * accessBitNum * pixelNumProjector);      // プロジェクタのアクセスマップ
+    bool *accessMapProjector = (bool*)malloc(sizeof(bool) * accessBitNum * pixelNumProjector);// プロジェクタのアクセスマップ
     bool *accessMapCamera = (bool*)malloc(sizeof(bool) * accessBitNum * pixelNumCamera);      // カメラのアクセスマップ
     memset(accessMapProjector, 0, sizeof(bool) * accessBitNum * pixelNumProjector);
     memset(accessMapCamera, 0, sizeof(bool) * accessBitNum * pixelNumCamera);
     
-    //
+    // 縦横の縞模様を投影しグレイコードをプロジェクタ，カメラ双方に付与する
     int offset = 0; // 初期ビットの位置
     for (int timeStep = 1; timeStep <= layerSize.width; ++ timeStep, ++ offset) {
         addSpatialCodeOfProCam(accessMapProjector, accessMapCamera, &projectionSize, &cameraSize, timeStep, offset, Vertical, &camera);
@@ -372,6 +381,8 @@ int main(int argc, const char * argv[])
     for (int timeStep = 1; timeStep <= layerSize.height; ++ timeStep, ++ offset) {
         addSpatialCodeOfProCam(accessMapProjector, accessMapCamera, &projectionSize, &cameraSize, timeStep, offset, Horizon, &camera);
     }
+    
+    // プロカム間のアクセスマップを作る
     
     // アクセスマップの解放
 	free(accessMapProjector);
