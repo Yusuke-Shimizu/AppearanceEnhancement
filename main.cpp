@@ -7,24 +7,14 @@
 //
 
 #include <iostream>
-#include <opencv2/opencv.hpp>
-#include <opencv/highgui.h>
-
+//#include <opencv2/opencv.hpp>
+//#include <opencv/highgui.h>
 #include "common.h"
+#include "myOpenCV.h"
 
 using namespace std;
 using namespace cv;
 
-// 色のセッティング
-// it -> (red, green, blue)
-void setColor(const MatIterator_<Vec3b> it, const unsigned char red, const unsigned char green, const unsigned char blue){
-    (*it)[0] = blue;
-    (*it)[1] = green;
-    (*it)[2] = red;
-}
-void setColor(const MatIterator_<Vec3b> it, const unsigned char luminance){
-    setColor(it, luminance, luminance, luminance);
-}
 
 // 現在のパターンの表示
 void printCurrentPattern(const bool *pattern, const int patternSize){
@@ -222,14 +212,14 @@ void image2map(bool* const map, Mat* const image, const Size* const mapSize){
     for (int y = 0; y < mapSize->height; ++ y) {
         for (int x = 0; x < mapSize->width; ++ x, ++ imageItr) {
             // 画像を参照し色を決定
-            cout << (int)*imageItr;
+            //cout << (int)*imageItr;
             if (*imageItr >= 0) {
                 map[y * mapSize->width + x] = BOOL_WHITE;
             } else {
                 map[y * mapSize->width + x] = BOOL_BLACK;
             }
         }
-        cout << endl;
+        //cout << endl;
     }
 }
 
@@ -319,7 +309,9 @@ void addSpatialCodeOfProCam(bool* const spatialCodeProjector, bool* const spatia
      作りたい！
      
      */
-    Mat diffPosiNega = posiImage - negaImage;
+    //Mat diffPosiNega = posiImage - negaImage;
+    Mat diffPosiNega = Mat::zeros(posiImage.rows, posiImage.cols, CV_16S);
+    diffPosiNega = posiImage - negaImage;
     image2map(spatialCodeCamera, &diffPosiNega, cameraSize);
     printPatternMap(spatialCodeCamera, cameraSize);
     
