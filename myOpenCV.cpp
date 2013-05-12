@@ -26,11 +26,6 @@ void setColor(const MatIterator_<Vec3b> it, const unsigned char luminance){
 /**
  * 表示関数群
  */
-// Matの中身を表示
-void printMatContents(const Mat* const m1){
-
-}
-
 // Matの様々な要素を表示
 void printMatPropaty(const Mat* const m1){
     // 行数
@@ -61,6 +56,15 @@ void printMatPropaty(const Mat* const m1){
     std::cout << "isSubmatrix:" << (m1->isSubmatrix()?"true":"false") << std::endl;
     // データは空か？
     std::cout << "empty:" << (m1->empty()?"true":"false") << std::endl;
+}
+
+// 初期化関数群
+// Pointの初期化
+void initPoint(cv::Point* const p, const int size){
+    for (int i = 0; i < size; ++ i) {
+        (p + i)->x = 0;
+        (p + i)->y = 0;
+    }
 }
 
 // その他の関数

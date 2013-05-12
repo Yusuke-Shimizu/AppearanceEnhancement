@@ -7,10 +7,9 @@
 //
 
 #include <iostream>
-//#include <opencv2/opencv.hpp>
-//#include <opencv/highgui.h>
 #include "common.h"
 #include "myOpenCV.h"
+#include "myOpenGL.h"
 
 using namespace std;
 using namespace cv;
@@ -312,13 +311,13 @@ void addSpatialCodeOfProCam(bool* const spatialCodeProjector, bool* const spatia
      */
     // ポジネガ投影の撮影像の差分を作成し二値化する
     Mat diffPosiNega = Mat::zeros(posiImage.rows, posiImage.cols, CV_16SC1);
-    printMatPropaty(&posiImage);cout << endl;
-    printMatPropaty(&negaImage);cout << endl;
-    printMatPropaty(&diffPosiNega);cout << endl;
+    //printMatPropaty(&posiImage);cout << endl;
+    //printMatPropaty(&negaImage);cout << endl;
+    //printMatPropaty(&diffPosiNega);cout << endl;
     subMat(&diffPosiNega, &posiImage, &negaImage);
     //image2map(spatialCodeCamera, &diffPosiNega, cameraSize);
     image2map(binaryMapCamera, &diffPosiNega, cameraSize);
-    printPatternMap(binaryMapCamera, cameraSize);
+    //printPatternMap(binaryMapCamera, cameraSize);
     //imshow("diff image", diffPosiNega);
     //cout << posiImage - negaImage << endl;
     //cout << diffPosiNega << endl;
@@ -368,25 +367,37 @@ int main(int argc, const char * argv[])
     const int pixelNumCamera = cameraSize.width * cameraSize.height;        // 全画素数
 
     // (縦層+横層)*全画素数
-    bool *accessMapProjector = (bool*)malloc(sizeof(bool) * accessBitNum * pixelNumProjector);// プロジェクタのアクセスマップ
-    bool *accessMapCamera = (bool*)malloc(sizeof(bool) * accessBitNum * pixelNumCamera);      // カメラのアクセスマップ
-    memset(accessMapProjector, 0, sizeof(bool) * accessBitNum * pixelNumProjector);
-    memset(accessMapCamera, 0, sizeof(bool) * accessBitNum * pixelNumCamera);
+    bool *grayCodeMapProjector = (bool*)malloc(sizeof(bool) * accessBitNum * pixelNumProjector);// プロジェクタのグレイコードマップ
+    bool *grayCodeMapCamera = (bool*)malloc(sizeof(bool) * accessBitNum * pixelNumCamera);      // カメラのグレイコードマップ
+    memset(grayCodeMapProjector, 0, sizeof(bool) * accessBitNum * pixelNumProjector);
+    memset(grayCodeMapCamera, 0, sizeof(bool) * accessBitNum * pixelNumCamera);
     
     // 縦横の縞模様を投影しグレイコードをプロジェクタ，カメラ双方に付与する
     int offset = 0; // 初期ビットの位置
     for (int timeStep = 1; timeStep <= layerSize.width; ++ timeStep, ++ offset) {
-        addSpatialCodeOfProCam(accessMapProjector, accessMapCamera, &projectionSize, &cameraSize, timeStep, offset, Vertical, &camera);
+        //addSpatialCodeOfProCam(grayCodeMapProjector, grayCodeMapCamera, &projectionSize, &cameraSize, timeStep, offset, Vertical, &camera);
     }
     for (int timeStep = 1; timeStep <= layerSize.height; ++ timeStep, ++ offset) {
-        addSpatialCodeOfProCam(accessMapProjector, accessMapCamera, &projectionSize, &cameraSize, timeStep, offset, Horizon, &camera);
+        //addSpatialCodeOfProCam(grayCodeMapProjector, grayCodeMapCamera, &projectionSize, &cameraSize, timeStep, offset, Horizon, &camera);
     }
     
     // プロカム間のアクセスマップを作る
+    Point *accessMapCam2Pro = (Point*)malloc(sizeof(Point) * pixelNumCamera);// カメラからプロジェクタへのアクセスマップ
+    initPoint(accessMapCam2Pro, pixelNumCamera);
     
     // アクセスマップの解放
-	free(accessMapProjector);
-	free(accessMapCamera);
+	free(grayCodeMapProjector);
+	free(grayCodeMapCamera);
+    
+    
+    //myInitGlut(argc, argv);
+    /*
+    // gl cv test
+    camera >> frame;
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, frame.size().width, frame.size().height, 0, GL_BGR_EXT, GL_UNSIGNED_BYTE, frame.data);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);*/
+    
     
     return 0;
 }
