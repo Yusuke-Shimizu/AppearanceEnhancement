@@ -24,15 +24,15 @@
 //#define PRJ_SIZE_HEIGHT 512
 //#define PRJ_SIZE_WIDTH 800
 //#define PRJ_SIZE_HEIGHT 700
-//#define PRJ_SIZE_WIDTH 1024
-//#define PRJ_SIZE_HEIGHT 768
-#define PRJ_SIZE_WIDTH 10
-#define PRJ_SIZE_HEIGHT 7
+#define PRJ_SIZE_WIDTH 1024
+#define PRJ_SIZE_HEIGHT 768
+//#define PRJ_SIZE_WIDTH 10
+//#define PRJ_SIZE_HEIGHT 7
 
 #define BOOL_BLACK 0
 #define BOOL_WHITE 1
 
-#define SLEEP_TIME 500    // スリープ時間(ms)
+#define SLEEP_TIME 100    // スリープ時間(ms)
 #define MAX_WINDOW_SIZE 10000   // ウィンドウの最大値
 
 enum stripeDirection {Vertical, Horizon};   // {縦，横}

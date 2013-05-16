@@ -17,6 +17,7 @@
 // set method
 void setColor(const cv::MatIterator_<cv::Vec3b> it, const unsigned char red, const unsigned char green, const unsigned char blue);
 void setColor(const cv::MatIterator_<cv::Vec3b> it, const unsigned char luminance);
+void setPoint(cv::Point* const p, const int _x, const int _y);
 // print method
 void printMatPropaty(const cv::Mat* const m1);
 // init method

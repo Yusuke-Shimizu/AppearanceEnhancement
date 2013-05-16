@@ -9,16 +9,16 @@
 #include <iostream>
 #include "common.h"
 #include "myOpenCV.h"
-#include "myOpenGL.h"
+//#include "myOpenGL.h"
 
 using namespace std;
 using namespace cv;
 
 
 // 現在のパターンの表示
-void printCurrentPattern(const bool *pattern, const int patternSize){
+void printCurrentPattern(const bool* const pattern, const int patternSize){
     for(int i = 0; i < patternSize; ++ i){
-        cout << pattern[i];
+        cout << *(pattern + i);
     }
     cout << endl;
 }
@@ -211,14 +211,12 @@ void image2map(bool* const map, Mat* const image, const Size* const mapSize){
     for (int y = 0; y < mapSize->height; ++ y) {
         for (int x = 0; x < mapSize->width; ++ x, ++ imageItr) {
             // 画像を参照し色を決定
-            //cout << (int)*imageItr;
             if (*imageItr >= -30) {
                 map[y * mapSize->width + x] = BOOL_WHITE;
             } else {
                 map[y * mapSize->width + x] = BOOL_BLACK;
             }
         }
-        //cout << endl;
     }
 }
 
@@ -240,12 +238,9 @@ void createBinaryMap(bool *binaryMap, const Size* const mapSize, const unsigned 
     bool posiPattern[patternSize];                          // グレイコードパターンを入れる配列
     Mat projectionImage = Mat::zeros(*mapSize, CV_8UC3);    // 投影画像
     Mat capturedImage;                                      // 撮影画像
-    _print2(mapSize->width, mapSize->height);
-    _print(layerNum);
     
     // init gray code image
     makeGrayCodePattern(posiPattern, patternSize, layerNum);
-    //printCurrentPattern(posiPattern, patternSize);
     
     // make binary map
     pattern2map(binaryMap, posiPattern, mapSize, direction);
@@ -302,46 +297,105 @@ void addSpatialCodeOfProCam(bool* const spatialCodeProjector, bool* const spatia
     *camera >> negaImage;
     cvtColor(negaImage, negaImage, CV_BGR2GRAY);    // グレー化
     waitKey(SLEEP_TIME);
-    // ポジネガ画像の差分
-    /*
-     
-     ここの差分で多分unsignedになってて０以下が作れない
-     作りたい！
-     
-     */
+
     // ポジネガ投影の撮影像の差分を作成し二値化する
     Mat diffPosiNega = Mat::zeros(posiImage.rows, posiImage.cols, CV_16SC1);
-    //printMatPropaty(&posiImage);cout << endl;
-    //printMatPropaty(&negaImage);cout << endl;
-    //printMatPropaty(&diffPosiNega);cout << endl;
     subMat(&diffPosiNega, &posiImage, &negaImage);
-    //image2map(spatialCodeCamera, &diffPosiNega, cameraSize);
+    //imshow("image", diffPosiNega);
+    //_print(diffPosiNega);
     image2map(binaryMapCamera, &diffPosiNega, cameraSize);
-    //printPatternMap(binaryMapCamera, cameraSize);
-    //imshow("diff image", diffPosiNega);
-    //cout << posiImage - negaImage << endl;
-    //cout << diffPosiNega << endl;
     
     // プロジェクタとカメラのアクセスマップの生成
     insertAccessMap(spatialCodeProjector, projectorSize, accessBitNum, binaryMapProjector, offset); // プロジェクタの空間コードを追加
     insertAccessMap(spatialCodeCamera, cameraSize, accessBitNum, binaryMapCamera, offset);  // カメラの空間コードを追加
-    printAccessMap(spatialCodeProjector, projectorSize, accessBitNum);
     
     // free
     free(binaryMapProjector);
     free(binaryMapCamera);
 }
 
-// ルックアップテーブルの生成
-void createLookUpTable(){
-    // １．ポジパターン投影
-    // ２．ポジパターン撮影
-    // ３．ネガパターン投影
-    // ４．ネガパターン撮影
-    // ５．ポジ画像からネガ画像を引く
-    // ６．０を境に二値化する
-    // ７．空間コードを付与する
-    // ８．次の層に進む
+// コードを分割して代入する
+void divideCode(bool* const codeX, bool* const codeY, const bool* const originalCode, const int sizeX, const int sizeY){
+    // codeXへの代入
+    for (int i = 0; i < sizeX; ++ i) {
+        *(codeX + i) = *(originalCode + i);
+    }
+    
+    // codeYへの代入
+    for (int i = 0; i < sizeY; ++ i) {
+        *(codeY + i) = *(originalCode + sizeX + i);
+    }
+}
+
+// グレイコードからバイナリコードを生成
+// binaryCode   : バイナリコードを入れる配列
+// grayCode     : グレイコードが入っている配列
+// bitNum       : ビット深度
+void grayCode2binaryCode(bool* const binaryCode, const bool* const grayCode, const int bitNum){
+    // 最上位ビット
+    *binaryCode = *grayCode;
+    
+    // それ以外のビット
+    for (int i = 1; i < bitNum; ++ i) {
+        *(binaryCode + i) = *(grayCode + i) ^ *(grayCode + i - 1);
+    }
+}
+
+// 二進数から十進数へ変換
+int binary2decimal(const bool* const binaryCode, const int depth){
+    //printCurrentPattern(binaryCode, depth);
+    // init
+    int binary = 0;
+    for (int i = 0, timeNum = 1; i < depth; ++ i, timeNum *= 2) {
+        binary += timeNum * (*(binaryCode + depth - 1 - i));
+    }
+    
+    return binary;
+}
+
+// グレイコードから座標値を取得（インバースグレイコード？）
+int getPositionFromGrayCode(const bool* const grayCode, const int depth){
+    // バイナリコードを生成
+    bool* binaryCode = (bool*)malloc(sizeof(bool) * depth); // 純二進コードを入れる配列
+    memset(binaryCode, 0, sizeof(bool) * depth);
+    grayCode2binaryCode(binaryCode, grayCode, depth);
+    
+    // バイナリコードから数字を生成
+    int binaryNum = binary2decimal(binaryCode, depth);
+    
+    return binaryNum;
+}
+
+// カメラからプロジェクタへのアクセスマップの設定を行う
+void setAccessMap(Point* const c2pMap, const bool* codeMapCamera, const bool* codeMapProjector, const Size* cameraSize, const Size* projectorSize, const Size* const depthSize){
+    // init
+    int depth = depthSize->width + depthSize->height;   // 縦横を合わせたビットの深さ
+    
+    // カメラマップの全画素探索
+    for (int cy = 0; cy < cameraSize->height; ++ cy) {
+        for (int cx = 0; cx < cameraSize->width; ++ cx) {
+            // init
+            int cameraPos = cx + cy * cameraSize->width;    // カメラの位置
+            bool *grayCodeX = (bool*)malloc(sizeof(bool) * depth);// グレイコードのX座標
+            bool *grayCodeY = (bool*)malloc(sizeof(bool) * depth);// グレイコードのY座標
+            memset(grayCodeX, 0, sizeof(bool) * depth);
+            memset(grayCodeY, 0, sizeof(bool) * depth);
+            
+            // カメラの空間コードからxyそれぞれのコード値を分離
+            divideCode(grayCodeX, grayCodeY, codeMapCamera + cameraPos, depthSize->width, depthSize->height);
+            
+            // 座標値を代入
+            int px = getPositionFromGrayCode(grayCodeX, depthSize->width);
+            int py = getPositionFromGrayCode(grayCodeY, depthSize->height);
+            setPoint(c2pMap + cameraPos, px, py);
+            
+            //_print4(cx, cy, px, py);
+            
+            // free
+            free(grayCodeX);
+            free(grayCodeY);
+        }
+    }
 }
 
 // main method
@@ -359,7 +413,7 @@ int main(int argc, const char * argv[])
     //imshow("camera image", frame);
     
     // init projection image
-    Size projectionSize(PRJ_SIZE_WIDTH, PRJ_SIZE_HEIGHT);
+    Size projectionSize(PRJ_SIZE_WIDTH, PRJ_SIZE_HEIGHT);       // 投影サイズ
     Mat projectionImage = cv::Mat::zeros(projectionSize, CV_8UC3);
     Size layerSize(calcBitCodeNumber(projectionSize.width), calcBitCodeNumber(projectionSize.height));
     const int accessBitNum = layerSize.width + layerSize.height;  // アクセスに必要なビット数
@@ -375,15 +429,16 @@ int main(int argc, const char * argv[])
     // 縦横の縞模様を投影しグレイコードをプロジェクタ，カメラ双方に付与する
     int offset = 0; // 初期ビットの位置
     for (int timeStep = 1; timeStep <= layerSize.width; ++ timeStep, ++ offset) {
-        //addSpatialCodeOfProCam(grayCodeMapProjector, grayCodeMapCamera, &projectionSize, &cameraSize, timeStep, offset, Vertical, &camera);
+        addSpatialCodeOfProCam(grayCodeMapProjector, grayCodeMapCamera, &projectionSize, &cameraSize, timeStep, offset, Vertical, &camera);
     }
     for (int timeStep = 1; timeStep <= layerSize.height; ++ timeStep, ++ offset) {
-        //addSpatialCodeOfProCam(grayCodeMapProjector, grayCodeMapCamera, &projectionSize, &cameraSize, timeStep, offset, Horizon, &camera);
+        addSpatialCodeOfProCam(grayCodeMapProjector, grayCodeMapCamera, &projectionSize, &cameraSize, timeStep, offset, Horizon, &camera);
     }
     
     // プロカム間のアクセスマップを作る
     Point *accessMapCam2Pro = (Point*)malloc(sizeof(Point) * pixelNumCamera);// カメラからプロジェクタへのアクセスマップ
     initPoint(accessMapCam2Pro, pixelNumCamera);
+    setAccessMap(accessMapCam2Pro, grayCodeMapCamera, grayCodeMapProjector, &cameraSize, &projectionSize, &layerSize);
     
     // アクセスマップの解放
 	free(grayCodeMapProjector);

@@ -23,6 +23,13 @@ void setColor(const MatIterator_<Vec3b> it, const unsigned char luminance){
     setColor(it, luminance, luminance, luminance);
 }
 
+// Pointのセッティング
+void setPoint(cv::Point* const p, const int _x, const int _y){
+    p->x = _x;
+    p->y = _y;
+}
+
+
 /**
  * 表示関数群
  */
@@ -105,7 +112,9 @@ void subMat(Mat *dst, const Mat* const src1, const Mat* const src2){
     int row = dst->rows, col = dst->cols;
     for (int y = 0; y < col; ++ y) {
         for (int x = 0; x < row; ++ x) {
-            dst->at<int>(x, y) = (int)(src1->at<unsigned char>(x, y) - src2->at<unsigned char>(x, y));
+            //dst->at<int>(x, y) = (int)(src1->at<unsigned char>(x, y) - src2->at<unsigned char>(x, y));
+            int pos = x + y * row;
+            dst->data[pos] = (int)src1->data[pos] - (int)src2->data[pos];
             //_print3(dst->at<int>(x, y), (int)src1->at<unsigned char>(x, y), (int)src2->at<unsigned char>(x, y));
         }
     }
