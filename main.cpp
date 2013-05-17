@@ -184,13 +184,12 @@ void map2image(Mat *image, const bool* const map, const Size* const mapSize){
     for (int y = 0; y < mapSize->height; ++ y) {
         for (int x = 0; x < mapSize->width; ++ x, ++ imageItr) {
             char color = 0;
-            const char BLACK = 0, WHITE = 255; // 後で色配列に変更する(スカラーschlor?)
             
             // マップを参照し色を決定
             if (map[y * mapSize->width + x] == BOOL_BLACK) {
-                color = BLACK;
+                color = CHAR_BLACK;
             } else {
-                color = WHITE;
+                color = CHAR_WHITE;
             }
             
             // 色を画像に入れる
@@ -275,7 +274,7 @@ void addSpatialCodeOfProCam(bool* const spatialCodeProjector, bool* const spatia
     Mat projectionImage = cv::Mat::zeros(*projectorSize, CV_8UC3);
     Size layerSize(calcBitCodeNumber(projectorSize->width), calcBitCodeNumber(projectorSize->height));
     const int accessBitNum = layerSize.width + layerSize.height;  // アクセスに必要なビット数
-
+    
     // バイナリマップを作成
     bool *binaryMapProjector = (bool*)malloc(sizeof(bool) * projectorSize->width * projectorSize->height);      // プロジェクタのアクセスマップ
     bool *binaryMapCamera = (bool*)malloc(sizeof(bool) * cameraSize->width * cameraSize->height);      // カメラのアクセスマップ
@@ -288,20 +287,29 @@ void addSpatialCodeOfProCam(bool* const spatialCodeProjector, bool* const spatia
     // projection and shot posi image
     // posi
     Mat posiImage, negaImage;
-    imshow("projection", projectionImage);  // posi pattern
+    imshow(W_NAME_GEO_PROJECTOR, projectionImage);  // posi pattern
+    waitKey(SLEEP_TIME);
     *camera >> posiImage;
+	imshow(W_NAME_GEO_CAMERA, posiImage);
+	cvMoveWindow(W_NAME_GEO_CAMERA, projectorSize->width, 0);
     cvtColor(posiImage, posiImage, CV_BGR2GRAY);    // グレー化
-    waitKey(SLEEP_TIME);
+	waitKey(SLEEP_TIME);
     // nega
-    imshow("projection", ~projectionImage); // nega pattern
-    *camera >> negaImage;
-    cvtColor(negaImage, negaImage, CV_BGR2GRAY);    // グレー化
+    imshow(W_NAME_GEO_PROJECTOR, ~projectionImage); // nega pattern
     waitKey(SLEEP_TIME);
-
+    *camera >> negaImage;
+	imshow(W_NAME_GEO_CAMERA, negaImage);
+    cvtColor(negaImage, negaImage, CV_BGR2GRAY);    // グレー化
+	waitKey(SLEEP_TIME);
+	
     // ポジネガ投影の撮影像の差分を作成し二値化する
     Mat diffPosiNega = Mat::zeros(posiImage.rows, posiImage.cols, CV_16SC1);
     subMat(&diffPosiNega, &posiImage, &negaImage);
-    //imshow("image", diffPosiNega);
+	Mat diffPosiNega_test = Mat::zeros(posiImage.rows, posiImage.cols, CV_8UC1);
+	for(int i = 0; i < posiImage.rows * posiImage.cols; ++ i) {
+		diffPosiNega_test.data[i] = (diffPosiNega.data[i] + 256) / 2;
+	}
+    imshow("image", diffPosiNega_test);
     //_print(diffPosiNega);
     image2map(binaryMapCamera, &diffPosiNega, cameraSize);
     
@@ -332,18 +340,19 @@ void divideCode(bool* const codeX, bool* const codeY, const bool* const original
 // grayCode     : グレイコードが入っている配列
 // bitNum       : ビット深度
 void grayCode2binaryCode(bool* const binaryCode, const bool* const grayCode, const int bitNum){
+	//printCurrentPattern(grayCode, bitNum);
     // 最上位ビット
     *binaryCode = *grayCode;
     
     // それ以外のビット
     for (int i = 1; i < bitNum; ++ i) {
-        *(binaryCode + i) = *(grayCode + i) ^ *(grayCode + i - 1);
+        *(binaryCode + i) = *(grayCode + i) ^ *(binaryCode + i - 1);
     }
+	//printCurrentPattern(binaryCode, bitNum);
 }
 
 // 二進数から十進数へ変換
 int binary2decimal(const bool* const binaryCode, const int depth){
-    //printCurrentPattern(binaryCode, depth);
     // init
     int binary = 0;
     for (int i = 0, timeNum = 1; i < depth; ++ i, timeNum *= 2) {
@@ -368,25 +377,34 @@ int getPositionFromGrayCode(const bool* const grayCode, const int depth){
 
 // カメラからプロジェクタへのアクセスマップの設定を行う
 void setAccessMap(Point* const c2pMap, const bool* codeMapCamera, const bool* codeMapProjector, const Size* cameraSize, const Size* projectorSize, const Size* const depthSize){
-    // init
-    int depth = depthSize->width + depthSize->height;   // 縦横を合わせたビットの深さ
-    
     // カメラマップの全画素探索
     for (int cy = 0; cy < cameraSize->height; ++ cy) {
         for (int cx = 0; cx < cameraSize->width; ++ cx) {
             // init
             int cameraPos = cx + cy * cameraSize->width;    // カメラの位置
-            bool *grayCodeX = (bool*)malloc(sizeof(bool) * depth);// グレイコードのX座標
-            bool *grayCodeY = (bool*)malloc(sizeof(bool) * depth);// グレイコードのY座標
-            memset(grayCodeX, 0, sizeof(bool) * depth);
-            memset(grayCodeY, 0, sizeof(bool) * depth);
+            bool *grayCodeX = (bool*)malloc(sizeof(bool) * depthSize->width);// グレイコードのX座標
+            bool *grayCodeY = (bool*)malloc(sizeof(bool) * depthSize->height);// グレイコードのY座標
+            memset(grayCodeX, 0, sizeof(bool) * depthSize->width);
+            memset(grayCodeY, 0, sizeof(bool) * depthSize->height);
             
-            // カメラの空間コードからxyそれぞれのコード値を分離
+            // カメラの空間コードからxyそれぞれのコード値を分離 maybe ok
             divideCode(grayCodeX, grayCodeY, codeMapCamera + cameraPos, depthSize->width, depthSize->height);
             
-            // 座標値を代入
+            // 座標値を代入 ok
             int px = getPositionFromGrayCode(grayCodeX, depthSize->width);
             int py = getPositionFromGrayCode(grayCodeY, depthSize->height);
+            
+            // error
+            if(px >= projectorSize->width){
+                cout << "over!!!!!!" << endl << "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" << endl;;
+                //_print4(px, py, projectorSize->width, projectorSize->height);
+                return;
+            }else if(py >= projectorSize->height){
+                //_print4(px, py, projectorSize->width, projectorSize->height);
+                //return;
+            }
+            
+            // set
             setPoint(c2pMap + cameraPos, px, py);
             
             //_print4(cx, cy, px, py);
@@ -396,6 +414,83 @@ void setAccessMap(Point* const c2pMap, const bool* codeMapCamera, const bool* co
             free(grayCodeY);
         }
     }
+	cout << "finish" << endl;
+}
+
+void test_getPositionFromGrayCode(void){
+	bool in3[8*3] = {
+		0,0,0,
+		0,0,1,
+		0,1,1,
+		0,1,0,
+		1,1,0,
+		1,1,1,
+		1,0,1,
+		1,0,0
+	};
+	int out3[8] = {0,0,0,0,0,0,0,0};
+	for(int i = 0; i < 8; ++ i){
+		out3[i] = getPositionFromGrayCode((in3 + 3 * i), 3);
+		printCurrentPattern((in3 + 3 * i), 3);
+		_print(out3[i]);
+	}
+    
+    
+	bool in4[16*4] = {
+		0,0,0,0,
+		0,0,0,1,
+		0,0,1,1,
+		0,0,1,0,
+		0,1,1,0,
+		0,1,1,1,
+		0,1,0,1,
+		0,1,0,0,
+        
+		1,1,0,0,
+		1,1,0,1,
+		1,1,1,1,
+		1,1,1,0,
+		1,0,1,0,
+		1,0,1,1,
+		1,0,0,1,
+		1,0,0,0
+	};
+	int out4[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+	for(int i = 0; i < 16; ++ i){
+		out4[i] = getPositionFromGrayCode((in4 + 4 * i), 4);
+		printCurrentPattern((in4 + 4 * i), 4);
+		_print(out4[i]);
+	}
+}
+
+// 幾何キャリブレーションのテスト
+void test_geometricCalibration(Point* const accessMap, VideoCapture *video, const Size* const cameraSize, const Size* const projectorSize){
+	// init
+	Mat camera, projector = Mat::zeros(*projectorSize, CV_8UC3);
+	char *gtCameraWindowName;
+	gtCameraWindowName = "camera";
+	char *gtProjectorWindowName;
+	gtProjectorWindowName = "projector";
+	const int cx = 200, cy = 200;
+	int px = 0, py = 0;
+	px = (accessMap + cx + cy * cameraSize->width)->x;
+	py = (accessMap + cx + cy * cameraSize->width)->y;
+	_print4(cx, cy, px, py);
+    
+	while(1){
+		*video >> camera;
+        
+		MatIterator_<Vec3b> imageItr = camera.begin<Vec3b>() + cx + cy * cameraSize->width;
+		MatIterator_<Vec3b> prjImageItr = projector.begin<Vec3b>() + px + py * projectorSize->width;
+		for (int i = 0; i < cameraSize->width / 5; ++ i, ++ imageItr, ++ prjImageItr) {
+			setColor(imageItr, 255, 0, 0);
+			setColor(prjImageItr, 255, 0, 0);
+		}
+		imshow(gtCameraWindowName, camera); // camera image
+		cvMoveWindow(gtCameraWindowName, projectorSize->width, 0);
+		imshow(gtProjectorWindowName, projector); // projector image
+		waitKey(1);
+	}
 }
 
 // main method
@@ -419,8 +514,8 @@ int main(int argc, const char * argv[])
     const int accessBitNum = layerSize.width + layerSize.height;  // アクセスに必要なビット数
     const int pixelNumProjector = projectionSize.width * projectionSize.height;        // 全画素数
     const int pixelNumCamera = cameraSize.width * cameraSize.height;        // 全画素数
-
-    // (縦層+横層)*全画素数
+    
+    // 空間コード画像（大きさ：(縦層+横層)*全画素数）
     bool *grayCodeMapProjector = (bool*)malloc(sizeof(bool) * accessBitNum * pixelNumProjector);// プロジェクタのグレイコードマップ
     bool *grayCodeMapCamera = (bool*)malloc(sizeof(bool) * accessBitNum * pixelNumCamera);      // カメラのグレイコードマップ
     memset(grayCodeMapProjector, 0, sizeof(bool) * accessBitNum * pixelNumProjector);
@@ -435,23 +530,32 @@ int main(int argc, const char * argv[])
         addSpatialCodeOfProCam(grayCodeMapProjector, grayCodeMapCamera, &projectionSize, &cameraSize, timeStep, offset, Horizon, &camera);
     }
     
+	// 幾何キャリブレーションに使用したウィンドウの削除
+	destroyWindow(W_NAME_GEO_CAMERA);
+	destroyWindow(W_NAME_GEO_PROJECTOR);
+    
     // プロカム間のアクセスマップを作る
     Point *accessMapCam2Pro = (Point*)malloc(sizeof(Point) * pixelNumCamera);// カメラからプロジェクタへのアクセスマップ
     initPoint(accessMapCam2Pro, pixelNumCamera);
     setAccessMap(accessMapCam2Pro, grayCodeMapCamera, grayCodeMapProjector, &cameraSize, &projectionSize, &layerSize);
     
-    // アクセスマップの解放
+    // 空間コード画像の解放
 	free(grayCodeMapProjector);
 	free(grayCodeMapCamera);
     
+	// 幾何キャリブレーションのテスト
+	test_geometricCalibration(accessMapCam2Pro, &camera, &cameraSize, &projectionSize);
+    
+	// アクセスマップの解放
+	free(accessMapCam2Pro);
     
     //myInitGlut(argc, argv);
     /*
-    // gl cv test
-    camera >> frame;
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, frame.size().width, frame.size().height, 0, GL_BGR_EXT, GL_UNSIGNED_BYTE, frame.data);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);*/
+     // gl cv test
+     camera >> frame;
+     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, frame.size().width, frame.size().height, 0, GL_BGR_EXT, GL_UNSIGNED_BYTE, frame.data);
+     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);*/
     
     
     return 0;

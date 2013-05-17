@@ -107,9 +107,14 @@ void subMat(Mat *dst, const Mat* const src1, const Mat* const src2){
         ERROR_PRINT(src2->cols);
         return;
     }
-    
+    printMatPropaty(dst);std::cout << "-------------" << std::endl;
+    printMatPropaty(src1);std::cout << "-------------" << std::endl;
+    printMatPropaty(src2);std::cout << std::endl;
     //
     int row = dst->rows, col = dst->cols;
+	//MatIterator_<unsigned char> itrSrc1 = src1->begin<unsigned char>(), itrSrc2 = src2->begin<unsigned char>();
+	//MatIterator_<int> itrDest = dst->begin<int>();
+    
     for (int y = 0; y < col; ++ y) {
         for (int x = 0; x < row; ++ x) {
             //dst->at<int>(x, y) = (int)(src1->at<unsigned char>(x, y) - src2->at<unsigned char>(x, y));
@@ -119,3 +124,5 @@ void subMat(Mat *dst, const Mat* const src1, const Mat* const src2){
         }
     }
 }
+
+

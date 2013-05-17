@@ -31,9 +31,14 @@
 
 #define BOOL_BLACK 0
 #define BOOL_WHITE 1
+#define CHAR_BLACK 0
+#define CHAR_WHITE 255
 
 #define SLEEP_TIME 100    // スリープ時間(ms)
 #define MAX_WINDOW_SIZE 10000   // ウィンドウの最大値
+
+#define W_NAME_GEO_CAMERA "geometric calibration camera"
+#define W_NAME_GEO_PROJECTOR "geometric calibration projector"
 
 enum stripeDirection {Vertical, Horizon};   // {縦，横}
 
