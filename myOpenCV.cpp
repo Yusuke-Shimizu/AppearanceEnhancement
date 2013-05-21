@@ -35,6 +35,7 @@ void setPoint(cv::Point* const p, const int _x, const int _y){
  */
 // Matの様々な要素を表示
 void printMatPropaty(const Mat* const m1){
+    std::cout << "--------------------------"  << std::endl;
     // 行数
     std::cout << "rows:" << m1->rows <<std::endl;
     // 列数
@@ -63,6 +64,16 @@ void printMatPropaty(const Mat* const m1){
     std::cout << "isSubmatrix:" << (m1->isSubmatrix()?"true":"false") << std::endl;
     // データは空か？
     std::cout << "empty:" << (m1->empty()?"true":"false") << std::endl;
+    std::cout << "--------------------------"  << std::endl;
+}
+
+// OpenCVのバージョン表示
+void printOpenCVVersion(void) {
+    std::cout << "version: " << CV_VERSION << std::endl;
+    std::cout << "  major: " << CV_MAJOR_VERSION << std::endl;
+    std::cout << "  minor: " << CV_MINOR_VERSION << std::endl;
+    std::cout << "  subminor: " << CV_SUBMINOR_VERSION << std::endl;
+    std::cout << "OpenCV >= 2.0.0: " << (OPENCV_VERSION_CODE>=OPENCV_VERSION(2,0,0)?"true":"false") << std::endl;
 }
 
 // 初期化関数群
@@ -93,8 +104,11 @@ void mat2char(unsigned char c[], const Mat *m){
 	}
 }
 
-// Matの差分を拡張してから入れる
-void subMat(Mat *dst, const Mat* const src1, const Mat* const src2){
+// 符号無し8bit同士のMatの差分を符号有り16bitのMatに代入する
+// dst  : 符号有り１６ビット行列
+// src1 : 符号無し８ビット行列
+// src2 : 符号無し８ビット行列
+/*void subMat(Mat *dst, const Mat* const src1, const Mat* const src2){
     // error processing
     if (dst->rows != src1->rows || dst->rows != src1->rows || src1->rows != src2->rows) {
         ERROR_PRINT(dst->rows);
@@ -106,23 +120,142 @@ void subMat(Mat *dst, const Mat* const src1, const Mat* const src2){
         ERROR_PRINT(src1->cols);
         ERROR_PRINT(src2->cols);
         return;
+    } else if (dst->depth() != CV_16SC1) {
+        int dstDepth = dst->depth();
+        ERROR_PRINT(dstDepth);
+        return;
+    } else if (src1->depth() != CV_8UC1) {
+        int src1Depth = src1->depth();
+        ERROR_PRINT(src1Depth);
+        return;
+    } else if (src2->depth() != CV_8UC1) {
+        int src2Depth = src2->depth();
+        ERROR_PRINT(src2Depth);
+        return;
     }
-    printMatPropaty(dst);std::cout << "-------------" << std::endl;
-    printMatPropaty(src1);std::cout << "-------------" << std::endl;
-    printMatPropaty(src2);std::cout << std::endl;
-    //
-    int row = dst->rows, col = dst->cols;
-	//MatIterator_<unsigned char> itrSrc1 = src1->begin<unsigned char>(), itrSrc2 = src2->begin<unsigned char>();
-	//MatIterator_<int> itrDest = dst->begin<int>();
     
-    for (int y = 0; y < col; ++ y) {
-        for (int x = 0; x < row; ++ x) {
-            //dst->at<int>(x, y) = (int)(src1->at<unsigned char>(x, y) - src2->at<unsigned char>(x, y));
-            int pos = x + y * row;
-            dst->data[pos] = (int)src1->data[pos] - (int)src2->data[pos];
-            //_print3(dst->at<int>(x, y), (int)src1->at<unsigned char>(x, y), (int)src2->at<unsigned char>(x, y));
+    //  行と列の数を取得
+    int rows = dst->rows, cols = dst->cols;
+    // 連続性の確認
+    if (src1->isContinuous() && src2->isContinuous() && dst->isContinuous()) {
+        // 連続ならばループを二重から一重に変更
+        cols *= rows;
+        rows = 1;
+    }
+    
+    // 行列へアクセスし個々に変換
+    for (int y = 0; y < rows; ++ y) {
+        // init pointer
+        const uchar *sp1 = src1->ptr<uchar>(y);
+        const uchar *sp2 = src2->ptr<uchar>(y);
+        short *dp = dst->ptr<short>(y);
+        
+        for (int x = 0; x < cols; ++ x) {
+            dp[x] = (short)sp1[x] - (short)sp2[x];
         }
+    }
+}*/
+
+// ある範囲の数からある範囲の数へ変換
+// キャストで四捨五入されてなく，全て切り捨てされてる
+uchar convertNumber16sTo8u(const short src, const Size* charRange, const Size* intRange){
+    double A = intRange->width, B = intRange->height, a = charRange->width, b = charRange->height;
+    double tmp = (A-B)/(a-b)*src + (a*B-b*A)/(a-b);
+    return (uchar)tmp;
+}
+// 上のテスト
+void test_convertNumber16sTo8u(void){
+    for (int i = 0; i < 100; ++ i) {
+        const Size smallRange(-40, 10 + i), bigRange(0, 25);
+        const short src = 2;
+        unsigned char tmp = convertNumber16sTo8u(src, &smallRange, &bigRange);
+        _print2(src, (int)tmp);std::cout << std::endl;
     }
 }
 
+// Matの符号有り16bitから符号無し8bitへ変換
+// dst8u    : 変換後の符号無し８ビット行列
+// src16s   : 変換前の符号有り１６ビット行列
+void convertMatDepth16sTo8u(cv::Mat* const dst8u, const cv::Mat* const src16s){
+    // error processing
+    if (dst8u->depth() != CV_8UC1) {            // ビット深度の確認
+        int depth_dst8u = dst8u->depth();
+        ERROR_PRINT(depth_dst8u);
+        return;
+    } else if (src16s->depth() != CV_16SC1) {
+        int depth_src16s = src16s->depth();
+        ERROR_PRINT(depth_src16s);
+        return;
+    } else if (src16s->rows != dst8u->rows) {   // 大きさの一致確認
+        ERROR_PRINT(src16s->rows);
+        ERROR_PRINT(dst8u->rows);
+        return;
+    } else if (src16s->cols != dst8u->cols) {
+        ERROR_PRINT(src16s->cols);
+        ERROR_PRINT(dst8u->cols);
+        return;
+    }
+    
+    // ucharとintの大きさ
+    const Size charRange(DEPTH_U8BIT_MIN, DEPTH_U8BIT_MAX), intRange(DEPTH_S16BIT_MIN, DEPTH_S16BIT_MAX);
+    int rows = src16s->rows, cols = src16s->cols;   // 行と列の大きさ
+    
+    // 連続性の確認
+    if (src16s->isContinuous() && dst8u->isContinuous()) {
+        // 連続ならばループを二重から一重に変更
+        cols *= rows;
+        rows = 1;
+    }
+    
+    // 行列へアクセスし個々に変換
+    for (int y = 0; y < rows; ++ y) {
+        // init pointer
+        const short *src = src16s->ptr<short>(y);
+        uchar *dst = dst8u->ptr<uchar>(y);
+        
+        for (int x = 0; x < cols; ++ x) {
+            dst[x] = convertNumber16sTo8u(src[x], &charRange, &intRange);
+        }
+    }
+}
+// 上のテスト
+void test_convertMatDepth16sTo8u(void){
+    // init
+    Mat image16s = Mat::zeros(10, 10, CV_16SC1);
+	Mat image8u = Mat::zeros(image16s.rows, image16s.cols, CV_8UC1);
+    MatIterator_<int> im16_itr = image16s.begin<int>();
+    double A = DEPTH_S16BIT_MIN, B = DEPTH_S16BIT_MAX, a = DEPTH_U8BIT_MIN, b = DEPTH_U8BIT_MAX;
+    _print4(a, b, A, B);
+    
+    for (int i = A; im16_itr != image16s.end<int>(); ++ im16_itr, i += 257 * 17) {
+        *im16_itr = i;
+        
+        // back to zero
+        if (i > B) {
+            i = A;
+        }
+    }
+    
+    convertMatDepth16sTo8u(&image8u, &image16s);
+    _print(image16s);
+    _print(image8u);
+}
 
+// 符号付き１６ビット行列を表示
+// windowName   : ウィンドウ名
+// mat16s       : 表示する画像（符号付き１６ビット）
+void imshow16s(const char* const windowName, const Mat* const mat16s){
+    //error processing
+    if (mat16s->depth() != CV_16SC1) {
+        int mat16sDepth = mat16s->depth();
+        ERROR_PRINT(mat16sDepth);
+        return;
+    }
+    
+    // １６ビットから８ビットへ変換
+    Mat diffPosiNega8u = Mat::zeros(mat16s->rows, mat16s->cols, CV_8UC1);
+    convertMatDepth16sTo8u(&diffPosiNega8u, mat16s);
+    
+    // ８ビット画像を表示
+    imshow(windowName, diffPosiNega8u);
+}

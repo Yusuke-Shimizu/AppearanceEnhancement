@@ -302,16 +302,18 @@ void addSpatialCodeOfProCam(bool* const spatialCodeProjector, bool* const spatia
     cvtColor(negaImage, negaImage, CV_BGR2GRAY);    // グレー化
 	waitKey(SLEEP_TIME);
 	
-    // ポジネガ投影の撮影像の差分を作成し二値化する
-    Mat diffPosiNega = Mat::zeros(posiImage.rows, posiImage.cols, CV_16SC1);
-    subMat(&diffPosiNega, &posiImage, &negaImage);
-	Mat diffPosiNega_test = Mat::zeros(posiImage.rows, posiImage.cols, CV_8UC1);
-	for(int i = 0; i < posiImage.rows * posiImage.cols; ++ i) {
-		diffPosiNega_test.data[i] = (diffPosiNega.data[i] + 256) / 2;
-	}
-    imshow("image", diffPosiNega_test);
-    //_print(diffPosiNega);
-    image2map(binaryMapCamera, &diffPosiNega, cameraSize);
+    // ポジネガ撮影像を符号有り１６ビットに拡張 ok
+    Mat posiImage16bit, negaImage16bit;
+    posiImage.convertTo(posiImage16bit, CV_16SC1);
+    negaImage.convertTo(negaImage16bit, CV_16SC1);
+    
+    // ポジネガ撮影像の差分 ok
+    Mat diffPosiNega16s = posiImage16bit - negaImage16bit;
+    //subMat(&diffPosiNega, &posiImage, &negaImage);  // 8bit - 8bitなので符号有り16bitに拡張
+    image2map(binaryMapCamera, &diffPosiNega16s, cameraSize);
+    
+    // 差分画像の表示 ok
+    imshow16s("diff image", &diffPosiNega16s);
     
     // プロジェクタとカメラのアクセスマップの生成
     insertAccessMap(spatialCodeProjector, projectorSize, accessBitNum, binaryMapProjector, offset); // プロジェクタの空間コードを追加
@@ -348,7 +350,6 @@ void grayCode2binaryCode(bool* const binaryCode, const bool* const grayCode, con
     for (int i = 1; i < bitNum; ++ i) {
         *(binaryCode + i) = *(grayCode + i) ^ *(binaryCode + i - 1);
     }
-	//printCurrentPattern(binaryCode, bitNum);
 }
 
 // 二進数から十進数へ変換
@@ -374,49 +375,7 @@ int getPositionFromGrayCode(const bool* const grayCode, const int depth){
     
     return binaryNum;
 }
-
-// カメラからプロジェクタへのアクセスマップの設定を行う
-void setAccessMap(Point* const c2pMap, const bool* codeMapCamera, const bool* codeMapProjector, const Size* cameraSize, const Size* projectorSize, const Size* const depthSize){
-    // カメラマップの全画素探索
-    for (int cy = 0; cy < cameraSize->height; ++ cy) {
-        for (int cx = 0; cx < cameraSize->width; ++ cx) {
-            // init
-            int cameraPos = cx + cy * cameraSize->width;    // カメラの位置
-            bool *grayCodeX = (bool*)malloc(sizeof(bool) * depthSize->width);// グレイコードのX座標
-            bool *grayCodeY = (bool*)malloc(sizeof(bool) * depthSize->height);// グレイコードのY座標
-            memset(grayCodeX, 0, sizeof(bool) * depthSize->width);
-            memset(grayCodeY, 0, sizeof(bool) * depthSize->height);
-            
-            // カメラの空間コードからxyそれぞれのコード値を分離 maybe ok
-            divideCode(grayCodeX, grayCodeY, codeMapCamera + cameraPos, depthSize->width, depthSize->height);
-            
-            // 座標値を代入 ok
-            int px = getPositionFromGrayCode(grayCodeX, depthSize->width);
-            int py = getPositionFromGrayCode(grayCodeY, depthSize->height);
-            
-            // error
-            if(px >= projectorSize->width){
-                cout << "over!!!!!!" << endl << "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" << endl;;
-                //_print4(px, py, projectorSize->width, projectorSize->height);
-                return;
-            }else if(py >= projectorSize->height){
-                //_print4(px, py, projectorSize->width, projectorSize->height);
-                //return;
-            }
-            
-            // set
-            setPoint(c2pMap + cameraPos, px, py);
-            
-            //_print4(cx, cy, px, py);
-            
-            // free
-            free(grayCodeX);
-            free(grayCodeY);
-        }
-    }
-	cout << "finish" << endl;
-}
-
+// 上のテスト
 void test_getPositionFromGrayCode(void){
 	bool in3[8*3] = {
 		0,0,0,
@@ -463,16 +422,56 @@ void test_getPositionFromGrayCode(void){
 	}
 }
 
+// カメラからプロジェクタへのアクセスマップの設定を行う
+void setAccessMap(Point* const c2pMap, const bool* codeMapCamera, const bool* codeMapProjector, const Size* cameraSize, const Size* projectorSize, const Size* const depthSize){
+    // カメラマップの全画素探索
+    for (int cy = 0; cy < cameraSize->height; ++ cy) {
+        for (int cx = 0; cx < cameraSize->width; ++ cx) {
+            // init
+            int cameraPos = cx + cy * cameraSize->width;    // カメラの位置
+            bool *grayCodeX = (bool*)malloc(sizeof(bool) * depthSize->width);// グレイコードのX座標
+            bool *grayCodeY = (bool*)malloc(sizeof(bool) * depthSize->height);// グレイコードのY座標
+            memset(grayCodeX, 0, sizeof(bool) * depthSize->width);
+            memset(grayCodeY, 0, sizeof(bool) * depthSize->height);
+            
+            // カメラの空間コードからxyそれぞれのコード値を分離 maybe ok
+            divideCode(grayCodeX, grayCodeY, codeMapCamera + cameraPos, depthSize->width, depthSize->height);
+            
+            // 座標値を代入 ok
+            int px = getPositionFromGrayCode(grayCodeX, depthSize->width);
+            int py = getPositionFromGrayCode(grayCodeY, depthSize->height);
+            
+            // error
+            if(px >= projectorSize->width){
+                cout << "over!!!!!!" << endl << "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" << endl;;
+                //_print4(px, py, projectorSize->width, projectorSize->height);
+                return;
+            }else if(py >= projectorSize->height){
+                //_print4(px, py, projectorSize->width, projectorSize->height);
+                //return;
+            }
+            
+            // set
+            setPoint(c2pMap + cameraPos, px, py);
+            
+            //_print4(cx, cy, px, py);
+            
+            // free
+            free(grayCodeX);
+            free(grayCodeY);
+        }
+    }
+	cout << "finish" << endl;
+}
+
 // 幾何キャリブレーションのテスト
 void test_geometricCalibration(Point* const accessMap, VideoCapture *video, const Size* const cameraSize, const Size* const projectorSize){
 	// init
 	Mat camera, projector = Mat::zeros(*projectorSize, CV_8UC3);
-	char *gtCameraWindowName;
-	gtCameraWindowName = "camera";
-	char *gtProjectorWindowName;
-	gtProjectorWindowName = "projector";
-	const int cx = 200, cy = 200;
-	int px = 0, py = 0;
+	string gtCameraWindowName = "camera";       // カメラのウィンドウ名
+	string gtProjectorWindowName = "projector"; // プロジェクタのウィンドウ名
+	const int cx = 200, cy = 200;               // カメラウィンドウの点を表示させる位置
+	int px = 0, py = 0;                         // プロジェクタウィンドウの点を表示させる位置
 	px = (accessMap + cx + cy * cameraSize->width)->x;
 	py = (accessMap + cx + cy * cameraSize->width)->y;
 	_print4(cx, cy, px, py);
@@ -487,7 +486,7 @@ void test_geometricCalibration(Point* const accessMap, VideoCapture *video, cons
 			setColor(prjImageItr, 255, 0, 0);
 		}
 		imshow(gtCameraWindowName, camera); // camera image
-		cvMoveWindow(gtCameraWindowName, projectorSize->width, 0);
+		cvMoveWindow(gtCameraWindowName.c_str(), projectorSize->width, 0);
 		imshow(gtProjectorWindowName, projector); // projector image
 		waitKey(1);
 	}
@@ -496,6 +495,9 @@ void test_geometricCalibration(Point* const accessMap, VideoCapture *video, cons
 // main method
 int main(int argc, const char * argv[])
 {
+    test_convertMatDepth16sTo8u();
+    //test_convertNumber16sTo8u();
+
     // init camera
     VideoCapture camera(0);
     if( !camera.isOpened() ){

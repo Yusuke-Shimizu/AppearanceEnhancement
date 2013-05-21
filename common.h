@@ -20,23 +20,32 @@
 
 
 // 定義
-//#define PRJ_SIZE_WIDTH 512
-//#define PRJ_SIZE_HEIGHT 512
+#define PRJ_SIZE_WIDTH 512
+#define PRJ_SIZE_HEIGHT 512
 //#define PRJ_SIZE_WIDTH 800
 //#define PRJ_SIZE_HEIGHT 700
-#define PRJ_SIZE_WIDTH 1024
-#define PRJ_SIZE_HEIGHT 768
+//#define PRJ_SIZE_WIDTH 1024
+//#define PRJ_SIZE_HEIGHT 768
 //#define PRJ_SIZE_WIDTH 10
 //#define PRJ_SIZE_HEIGHT 7
 
+// 符号有無Nビットの範囲
+#define UCHAR_MIN 0
+#define DEPTH_U8BIT_MIN 0
+#define DEPTH_U8BIT_MAX 255
+#define DEPTH_S16BIT_MIN -32768
+#define DEPTH_S16BIT_MAX 32767
+
+// 型による色の定義
 #define BOOL_BLACK 0
 #define BOOL_WHITE 1
-#define CHAR_BLACK 0
-#define CHAR_WHITE 255
+#define CHAR_BLACK UCHAR_MIN
+#define CHAR_WHITE UCHAR_MAX
 
 #define SLEEP_TIME 100    // スリープ時間(ms)
 #define MAX_WINDOW_SIZE 10000   // ウィンドウの最大値
 
+// window name
 #define W_NAME_GEO_CAMERA "geometric calibration camera"
 #define W_NAME_GEO_PROJECTOR "geometric calibration projector"
 
