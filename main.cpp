@@ -210,7 +210,7 @@ void image2map(bool* const map, Mat* const image, const Size* const mapSize){
     for (int y = 0; y < mapSize->height; ++ y) {
         for (int x = 0; x < mapSize->width; ++ x, ++ imageItr) {
             // 画像を参照し色を決定
-            if (*imageItr >= -30) {
+            if (*imageItr >= BINARY_THRESH) {
                 map[y * mapSize->width + x] = BOOL_WHITE;
             } else {
                 map[y * mapSize->width + x] = BOOL_BLACK;
@@ -218,7 +218,6 @@ void image2map(bool* const map, Mat* const image, const Size* const mapSize){
         }
     }
 }
-
 
 // ネガポジ画像を用いて二値化画像を生成
 // make binary image using posi and nega image
@@ -261,6 +260,25 @@ void insertAccessMap(bool* accessMap, const Size* const mapSize, const int bitDe
         }
     }
 }
+// 上のテスト
+void test_insertAccessMap(void){
+    
+}
+
+// 入力された投影像を投影・撮影を行い，撮影像を出力する
+void captureProjectionImage(Mat* const captureImage, const Mat* const projectionImage, VideoCapture *videoStream){
+    // 投影
+    imshow(W_NAME_GEO_PROJECTOR, *projectionImage);  // posi pattern
+    waitKey(SLEEP_TIME);
+    
+    // 撮影
+    Mat image;
+    *videoStream >> image;
+    *captureImage = image.clone();
+    imshow(W_NAME_GEO_CAMERA, *captureImage);
+	cvMoveWindow(W_NAME_GEO_CAMERA, projectionImage->rows, 0);
+	waitKey(SLEEP_TIME);
+}
 
 // プロカムの空間コードを追加していく
 // spatialCodeProjector : プロジェクタの空間コード格納ポインタ
@@ -269,11 +287,9 @@ void insertAccessMap(bool* accessMap, const Size* const mapSize, const int bitDe
 // offsetBit        : 追加するビットの位置
 // direction        : 縞の方向
 // camera           : カメラのストリーム
-void addSpatialCodeOfProCam(bool* const spatialCodeProjector, bool* const spatialCodeCamera, const Size* const projectorSize, const Size* const cameraSize, const int patternLayerNum, const int offset, const stripeDirection direction, VideoCapture *camera){
+void addSpatialCodeOfProCam(bool* const spatialCodeProjector, bool* const spatialCodeCamera, const Size* const projectorSize, const Size* const cameraSize, const int patternLayerNum, const int offset, const stripeDirection direction, VideoCapture *videoStream){
     // init
-    Mat projectionImage = cv::Mat::zeros(*projectorSize, CV_8UC3);
-    Size layerSize(calcBitCodeNumber(projectorSize->width), calcBitCodeNumber(projectorSize->height));
-    const int accessBitNum = layerSize.width + layerSize.height;  // アクセスに必要なビット数
+    Mat projectionPosiImage = cv::Mat::zeros(*projectorSize, CV_8UC3);  // ポジ画像
     
     // バイナリマップを作成
     bool *binaryMapProjector = (bool*)malloc(sizeof(bool) * projectorSize->width * projectorSize->height);      // プロジェクタのアクセスマップ
@@ -281,44 +297,45 @@ void addSpatialCodeOfProCam(bool* const spatialCodeProjector, bool* const spatia
     createBinaryMap(binaryMapProjector, projectorSize, patternLayerNum, direction);
     
     // バイナリマップから画像を生成
-    map2image(&projectionImage, binaryMapProjector, projectorSize);
+    map2image(&projectionPosiImage, binaryMapProjector, projectorSize);
     
-    // 画像を投影・撮影し二値化画像を取得
     // projection and shot posi image
     // posi
     Mat posiImage, negaImage;
-    imshow(W_NAME_GEO_PROJECTOR, projectionImage);  // posi pattern
-    waitKey(SLEEP_TIME);
-    *camera >> posiImage;
-	imshow(W_NAME_GEO_CAMERA, posiImage);
-	cvMoveWindow(W_NAME_GEO_CAMERA, projectorSize->width, 0);
-    cvtColor(posiImage, posiImage, CV_BGR2GRAY);    // グレー化
-	waitKey(SLEEP_TIME);
+    captureProjectionImage(&posiImage, &projectionPosiImage, videoStream);
     // nega
-    imshow(W_NAME_GEO_PROJECTOR, ~projectionImage); // nega pattern
-    waitKey(SLEEP_TIME);
-    *camera >> negaImage;
-	imshow(W_NAME_GEO_CAMERA, negaImage);
-    cvtColor(negaImage, negaImage, CV_BGR2GRAY);    // グレー化
-	waitKey(SLEEP_TIME);
+    Mat projectionNegaImage = ~projectionPosiImage;     // ネガ画像
+    captureProjectionImage(&negaImage, &projectionNegaImage, videoStream);
+    
+    // カラー画像からグレー画像へ変換
+    cvtColor(posiImage, posiImage, CV_BGR2GRAY);
+    cvtColor(negaImage, negaImage, CV_BGR2GRAY);
 	
     // ポジネガ撮影像を符号有り１６ビットに拡張 ok
-    Mat posiImage16bit, negaImage16bit;
+	Mat posiImage16bit, negaImage16bit;
     posiImage.convertTo(posiImage16bit, CV_16SC1);
     negaImage.convertTo(negaImage16bit, CV_16SC1);
     
     // ポジネガ撮影像の差分 ok
     Mat diffPosiNega16s = posiImage16bit - negaImage16bit;
-    //subMat(&diffPosiNega, &posiImage, &negaImage);  // 8bit - 8bitなので符号有り16bitに拡張
+
+    // 差分画像の二値化
     image2map(binaryMapCamera, &diffPosiNega16s, cameraSize);
+    map2image(&diffPosiNega16s, binaryMapCamera, cameraSize);
     
     // 差分画像の表示 ok
     imshow16s("diff image", &diffPosiNega16s);
+    cvMoveWindow("diff image", projectorSize->width, 0);
     
     // プロジェクタとカメラのアクセスマップの生成
+    const Size layerSize(calcBitCodeNumber(projectorSize->width), calcBitCodeNumber(projectorSize->height));  // コード層の数
+    const int accessBitNum = layerSize.width + layerSize.height;  // アクセスに必要なビット数
     insertAccessMap(spatialCodeProjector, projectorSize, accessBitNum, binaryMapProjector, offset); // プロジェクタの空間コードを追加
     insertAccessMap(spatialCodeCamera, cameraSize, accessBitNum, binaryMapCamera, offset);  // カメラの空間コードを追加
     
+    //printAccessMap(spatialCodeProjector, projectorSize, accessBitNum);
+    //cout << "------" << endl;
+
     // free
     free(binaryMapProjector);
     free(binaryMapCamera);
@@ -443,52 +460,93 @@ void setAccessMap(Point* const c2pMap, const bool* codeMapCamera, const bool* co
             
             // error
             if(px >= projectorSize->width){
-                cout << "over!!!!!!" << endl << "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" << endl;;
-                //_print4(px, py, projectorSize->width, projectorSize->height);
+                cout << "X value of projector is out of bound (border : " << projectorSize->width << ")" << endl;
+                ERROR_PRINT(px);
                 return;
             }else if(py >= projectorSize->height){
-                //_print4(px, py, projectorSize->width, projectorSize->height);
-                //return;
+                cout << "Y value of projector is out of bound (border : " << projectorSize->height << ")" << endl;
+                ERROR_PRINT(py);
+                return;
             }
             
             // set
             setPoint(c2pMap + cameraPos, px, py);
-            
-            //_print4(cx, cy, px, py);
             
             // free
             free(grayCodeX);
             free(grayCodeY);
         }
     }
-	cout << "finish" << endl;
+	cout << "---created access map---" << endl;
+}
+
+// カメラ座標からプロジェクタ座標を取得する
+// projector    : 代入するプロジェクタ座標
+// camera       : カメラ座標
+// accessMapC2P : カメラ座標からプロジェクタ座標へ変換するマップ
+// cameraWidth  : カメラの幅
+void getProjectorPoint(Point* const projector, const Point* const camera, const Point* const accessMapC2P, const int cameraWidth){
+    const Point* accessMapPtr = accessMapC2P + camera->x + camera->y * cameraWidth;
+    projector->x = accessMapPtr->x;
+    projector->y = accessMapPtr->y;
 }
 
 // 幾何キャリブレーションのテスト
-void test_geometricCalibration(Point* const accessMap, VideoCapture *video, const Size* const cameraSize, const Size* const projectorSize){
+void test_geometricCalibration(Point* const accessMapC2P, VideoCapture *video, const Size* const cameraSize, const Size* const projectorSize){
 	// init
-	Mat camera, projector = Mat::zeros(*projectorSize, CV_8UC3);
+	Mat camera, projector;    // カメラ画像
 	string gtCameraWindowName = "camera";       // カメラのウィンドウ名
 	string gtProjectorWindowName = "projector"; // プロジェクタのウィンドウ名
-	const int cx = 200, cy = 200;               // カメラウィンドウの点を表示させる位置
-	int px = 0, py = 0;                         // プロジェクタウィンドウの点を表示させる位置
-	px = (accessMap + cx + cy * cameraSize->width)->x;
-	py = (accessMap + cx + cy * cameraSize->width)->y;
-	_print4(cx, cy, px, py);
-    
+    int windowSize = 2; // 点の大きさ
+	Point cp(windowSize, windowSize), pp(0, 0);   // カメラ・プロジェクタ画像の位置
+    getProjectorPoint(&pp, &cp, accessMapC2P, cameraSize->width);
+
 	while(1){
-		*video >> camera;
+        // カメラ画像の取得(浅いコピー)
+        Mat frame;
+		*video >> frame;
+        camera = frame.clone();
+        projector = Mat::zeros(*projectorSize, CV_8UC3);    // プロジェクタ画像
         
-		MatIterator_<Vec3b> imageItr = camera.begin<Vec3b>() + cx + cy * cameraSize->width;
-		MatIterator_<Vec3b> prjImageItr = projector.begin<Vec3b>() + px + py * projectorSize->width;
-		for (int i = 0; i < cameraSize->width / 5; ++ i, ++ imageItr, ++ prjImageItr) {
-			setColor(imageItr, 255, 0, 0);
-			setColor(prjImageItr, 255, 0, 0);
-		}
+        // 3x3の塗りつぶし
+        int ch = 3;
+        for (int y = -windowSize; y <= windowSize; ++ y) {
+            // カメラ・プロジェクタ画像へのポインタ
+            uchar* const camPtr = camera.ptr(cp.y + y);
+            uchar* const prjPtr = projector.ptr(pp.y + y);
+            
+            for (int x = -windowSize; x <= windowSize; ++ x) {
+                int camX = cp.x + x, prjX = pp.x + x;
+                // カメラ画像への代入
+                camPtr[camX * ch + 0] = 0;
+                camPtr[camX * ch + 1] = 0;
+                camPtr[camX * ch + 2] = UCHAR_MAX;
+                // プロジェクタ画像の代入
+                prjPtr[prjX * ch + 0] = UCHAR_MAX;
+                prjPtr[prjX * ch + 1] = 0;
+                prjPtr[prjX * ch + 2] = UCHAR_MAX;
+            }
+        }
+        
+        // ウィンドウを表示
 		imshow(gtCameraWindowName, camera); // camera image
 		cvMoveWindow(gtCameraWindowName.c_str(), projectorSize->width, 0);
 		imshow(gtProjectorWindowName, projector); // projector image
 		waitKey(1);
+        
+        // advanced camera pointer
+        const int step = 50;
+        cp.x += step;
+        if (cp.x + windowSize >= cameraSize->width) {
+            cp.x = windowSize;
+            cp.y += step;
+            
+            if (cp.y + windowSize >= cameraSize->height) {
+                cp.y = windowSize;
+            }
+        }
+        getProjectorPoint(&pp, &cp, accessMapC2P, cameraSize->width);
+        _print2(cp, pp);
 	}
 }
 
@@ -507,6 +565,7 @@ int main(int argc, const char * argv[])
     Mat frame;                                  // カメラ画像
     camera >> frame;
     Size cameraSize(frame.cols, frame.rows);    // カメラの大きさ
+    cout << "cameraSize = " << cameraSize << endl;
     //imshow("camera image", frame);
     
     // init projection image

@@ -20,14 +20,14 @@
 
 
 // 定義
+//#define PRJ_SIZE_WIDTH 10
+//#define PRJ_SIZE_HEIGHT 7
 #define PRJ_SIZE_WIDTH 512
 #define PRJ_SIZE_HEIGHT 512
 //#define PRJ_SIZE_WIDTH 800
 //#define PRJ_SIZE_HEIGHT 700
 //#define PRJ_SIZE_WIDTH 1024
 //#define PRJ_SIZE_HEIGHT 768
-//#define PRJ_SIZE_WIDTH 10
-//#define PRJ_SIZE_HEIGHT 7
 
 // 符号有無Nビットの範囲
 #define UCHAR_MIN 0
@@ -42,8 +42,9 @@
 #define CHAR_BLACK UCHAR_MIN
 #define CHAR_WHITE UCHAR_MAX
 
-#define SLEEP_TIME 100    // スリープ時間(ms)
+#define SLEEP_TIME 500    // スリープ時間(ms)
 #define MAX_WINDOW_SIZE 10000   // ウィンドウの最大値
+#define BINARY_THRESH 0     // ネガポジの二値化を行うときの閾値
 
 // window name
 #define W_NAME_GEO_CAMERA "geometric calibration camera"
