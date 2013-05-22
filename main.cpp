@@ -219,6 +219,32 @@ void image2map(bool* const map, Mat* const image, const Size* const mapSize){
     }
 }
 
+// パターンマップから画像を生成する
+// image    : 生成する画像
+// map      : 参照するパターンマップ
+// mapSize  : 上二つの大きさ
+/*void accessMap2image(Mat *image, const Point* const map, const Size* const mapSize){
+    // init iterator
+    MatIterator_<Vec3b> imageItr = image->begin<Vec3b>();
+ 
+    // パターンマップを参照し画像を生成
+    for (int y = 0; y < mapSize->height; ++ y) {
+        for (int x = 0; x < mapSize->width; ++ x, ++ imageItr) {
+            char color = 0;
+            
+            // マップを参照し色を決定
+            if (map[y * mapSize->width + x] == BOOL_BLACK) {
+                color = CHAR_BLACK;
+            } else {
+                color = CHAR_WHITE;
+            }
+            
+            // 色を画像に入れる
+            setColor(imageItr, color);
+        }
+    }
+}*/
+
 // ネガポジ画像を用いて二値化画像を生成
 // make binary image using posi and nega image
 // binaryMap    : 作った二値化マップを代入する変数
@@ -274,12 +300,15 @@ void captureProjectionImage(Mat* const captureImage, const Mat* const projection
     // 撮影
     Mat image;
     *videoStream >> image;
+	waitKey(SLEEP_TIME);
+    *videoStream >> image;
     *captureImage = image.clone();
-    imshow(W_NAME_GEO_CAMERA, *captureImage);
-	cvMoveWindow(W_NAME_GEO_CAMERA, projectionImage->rows, 0);
+    //imshow(W_NAME_GEO_CAMERA, *captureImage);
+	//cvMoveWindow(W_NAME_GEO_CAMERA, projectionImage->rows, 0);
 	waitKey(SLEEP_TIME);
 }
 
+int num = 0;
 // プロカムの空間コードを追加していく
 // spatialCodeProjector : プロジェクタの空間コード格納ポインタ
 // spatialCodeCamera    : カメラの空間コード格納ポインタ
@@ -302,6 +331,7 @@ void addSpatialCodeOfProCam(bool* const spatialCodeProjector, bool* const spatia
     // projection and shot posi image
     // posi
     Mat posiImage, negaImage;
+    waitKey(SLEEP_TIME);
     captureProjectionImage(&posiImage, &projectionPosiImage, videoStream);
     // nega
     Mat projectionNegaImage = ~projectionPosiImage;     // ネガ画像
@@ -324,8 +354,16 @@ void addSpatialCodeOfProCam(bool* const spatialCodeProjector, bool* const spatia
     map2image(&diffPosiNega16s, binaryMapCamera, cameraSize);
     
     // 差分画像の表示 ok
-    imshow16s("diff image", &diffPosiNega16s);
-    cvMoveWindow("diff image", projectorSize->width, 0);
+    //imshow16s("diff image", &diffPosiNega16s);
+    //cvMoveWindow("diff image", projectorSize->width, 0);
+    
+    // 差分画像の書き出し
+    Mat diffPosiNega8u = Mat::zeros(diffPosiNega16s.rows, diffPosiNega16s.cols, CV_8UC1);
+    convertMatDepth16sTo8u(&diffPosiNega8u, &diffPosiNega16s);
+    ostringstream oss;
+    oss << "diffImage" << (num++) << ".png";
+    imwrite(oss.str().c_str(), diffPosiNega8u);
+    cout << "write diffImage.png" << endl;
     
     // プロジェクタとカメラのアクセスマップの生成
     const Size layerSize(calcBitCodeNumber(projectorSize->width), calcBitCodeNumber(projectorSize->height));  // コード層の数
@@ -368,6 +406,19 @@ void grayCode2binaryCode(bool* const binaryCode, const bool* const grayCode, con
         *(binaryCode + i) = *(grayCode + i) ^ *(binaryCode + i - 1);
     }
 }
+// 上のテスト
+void test_grayCode2binaryCode(void){
+    // init
+    const int bitNum = 4;
+    bool binary[bitNum] = {0,0,0,0};
+    bool gray[bitNum] = {1,0,0,0};
+    
+    grayCode2binaryCode(binary, gray, bitNum);
+    cout << "gray code" << endl;
+    printCurrentPattern(gray, bitNum);
+    cout << "binary code" << endl;
+    printCurrentPattern(binary, bitNum);
+}
 
 // 二進数から十進数へ変換
 int binary2decimal(const bool* const binaryCode, const int depth){
@@ -378,6 +429,39 @@ int binary2decimal(const bool* const binaryCode, const int depth){
     }
     
     return binary;
+}
+
+void test_grayCode2binaryCode_binary2decimal(void){
+    // init
+    const int bitNum = 2;
+    bool binary[bitNum] = {0,0};
+    bool gray[bitNum] = {0,0};
+    grayCode2binaryCode(binary, gray, bitNum); cout << "gray code" << endl;
+    printCurrentPattern(gray, bitNum); cout << "binary code" << endl;
+    printCurrentPattern(binary, bitNum);
+    int decimal = binary2decimal(binary, bitNum);
+    _print(decimal);cout << endl;
+
+    gray[1] = 1;
+    grayCode2binaryCode(binary, gray, bitNum); cout << "gray code" << endl;
+    printCurrentPattern(gray, bitNum); cout << "binary code" << endl;
+    printCurrentPattern(binary, bitNum);
+    decimal = binary2decimal(binary, bitNum);
+    _print(decimal);cout << endl;
+
+    gray[0] = 1;
+    grayCode2binaryCode(binary, gray, bitNum); cout << "gray code" << endl;
+    printCurrentPattern(gray, bitNum); cout << "binary code" << endl;
+    printCurrentPattern(binary, bitNum);
+    decimal = binary2decimal(binary, bitNum);
+    _print(decimal);cout << endl;
+
+    gray[1] = 0;
+    grayCode2binaryCode(binary, gray, bitNum); cout << "gray code" << endl;
+    printCurrentPattern(gray, bitNum); cout << "binary code" << endl;
+    printCurrentPattern(binary, bitNum);
+    decimal = binary2decimal(binary, bitNum);
+    _print(decimal);
 }
 
 // グレイコードから座標値を取得（インバースグレイコード？）
@@ -500,7 +584,8 @@ void test_geometricCalibration(Point* const accessMapC2P, VideoCapture *video, c
     int windowSize = 2; // 点の大きさ
 	Point cp(windowSize, windowSize), pp(0, 0);   // カメラ・プロジェクタ画像の位置
     getProjectorPoint(&pp, &cp, accessMapC2P, cameraSize->width);
-
+    
+    // loop
 	while(1){
         // カメラ画像の取得(浅いコピー)
         Mat frame;
@@ -553,9 +638,10 @@ void test_geometricCalibration(Point* const accessMapC2P, VideoCapture *video, c
 // main method
 int main(int argc, const char * argv[])
 {
-    test_convertMatDepth16sTo8u();
+    //test_convertMatDepth16sTo8u();
     //test_convertNumber16sTo8u();
-
+    test_grayCode2binaryCode_binary2decimal();
+    
     // init camera
     VideoCapture camera(0);
     if( !camera.isOpened() ){

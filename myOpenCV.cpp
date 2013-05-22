@@ -259,3 +259,8 @@ void imshow16s(const char* const windowName, const Mat* const mat16s){
     // ８ビット画像を表示
     imshow(windowName, diffPosiNega8u);
 }
+
+// imwriteのテスト
+void test_imwrite(void){
+    
+}

@@ -42,7 +42,7 @@
 #define CHAR_BLACK UCHAR_MIN
 #define CHAR_WHITE UCHAR_MAX
 
-#define SLEEP_TIME 500    // スリープ時間(ms)
+#define SLEEP_TIME 200    // スリープ時間(ms)
 #define MAX_WINDOW_SIZE 10000   // ウィンドウの最大値
 #define BINARY_THRESH 0     // ネガポジの二値化を行うときの閾値
 
