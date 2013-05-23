@@ -264,3 +264,8 @@ void imshow16s(const char* const windowName, const Mat* const mat16s){
 void test_imwrite(void){
     
 }
+
+// 
+int areaSize(const cv::Size* const _size){
+    return _size->width * _size->height;
+}

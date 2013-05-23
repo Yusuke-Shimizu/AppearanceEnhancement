@@ -19,3 +19,14 @@ void display(void){
     
 }
 
+// other method
+bool helloOpenGL(void){
+    //myInitGlut(argc, argv);
+    /*
+     // gl cv test
+     camera >> frame;
+     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, frame.size().width, frame.size().height, 0, GL_BGR_EXT, GL_UNSIGNED_BYTE, frame.data);
+     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);*/
+    return true;
+}

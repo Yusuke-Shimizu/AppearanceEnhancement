@@ -35,4 +35,5 @@ void convertMatDepth16sTo8u(cv::Mat* const dst8u, const cv::Mat* const src16s);
 void test_convertMatDepth16sTo8u(void);
 void imshow16s(const char* const windowName, const cv::Mat* const mat16s);
 void test_imwrite(void);
+int areaSize(const cv::Size* const _size);
 #endif

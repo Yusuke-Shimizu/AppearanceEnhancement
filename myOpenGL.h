@@ -17,5 +17,7 @@
 void myInitGlut(int argc, const char * argv[]);
 // 描画関数
 void display(void);
+// other method
+bool helloOpenGL(void);
 
 #endif
