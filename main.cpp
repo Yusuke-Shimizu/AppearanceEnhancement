@@ -20,6 +20,7 @@ int main(int argc, const char * argv[])
 {
     // 幾何キャリブレーションを行う
     GeometricCalibration gc = GeometricCalibration();
+    gc.test_calcBitCodeNumber();
     if (!gc.doCalibration()) {
         return -1;
     }

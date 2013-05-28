@@ -26,6 +26,7 @@ public:
     void printPatternMap(const bool* const map, const cv::Size* const mapSize);
     void printAccessMap(const bool* const accessMap, const cv::Size* const mapSize, const int mapDepth);
     int calcBitCodeNumber(const int length);
+    void test_calcBitCodeNumber(void);
     void makePureBinaryCode(bool *pattern, const unsigned int patternSize, const unsigned int layerNum);
     void makeGrayCodePattern(bool *pattern, const unsigned int patternSize, const unsigned int layerNum);
     void makeNegaCodePattern(bool *pattern, const bool *posiPattern, const unsigned int patternSize);
@@ -46,7 +47,9 @@ public:
     int getPositionFromGrayCode(const bool* const grayCode, const int depth);
     void test_getPositionFromGrayCode(void);
     void setAccessMap(cv::Point* const c2pMap, const bool* codeMapCamera, const bool* codeMapProjector, const cv::Size* cameraSize, const cv::Size* projectorSize, const cv::Size* const depthSize);
+    bool test_setAccessMap(void);
     void getProjectorPoint(cv::Point* const projector, const cv::Point* const camera, const cv::Point* const accessMapC2P, const int cameraWidth);
+    void test_accessMap(const cv::Point* const accessMapCam2Pro, const cv::Size* const cameraSize, const cv::Size* const projectorSize);
     void test_geometricCalibration(cv::Point* const accessMapC2P, cv::VideoCapture *video, const cv::Size* const cameraSize, const cv::Size* const projectorSize);
 
 };

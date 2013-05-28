@@ -18,15 +18,28 @@ void myInitGlut(int argc, const char * argv[]){
 void display(void){
     
 }
+/*
+void displayMe(void)
+{
+    glClear(GL_COLOR_BUFFER_BIT);
+    glBegin(GL_POLYGON);
+    glVertex3f(0.0, 0.0, 0.0);
+    glVertex3f(0.5, 0.0, 0.0);
+    glVertex3f(0.5, 0.5, 0.0);
+    glVertex3f(0.0, 0.5, 0.0);
+    glEnd();
+    glFlush();
+}
 
 // other method
-bool helloOpenGL(void){
-    //myInitGlut(argc, argv);
-    /*
-     // gl cv test
-     camera >> frame;
-     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, frame.size().width, frame.size().height, 0, GL_BGR_EXT, GL_UNSIGNED_BYTE, frame.data);
-     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);*/
+bool helloOpenGL(int argc, const char * argv[]){
+    //glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_SINGLE);
+    glutInitWindowSize(300, 300);
+    glutInitWindowPosition(100, 100);
+    glutCreateWindow("Hello world :D");
+    glutDisplayFunc(displayMe);
+    glutMainLoop();
+
     return true;
-}
+}*/

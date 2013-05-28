@@ -11,7 +11,7 @@
 
 // プリント系
 #define _print(var) std::cout<<#var<<" = "<<(var)<<" ("<<&(var)<<") ("<<__FUNCTION__<<")"<<std::endl
-#define _print2(var1, var2) std::cout<<#var1<<" = ["<<(var1)<<","<<(var2)<<"] ("<<&(var1)<<"] ("<<__FUNCTION__<<")"<<std::endl
+#define _print2(var1, var2) std::cout<<#var1<<" = ["<<(var1)<<","<<(var2)<<"] ("<<&(var1)<<") ("<<__FUNCTION__<<")"<<std::endl
 #define _print3(var1, var2, var3) std::cout<<#var1<<" = ["<<(var1)<<","<<(var2)<<","<<(var3)<<"] ("<<&(var1)<<") ("<<__FUNCTION__<<")"<<std::endl
 #define _print4(var1, var2, var3, var4) std::cout<<#var1<<" = ["<<(var1)<<","<<(var2)<<","<<(var3)<<","<<(var4)<<"] ("<<&(var1)<<") ("<<__FUNCTION__<<")"<<std::endl
 #define _print_name(var) std::cout<<#var<<" ("<<&(var)<<") ("<<__FUNCTION__<<")"
@@ -22,12 +22,14 @@
 // 定義
 //#define PRJ_SIZE_WIDTH 10
 //#define PRJ_SIZE_HEIGHT 7
-#define PRJ_SIZE_WIDTH 512
-#define PRJ_SIZE_HEIGHT 512
+//#define PRJ_SIZE_WIDTH 512
+//#define PRJ_SIZE_HEIGHT 512
 //#define PRJ_SIZE_WIDTH 800
 //#define PRJ_SIZE_HEIGHT 700
+#define PRJ_SIZE_WIDTH 768
+#define PRJ_SIZE_HEIGHT 768
 //#define PRJ_SIZE_WIDTH 1024
-//#define PRJ_SIZE_HEIGHT 768
+//#define PRJ_SIZE_HEIGHT 1024
 
 // 符号有無Nビットの範囲
 #define UCHAR_MIN 0

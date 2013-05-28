@@ -68,6 +68,13 @@ int GeometricCalibration::calcBitCodeNumber(const int length){
     
     return layerNum;
 }
+// 上のテスト
+void GeometricCalibration::test_calcBitCodeNumber(void){
+    for (int i = 1; i < 1025; ++ i) {
+        int layer = calcBitCodeNumber(i);
+        _print2(i, layer);
+    }
+}
 
 // 純二進コードの生成
 // pattern      : 生成したコードを入れる場所
@@ -345,12 +352,12 @@ void GeometricCalibration::addSpatialCodeOfProCam(bool* const spatialCodeProject
     // init
     Mat projectionPosiImage = cv::Mat::zeros(*projectorSize, CV_8UC3);  // ポジ画像
     
-    // バイナリマップを作成
+    // 投影用バイナリマップを作成
     bool *binaryMapProjector = (bool*)malloc(sizeof(bool) * projectorSize->width * projectorSize->height);      // プロジェクタのアクセスマップ
     bool *binaryMapCamera = (bool*)malloc(sizeof(bool) * cameraSize->width * cameraSize->height);      // カメラのアクセスマップ
     createBinaryMap(binaryMapProjector, projectorSize, patternLayerNum, direction);
     
-    // バイナリマップから画像を生成
+    // バイナリマップから投影画像を生成
     map2image(&projectionPosiImage, binaryMapProjector, projectorSize);
     
     // projection and shot posi image
@@ -361,6 +368,8 @@ void GeometricCalibration::addSpatialCodeOfProCam(bool* const spatialCodeProject
     // nega
     Mat projectionNegaImage = ~projectionPosiImage;     // ネガ画像
     captureProjectionImage(&negaImage, &projectionNegaImage, videoStream);
+    projectionPosiImage.release();  // free
+    projectionNegaImage.release();  // free
     
     // カラー画像からグレー画像へ変換
     cvtColor(posiImage, posiImage, CV_BGR2GRAY);
@@ -370,10 +379,11 @@ void GeometricCalibration::addSpatialCodeOfProCam(bool* const spatialCodeProject
 	Mat posiImage16bit, negaImage16bit;
     posiImage.convertTo(posiImage16bit, CV_16SC1);
     negaImage.convertTo(negaImage16bit, CV_16SC1);
+    posiImage.release();    // free
+    negaImage.release();    // free
     
     // ポジネガ撮影像の差分 ok
     Mat diffPosiNega16s = posiImage16bit - negaImage16bit;
-    //Mat diffPosiNega16s = negaImage16bit - posiImage16bit; // こうしたらすぐ出来そうだけど，よくなさげ
     
     // 差分画像の二値化
     image2map(binaryMapCamera, &diffPosiNega16s, cameraSize);
@@ -550,6 +560,12 @@ void GeometricCalibration::test_getPositionFromGrayCode(void){
 }
 
 // カメラからプロジェクタへのアクセスマップの設定を行う
+// *c2pMap              : 代入するアクセスマップ
+// *codeMapCamera       : カメラのコードマップ
+// *codeMapProjector    : プロジェクタのコードマップ (いらない)
+// *cameraSize          : カメラ画像の大きさ
+// *projectorSize       : プロジェクタ画像の大きさ
+// *depthSize           : X,Y座標のビット深度
 void GeometricCalibration::setAccessMap(Point* const c2pMap, const bool* codeMapCamera, const bool* codeMapProjector, const Size* cameraSize, const Size* projectorSize, const Size* const depthSize){
     // カメラマップの全画素探索
     for (int cy = 0; cy < cameraSize->height; ++ cy) {
@@ -570,13 +586,15 @@ void GeometricCalibration::setAccessMap(Point* const c2pMap, const bool* codeMap
             
             // error
             if(px >= projectorSize->width){
-                cout << "X value of projector is out of bound (border : " << projectorSize->width << ")" << endl;
-                ERROR_PRINT(px);
-                return;
+//                cout << "X value of projector is out of bound (border : " << projectorSize->width << ")" << endl;
+//                ERROR_PRINT(px);
+                px = py = 0;
+                //return;
             }else if(py >= projectorSize->height){
-                cout << "Y value of projector is out of bound (border : " << projectorSize->height << ")" << endl;
-                ERROR_PRINT(py);
-                return;
+//                cout << "Y value of projector is out of bound (border : " << projectorSize->height << ")" << endl;
+//                ERROR_PRINT(py);
+                px = py = 0;
+                //return;
             }
             
             // set
@@ -588,6 +606,13 @@ void GeometricCalibration::setAccessMap(Point* const c2pMap, const bool* codeMap
         }
     }
 	cout << "---created access map---" << endl;
+}
+
+// 上のテスト
+bool GeometricCalibration::test_setAccessMap(void){
+    
+    
+    return true;
 }
 
 // カメラ座標からプロジェクタ座標を取得する
@@ -614,9 +639,10 @@ void GeometricCalibration::test_geometricCalibration(Point* const accessMapC2P, 
     // loop
 	while(1){
         // カメラ画像の取得
-        Mat frame;
-		*video >> frame;
-        camera = frame.clone();
+//        Mat frame;
+//		*video >> frame;
+//        camera = frame.clone();
+		*video >> camera;
         projector = Mat::zeros(*projectorSize, CV_8UC3);    // プロジェクタ画像
         
         // 3x3の塗りつぶし
@@ -660,6 +686,12 @@ void GeometricCalibration::test_geometricCalibration(Point* const accessMapC2P, 
         getProjectorPoint(&pp, &cp, accessMapC2P, cameraSize->width);
         _print2(cp, pp);
 	}
+}
+
+void GeometricCalibration::test_accessMap(const Point* const accessMapCam2Pro, const Size* const cameraSize, const Size* const projectorSize){
+    Mat accessImage = Mat::zeros(*cameraSize, CV_8UC3); // アクセスマップ画像
+    accessMap2image(&accessImage, accessMapCam2Pro, cameraSize, projectorSize);
+    imshow("access map image", accessImage);
 }
 
 // 幾何キャリブレーション
@@ -714,10 +746,8 @@ bool GeometricCalibration::doCalibration(void){
 	free(grayCodeMapProjector);
 	free(grayCodeMapCamera);
     
-    //
-    Mat accessImage = Mat::zeros(cameraSize, CV_8UC3); // アクセスマップ画像
-    accessMap2image(&accessImage, accessMapCam2Pro, &cameraSize, &projectionSize);
-    imshow("access map image", accessImage);
+    // アクセスマップのテスト
+    //test_accessMap(accessMapCam2Pro, &cameraSize, &projectionSize);
     
 	// 幾何キャリブレーションのテスト
 	test_geometricCalibration(accessMapCam2Pro, &camera, &cameraSize, &projectionSize);
