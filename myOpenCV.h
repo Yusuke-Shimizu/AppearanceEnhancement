@@ -28,7 +28,6 @@ void printOpenCVVersion(void);
 void initPoint(cv::Point* const p, const int size);
 // other method
 void mat2char(unsigned char c[], const cv::Mat *m);
-//void subMat(cv::Mat *dst, const cv::Mat* const src1, const cv::Mat* const src2);
 uchar convertNumber16sTo8u(const short src, const cv::Size* charRange, const cv::Size* intRange);
 void test_convertNumber16sTo8u(void);
 void convertMatDepth16sTo8u(cv::Mat* const dst8u, const cv::Mat* const src16s);
@@ -36,4 +35,7 @@ void test_convertMatDepth16sTo8u(void);
 void imshow16s(const char* const windowName, const cv::Mat* const mat16s);
 void test_imwrite(void);
 int areaSize(const cv::Size* const _size);
+void videoCapture_test(void);
+void test_sizeArea(void);
+
 #endif

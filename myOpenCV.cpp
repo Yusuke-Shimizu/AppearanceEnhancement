@@ -269,3 +269,37 @@ void test_imwrite(void){
 int areaSize(const cv::Size* const _size){
     return _size->width * _size->height;
 }
+
+// VideoCaptureのテスト
+// カメラ使う度にVideoCaptureを生成すると，削除する時に時間食うのでやめたほうがいい
+void videoCapture_test(void){
+    while(1){
+        VideoCapture video(0);
+        if( !video.isOpened() ){
+            std::cerr << "ERROR : camera is not opened !!" << std::endl;
+            return;
+        }
+        Mat image;
+        video >> image;
+        imshow("video capture test", image);
+        waitKey(1);
+    }
+}
+
+// Size.area()のテスト
+void test_sizeArea(void){
+    for (int y = 1; y <= 10; ++ y) {
+        for (int x = 1; x <= 10; ++ x) {
+            Size size(x, y);
+            int sizeArea1 = size.width * size.height;
+            int sizeArea2 = size.area();
+            
+            if (sizeArea1 != sizeArea2) {
+                _print4(x, y, sizeArea1, sizeArea2);
+                return;
+            }
+        }
+    }
+    
+    std::cout << "size.area() is size.width * size.height" << std::endl;
+}

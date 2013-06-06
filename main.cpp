@@ -7,20 +7,18 @@
 //
 
 #include <iostream>
-#include "common.h"
-#include "myOpenCV.h"
-//#include "myOpenGL.h"
+#include "ProCam.h"
 #include "GeometricCalibration.h"
-
-using namespace std;
-using namespace cv;
+#include "myOpenCV.h"
 
 // main method
 int main(int argc, const char * argv[])
 {
+    // プロカムの設定
+    //ProCam procam = ProCam(<#const cv::Size *const cameraSize#>, <#const cv::Size *const projectorSize#>, <#const int cameraBitDepth#>, <#const int projectorBitDepth#>);
+
     // 幾何キャリブレーションを行う
     GeometricCalibration gc = GeometricCalibration();
-    gc.test_calcBitCodeNumber();
     if (!gc.doCalibration()) {
         return -1;
     }

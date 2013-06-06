@@ -118,6 +118,11 @@ void GeometricCalibration::makePureBinaryCode(bool *pattern, const unsigned int 
     }
 }
 
+// 未完成
+bool GeometricCalibration::getNthBit(const int num, const int Nth){
+    return true;
+}
+
 // グレイコードパターンの生成
 // pattern      : パターンを入れる場所
 // patternSize  : パターンの長さ
@@ -135,9 +140,8 @@ void GeometricCalibration::makeGrayCodePattern(bool *pattern, const unsigned int
     // pbc(純二進コード変数)のイニシャライズ
     bool pbc_current[patternSize], pbc_before[patternSize];
     for (int i = 0; i < patternSize; ++ i) {
-        const bool WHITE = 1;
-        pbc_current[i] = WHITE;
-        pbc_before[i] = WHITE;
+        pbc_current[i] = BOOL_WHITE;
+        pbc_before[i] = BOOL_WHITE;
     }
     
     // 現在と一つ前の純二進コード取得
@@ -147,6 +151,22 @@ void GeometricCalibration::makeGrayCodePattern(bool *pattern, const unsigned int
     // グレイコード＝純二進コードの現在と過去の排他的論理和
     for (int i = 0; i < patternSize; ++ i) {
         pattern[i] = pbc_current[i] ^ pbc_before[i];
+    }
+}
+// 座標値で生成する方法
+void GeometricCalibration::makeGrayCodePattern2(bool *pattern, const unsigned int patternSize, const unsigned int layerNum){
+    // １層目は純二進コードと同じ
+    if (layerNum == 1) {
+        makePureBinaryCode(pattern, patternSize, layerNum);
+        return;
+    }else if (layerNum == 0){
+        ERROR_PRINT(layerNum);
+        return;
+    }
+
+    // patternを全走査し，N番目とN-1番目のビットの排他的論理和を用いる
+    for (int i = 0; i < patternSize; ++ i) {
+        pattern[i] = getNthBit(i, layerNum - 1) ^ getNthBit(i, layerNum);
     }
 }
 
@@ -331,9 +351,22 @@ void GeometricCalibration::captureProjectionImage(Mat* const captureImage, const
     
     // 撮影
     Mat image;
-    *videoStream >> image;
-	waitKey(SLEEP_TIME);
-    *videoStream >> image;
+    for (int i = 0; i < CAPTURE_NUM; ++ i) {
+        *videoStream >> image;
+    }
+//    *videoStream >> image;
+//    *videoStream >> image;
+//    *videoStream >> image;
+//    *videoStream >> image;
+//    *videoStream >> image;
+//    *videoStream >> image;
+////	waitKey(SLEEP_TIME);
+//    *videoStream >> image;
+//    *videoStream >> image;
+//    *videoStream >> image;
+//    *videoStream >> image;
+//    *videoStream >> image;
+//    *videoStream >> image;
     *captureImage = image.clone();
     //imshow(W_NAME_GEO_CAMERA, *captureImage);
 	//cvMoveWindow(W_NAME_GEO_CAMERA, projectionImage->rows, 0);
@@ -653,14 +686,16 @@ void GeometricCalibration::test_geometricCalibration(Point* const accessMapC2P, 
             uchar* const prjPtr = projector.ptr(pp.y + y);
             
             for (int x = -windowSize; x <= windowSize; ++ x) {
-                int camX = cp.x + x, prjX = pp.x + x;   // カメラ・プロジェクタの座標
+                int camX = max(cp.x + x, 0), prjX = max(pp.x + x, 0);   // カメラ・プロジェクタの座標
                 
                 // カメラ画像への代入
                 camPtr[camX * ch + 0] = 0;
                 camPtr[camX * ch + 1] = 0;
                 camPtr[camX * ch + 2] = UCHAR_MAX;
                 // プロジェクタ画像の代入
+                ////////////// EXC_BAC_ACCESS
                 prjPtr[prjX * ch + 0] = UCHAR_MAX;
+                //////////////
                 prjPtr[prjX * ch + 1] = 0;
                 prjPtr[prjX * ch + 2] = UCHAR_MAX;
             }
@@ -747,7 +782,7 @@ bool GeometricCalibration::doCalibration(void){
 	free(grayCodeMapCamera);
     
     // アクセスマップのテスト
-    //test_accessMap(accessMapCam2Pro, &cameraSize, &projectionSize);
+    test_accessMap(accessMapCam2Pro, &cameraSize, &projectionSize);
     
 	// 幾何キャリブレーションのテスト
 	test_geometricCalibration(accessMapCam2Pro, &camera, &cameraSize, &projectionSize);

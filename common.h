@@ -16,18 +16,20 @@
 #define _print4(var1, var2, var3, var4) std::cout<<#var1<<" = ["<<(var1)<<","<<(var2)<<","<<(var3)<<","<<(var4)<<"] ("<<&(var1)<<") ("<<__FUNCTION__<<")"<<std::endl
 #define _print_name(var) std::cout<<#var<<" ("<<&(var)<<") ("<<__FUNCTION__<<")"
 #define _print_name_ln(var) std::cout<<#var<<" ("<<&(var)<<") ("<<__FUNCTION__<<")"<<std::endl
-#define ERROR_PRINT(var) std::cout<<"error is "<<#var<<" = "<<(var)<<" ("<<&(var)<<") ("<<__FUNCTION__<<")"<<std::endl
+#define ERROR_PRINT(var) std::cerr<<"error is "<<#var<<" = "<<(var)<<" ("<<&(var)<<") ("<<__FUNCTION__<<")"<<std::endl
 
 
 // 定義
 //#define PRJ_SIZE_WIDTH 10
 //#define PRJ_SIZE_HEIGHT 7
-//#define PRJ_SIZE_WIDTH 512
-//#define PRJ_SIZE_HEIGHT 512
+#define PRJ_SIZE_WIDTH 512
+#define PRJ_SIZE_HEIGHT 512
 //#define PRJ_SIZE_WIDTH 800
 //#define PRJ_SIZE_HEIGHT 700
-#define PRJ_SIZE_WIDTH 768
-#define PRJ_SIZE_HEIGHT 768
+//#define PRJ_SIZE_WIDTH 768
+//#define PRJ_SIZE_HEIGHT 768
+//#define PRJ_SIZE_WIDTH 1024
+//#define PRJ_SIZE_HEIGHT 768
 //#define PRJ_SIZE_WIDTH 1024
 //#define PRJ_SIZE_HEIGHT 1024
 
@@ -44,9 +46,11 @@
 #define CHAR_BLACK UCHAR_MIN
 #define CHAR_WHITE UCHAR_MAX
 
-#define SLEEP_TIME 500    // スリープ時間(ms)
+// その他
+#define SLEEP_TIME 300    // スリープ時間(ms)
 #define MAX_WINDOW_SIZE 10000   // ウィンドウの最大値
 #define BINARY_THRESH 0     // ネガポジの二値化を行うときの閾値
+#define CAPTURE_NUM 10
 
 // window name
 #define W_NAME_GEO_CAMERA "geometric calibration camera"

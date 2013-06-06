@@ -28,7 +28,9 @@ public:
     int calcBitCodeNumber(const int length);
     void test_calcBitCodeNumber(void);
     void makePureBinaryCode(bool *pattern, const unsigned int patternSize, const unsigned int layerNum);
+    bool getNthBit(const int num, const int Nth);
     void makeGrayCodePattern(bool *pattern, const unsigned int patternSize, const unsigned int layerNum);
+    void makeGrayCodePattern2(bool *pattern, const unsigned int patternSize, const unsigned int layerNum);
     void makeNegaCodePattern(bool *pattern, const bool *posiPattern, const unsigned int patternSize);
     void pattern2map(bool *map, const bool* const pattern, const cv::Size* const mapSize, const stripeDirection direction);
     void map2image(cv::Mat *image, const bool* const map, const cv::Size* const mapSize);
