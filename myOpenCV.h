@@ -18,8 +18,10 @@
 //const double M_PI = 3.14159265358979;
 
 // set method
-void setColor(const cv::MatIterator_<cv::Vec3b> it, const unsigned char red, const unsigned char green, const unsigned char blue);
-void setColor(const cv::MatIterator_<cv::Vec3b> it, const unsigned char luminance);
+void setColor(const cv::MatIterator_<cv::Vec3b> it, const uchar red, const uchar green, const uchar blue);
+void setColor(const cv::MatIterator_<cv::Vec3b> it, const uchar luminance);
+void setColor(cv::Mat* const mat, const double& red, const double& green, const double& blue);
+void setColor(cv::Mat* const mat, const double& luminance);
 void setPoint(cv::Point* const p, const int _x, const int _y);
 // print method
 void printMatPropaty(const cv::Mat* const m1);
@@ -34,8 +36,23 @@ void convertMatDepth16sTo8u(cv::Mat* const dst8u, const cv::Mat* const src16s);
 void test_convertMatDepth16sTo8u(void);
 void imshow16s(const char* const windowName, const cv::Mat* const mat16s);
 void test_imwrite(void);
-int areaSize(const cv::Size* const _size);
 void videoCapture_test(void);
 void test_sizeArea(void);
+bool calcMultiplyEachElement(cv::Mat* om, const cv::Mat& im1, const cv::Mat& im2);
+bool calcDivideEachElement(cv::Mat* om, const cv::Mat& im1, const cv::Mat& im2);
+bool compareMat(const cv::Mat& m1, const cv::Mat& m2, const double& thresh);
+void test_compareMat(void);
+bool getDiffNumOfMat(double* const diff, const cv::Mat& m1, const cv::Mat& m2);
+bool getAvgOfDiffMat(double* const diff, const cv::Mat& m1, const cv::Mat& m2);
+void test_getAvgOfDiffMat(void);
+bool getRateOfDiffMat(double* const diff, const cv::Mat& m1, const cv::Mat& m2);
+void test_sizeCompare(void);
+void doAnyMethodForAllPixelOfMat(cv::Mat* const m1);
+bool showData(const cv::Mat& data);
+bool checkMatSize(const cv::Mat& m1, const cv::Mat& m2);
+bool checkMatSize(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3);
+bool checkMatSize(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4);
+bool mulElmByElm(cv::Mat* const dst, const cv::Mat& src1, const cv::Mat& src2);
+bool divElmByElm(cv::Mat* const dst, const cv::Mat& src1, const cv::Mat& src2);
 
 #endif

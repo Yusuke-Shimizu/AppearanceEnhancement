@@ -354,19 +354,6 @@ void GeometricCalibration::captureProjectionImage(Mat* const captureImage, const
     for (int i = 0; i < CAPTURE_NUM; ++ i) {
         *videoStream >> image;
     }
-//    *videoStream >> image;
-//    *videoStream >> image;
-//    *videoStream >> image;
-//    *videoStream >> image;
-//    *videoStream >> image;
-//    *videoStream >> image;
-////	waitKey(SLEEP_TIME);
-//    *videoStream >> image;
-//    *videoStream >> image;
-//    *videoStream >> image;
-//    *videoStream >> image;
-//    *videoStream >> image;
-//    *videoStream >> image;
     *captureImage = image.clone();
     //imshow(W_NAME_GEO_CAMERA, *captureImage);
 	//cvMoveWindow(W_NAME_GEO_CAMERA, projectionImage->rows, 0);
@@ -741,8 +728,7 @@ bool GeometricCalibration::doCalibration(void){
     Mat frame;                                  // カメラ画像
     camera >> frame;
     Size cameraSize(frame.cols, frame.rows);    // カメラの大きさ
-    cout << "cameraSize = " << cameraSize << endl;
-    //imshow("camera image", frame);
+    _print(cameraSize);
     
     // init projection image
     Size projectionSize(PRJ_SIZE_WIDTH, PRJ_SIZE_HEIGHT);       // 投影サイズ

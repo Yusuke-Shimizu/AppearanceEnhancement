@@ -6,6 +6,7 @@
 //  Copyright (c) 2013年 志水 友輔. All rights reserved.
 //
 
+#include <cmath>
 #include "myOpenCV.h"
 #include "common.h"
 
@@ -14,14 +15,23 @@ using namespace cv;
 // セッティング
 // 色のセッティング
 // it -> (red, green, blue)
-void setColor(const MatIterator_<Vec3b> it, const unsigned char red, const unsigned char green, const unsigned char blue){
+void setColor(const MatIterator_<Vec3b> it, const uchar red, const uchar green, const uchar blue){
     (*it)[0] = blue;
     (*it)[1] = green;
     (*it)[2] = red;
 }
-void setColor(const MatIterator_<Vec3b> it, const unsigned char luminance){
+void setColor(const MatIterator_<Vec3b> it, const uchar luminance){
     setColor(it, luminance, luminance, luminance);
 }
+void setColor(cv::Mat* const mat, const double& red, const double& green, const double& blue){
+    mat->at<double>(0, 0) = blue;
+    mat->at<double>(0, 1) = green;
+    mat->at<double>(0, 2) = red;
+}
+void setColor(cv::Mat* const mat, const double& luminance){
+    setColor(mat, luminance, luminance, luminance);
+}
+
 
 // Pointのセッティング
 void setPoint(cv::Point* const p, const int _x, const int _y){
@@ -34,37 +44,37 @@ void setPoint(cv::Point* const p, const int _x, const int _y){
  * 表示関数群
  */
 // Matの様々な要素を表示
-void printMatPropaty(const Mat* const m1){
+void printMatPropaty(const Mat& m1){
     std::cout << "--------------------------"  << std::endl;
     // 行数
-    std::cout << "rows:" << m1->rows <<std::endl;
+    std::cout << "rows:" << m1.rows <<std::endl;
     // 列数
-    std::cout << "cols:" << m1->cols << std::endl;
+    std::cout << "cols:" << m1.cols << std::endl;
     // 次元数
-    std::cout << "dims:" << m1->dims << std::endl;
+    std::cout << "dims:" << m1.dims << std::endl;
     // サイズ（2次元の場合）
-    std::cout << "size[]:" << m1->size().width << "," << m1->size().height << std::endl;
+    std::cout << "size[]:" << m1.size().width << "," << m1.size().height << std::endl;
     // ビット深度ID
-    std::cout << "depth (ID):" << m1->depth() << "(=" << CV_64F << ")" << std::endl;
+    std::cout << "depth (ID):" << m1.depth() << "(=" << CV_64F << ")" << std::endl;
     // チャンネル数
-    std::cout << "channels:" << m1->channels() << std::endl;
+    std::cout << "channels:" << m1.channels() << std::endl;
     // （複数チャンネルから成る）1要素のサイズ [バイト単位]
-    std::cout << "elemSize:" << m1->elemSize() << "[byte]" << std::endl;
+    std::cout << "elemSize:" << m1.elemSize() << "[byte]" << std::endl;
     // 1要素内の1チャンネル分のサイズ [バイト単位]
-    std::cout << "elemSize1 (elemSize/channels):" << m1->elemSize1() << "[byte]" << std::endl;
+    std::cout << "elemSize1 (elemSize/channels):" << m1.elemSize1() << "[byte]" << std::endl;
     // 要素の総数
-    std::cout << "total:" << m1->total() << std::endl;
+    std::cout << "total:" << m1.total() << std::endl;
     // ステップ数 [バイト単位]
-    std::cout << "step:" << m1->step << "[byte]" << std::endl;
+    std::cout << "step:" << m1.step << "[byte]" << std::endl;
     // 1ステップ内のチャンネル総数
-    std::cout << "step1 (step/elemSize1):" << m1->step1()  << std::endl;
+    std::cout << "step1 (step/elemSize1):" << m1.step1()  << std::endl;
     // データは連続か？
-    std::cout << "isContinuous:" << (m1->isContinuous()?"true":"false") << std::endl;
+    std::cout << "isContinuous:" << (m1.isContinuous()?"true":"false") << std::endl;
     // 部分行列か？
-    std::cout << "isSubmatrix:" << (m1->isSubmatrix()?"true":"false") << std::endl;
+    std::cout << "isSubmatrix:" << (m1.isSubmatrix()?"true":"false") << std::endl;
     // データは空か？
-    std::cout << "empty:" << (m1->empty()?"true":"false") << std::endl;
-    std::cout << "--------------------------"  << std::endl;
+    std::cout << "empty:" << (m1.empty()?"true":"false") << std::endl;
+    _print_bar;
 }
 
 // OpenCVのバージョン表示
@@ -103,58 +113,6 @@ void mat2char(unsigned char c[], const Mat *m){
 		}
 	}
 }
-
-// 符号無し8bit同士のMatの差分を符号有り16bitのMatに代入する
-// dst  : 符号有り１６ビット行列
-// src1 : 符号無し８ビット行列
-// src2 : 符号無し８ビット行列
-/*void subMat(Mat *dst, const Mat* const src1, const Mat* const src2){
-    // error processing
-    if (dst->rows != src1->rows || dst->rows != src1->rows || src1->rows != src2->rows) {
-        ERROR_PRINT(dst->rows);
-        ERROR_PRINT(src1->rows);
-        ERROR_PRINT(src2->rows);
-        return;
-    } else if (dst->cols != src1->cols || dst->cols != src1->cols || src1->cols != src2->cols){
-        ERROR_PRINT(dst->cols);
-        ERROR_PRINT(src1->cols);
-        ERROR_PRINT(src2->cols);
-        return;
-    } else if (dst->depth() != CV_16SC1) {
-        int dstDepth = dst->depth();
-        ERROR_PRINT(dstDepth);
-        return;
-    } else if (src1->depth() != CV_8UC1) {
-        int src1Depth = src1->depth();
-        ERROR_PRINT(src1Depth);
-        return;
-    } else if (src2->depth() != CV_8UC1) {
-        int src2Depth = src2->depth();
-        ERROR_PRINT(src2Depth);
-        return;
-    }
-    
-    //  行と列の数を取得
-    int rows = dst->rows, cols = dst->cols;
-    // 連続性の確認
-    if (src1->isContinuous() && src2->isContinuous() && dst->isContinuous()) {
-        // 連続ならばループを二重から一重に変更
-        cols *= rows;
-        rows = 1;
-    }
-    
-    // 行列へアクセスし個々に変換
-    for (int y = 0; y < rows; ++ y) {
-        // init pointer
-        const uchar *sp1 = src1->ptr<uchar>(y);
-        const uchar *sp2 = src2->ptr<uchar>(y);
-        short *dp = dst->ptr<short>(y);
-        
-        for (int x = 0; x < cols; ++ x) {
-            dp[x] = (short)sp1[x] - (short)sp2[x];
-        }
-    }
-}*/
 
 // ある範囲の数からある範囲の数へ変換
 // キャストで四捨五入されてなく，全て切り捨てされてる
@@ -265,11 +223,6 @@ void test_imwrite(void){
     
 }
 
-// 
-int areaSize(const cv::Size* const _size){
-    return _size->width * _size->height;
-}
-
 // VideoCaptureのテスト
 // カメラ使う度にVideoCaptureを生成すると，削除する時に時間食うのでやめたほうがいい
 void videoCapture_test(void){
@@ -303,3 +256,224 @@ void test_sizeArea(void){
     
     std::cout << "size.area() is size.width * size.height" << std::endl;
 }
+
+// 要素ごとのかけ算
+bool calcMultiplyEachElement(cv::Mat* om, const cv::Mat& im1, const cv::Mat& im2){
+    // error processing
+    if (om->size != im1.size || om->size != im2.size || im1.size != im2.size) {
+        ERROR_PRINT3(*om, im1, im2);
+        return false;
+    }
+    
+    // calculation
+    for (int c = 0; c < 3; ++ c) {
+        om->at<double>(0, c) = im1.at<double>(0, c) * im2.at<double>(0, c);
+    }
+    return true;
+}
+
+// 要素ごとの割り算
+bool calcDivideEachElement(cv::Mat* om, const cv::Mat& im1, const cv::Mat& im2){
+    // error processing
+    if (om->size() != im1.size() || om->size() != im2.size() || im1.size() != im2.size()) {
+        ERROR_PRINT3(*om, im1, im2);
+        return false;
+    }
+    
+    // calculation
+    for (int c = 0; c < 3; ++ c) {
+        om->at<double>(0, c) = im1.at<double>(0, c) / im2.at<double>(0, c);
+    }
+    return true;
+}
+
+// 行列同士の比較(全く同じでなくても，大体似てたらok)
+// input / m1       : 比較対象の行列
+// input / m2       : 比較対象の行列
+// input / thresh   : 同じかどうかの閾値
+// return           : 同じ行列かどうか
+bool compareMat(const cv::Mat& m1, const cv::Mat& m2, const double& thresh){
+    // error processing
+    if (m1.size() != m2.size()) {
+        Size m1size = m1.size(), m2size = m2.size();
+        ERROR_PRINT2(m1size, m2size);
+        return false;
+    }
+
+    // calc
+    double diff = 0;
+    getDiffNumOfMat(&diff, m1, m2);
+//    _print(diff);
+
+//    if (sum < thresh * thresh) {
+    if (diff < thresh) {
+        return true;
+    } else {
+        return false;
+    }
+}
+// 上のテスト
+void test_compareMat(void){
+    Mat m1 = (Mat_<double>(3, 3) << 1, 2, 3, 4, 5, 6, 7, 8, 9);
+    Mat m2 = (Mat_<double>(3, 3) << 1, 2, 3, 4, 5, 6, 7, 8, 9);
+    Mat m3 = (Mat_<double>(3, 3) << 2, 3, 4, 5, 6, 7, 8, 9, 10);
+    Mat m4 = (Mat_<double>(3, 3) << 1.01, 2.01, 3.01, 4.01, 5.01, 6.01, 7.01, 8.01, 9.01);
+    Mat m5 = (Mat_<double>(3, 3) << 1.0001, 2.0001, 3.0001, 4.0001, 5.0001, 6.0001, 7.0001, 8.0001, 9.0001);
+    
+    compareMat(m1, m2, 0.01);
+    compareMat(m1, m3, 0.01);
+    compareMat(m1, m4, 0.01);
+    compareMat(m1, m5, 0.01);
+}
+
+// 行列の差のノルムを取得
+bool getDiffNumOfMat(double* const diff, const cv::Mat& m1, const cv::Mat& m2){
+    // error processing
+    if (m1.size() != m2.size()) {
+        Size m1size = m1.size(), m2size = m2.size();
+        ERROR_PRINT2(m1size, m2size);
+        return false;
+    }
+    
+    // calc
+    Mat diffMat = m1 - m2;
+    *diff = cv::norm(diffMat);
+    
+    return true;
+}
+
+// 行列の差の絶対値の平均を求める
+bool getAvgOfDiffMat(double* const diff, const cv::Mat& m1, const cv::Mat& m2){
+    // error processing
+    if ( !checkMatSize(m1, m2) ) return false;
+
+    // init
+    Mat diffMat = Mat::zeros(m1.size(), CV_64FC1);
+    
+    // 差の絶対値を取得
+    absdiff(m1, m2, diffMat);
+    
+    // 上の行列の要素の平均値を取得
+    reduce(diffMat, diffMat, 0, CV_REDUCE_AVG);
+    *diff = diffMat.at<double>(0, 0);
+    
+    return true;
+}
+// 上のテスト
+void test_getAvgOfDiffMat(void){
+    Mat m1 = (Mat_<double>(3, 1) << 1, 2, 3);
+    Mat m2 = (Mat_<double>(3, 1) << 1, 2, 3);
+    Mat m3 = (Mat_<double>(3, 1) << 2, 3, 4);
+    Mat m4 = (Mat_<double>(3, 1) << 0, 0, 0);
+    Mat m5 = (Mat_<double>(3, 1) << 0.1, 0.5, -1.9);
+    
+    double diff = 0.0;
+    getAvgOfDiffMat(&diff, m1, m2);
+    _print3(diff, m1, m2);
+    getAvgOfDiffMat(&diff, m1, m3);
+    _print3(diff, m1, m3);
+    getAvgOfDiffMat(&diff, m1, m4);
+    _print3(diff, m1, m4);
+    getAvgOfDiffMat(&diff, m1, m5);
+    _print3(diff, m1, m5);
+}
+
+// 差の比率を取得
+bool getRateOfDiffMat(double* const diff, const cv::Mat& m1, const cv::Mat& m2){
+    if ( !getAvgOfDiffMat(diff, m1, m2) ) return false;
+    *diff = *diff / m1.at<double>(0, 0);
+
+    return true;
+}
+
+// Size::operator== の検証
+void test_sizeCompare(void){
+    Size s1(2, 2), s2(2, 2), s3(2, 3), s4(3, 2), s5(3, 3);
+    
+    if (s1 == s2) {
+        std::cout << "s1 == s2" << std::endl;
+    }
+    if (s1 == s3) {
+        std::cout << "s1 == s3" << std::endl;
+    }
+    if (s1 == s4) {
+        std::cout << "s1 == s4" << std::endl;
+    }
+    if (s1 == s5) {
+        std::cout << "s1 == s5" << std::endl;
+    }
+}
+
+// Matの全画素にある操作を行う関数（未実装）
+void doAnyMethodForAllPixelOfMat(cv::Mat* const m1){
+    int rows = m1->rows, cols = m1->cols;   // 行と列の大きさ
+    
+    // 連続性の確認
+    if (m1->isContinuous()) {
+        // 連続ならばループを二重から一重に変更
+        cols *= rows;
+        rows = 1;
+    }
+    
+    // 行列へアクセスし個々に変換
+    for (int y = 0; y < rows; ++ y) {
+        // init pointer
+        double *dst = m1->ptr<double>(y);
+        
+        for (int x = 0; x < cols; ++ x) {
+            dst[x] = 0;
+        }
+    }
+}
+
+// データを可視化する関数
+// input / data : 可視化したいデータ
+// return       : 成功したかどうか
+bool showData(const cv::Mat& data){
+    Mat image = Mat::zeros(Size(512, 512), CV_8UC3);
+    imshow("date image", image);
+    return true;
+}
+
+// Matの大きさのチェック
+// return   : 大きさが同じならtrue，違うならfalse
+bool checkMatSize(const cv::Mat& m1, const cv::Mat& m2){
+    if (m1.size() != m2.size()) {
+        Size m1size = m1.size(), m2size = m2.size();
+        ERROR_PRINT2(m1size, m2size);
+        return false;
+    } else {
+        return true;
+    }
+}
+bool checkMatSize(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3){
+    if ( checkMatSize(m1, m2) && checkMatSize(m2, m3)) {
+        return true;
+    } else {
+        return false;
+    }
+}
+bool checkMatSize(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4){
+    if ( checkMatSize(m1, m2) && checkMatSize(m2, m3, m4)) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+// 要素ごとのかけ算
+bool mulElmByElm(cv::Mat* const dst, const cv::Mat& src1, const cv::Mat& src2){
+    if ( !checkMatSize(*dst, src1, src2) ) return false;
+    
+    
+    
+    return true;
+}
+
+// 要素ごとの割り算
+bool divElmByElm(cv::Mat* const dst, const cv::Mat& src1, const cv::Mat& src2){
+    if ( !checkMatSize(*dst, src1, src2) ) return false;
+    
+    return true;
+}
+

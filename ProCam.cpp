@@ -8,15 +8,26 @@
 
 #include <iostream>
 #include "ProCam.h"
+#include "LinearizerOfProjector.h"
 #include "myOpenCV.h"
 #include "common.h"
 
-using namespace std;
-using namespace cv;
+//using namespace std;
+//using namespace cv;
 
+///////////////////////////////  constructor ///////////////////////////////
 // コンストラクタ
-ProCam::ProCam(const cv::Size* const cameraSize, const cv::Size* const projectorSize, const int cameraBitDepth, const int projectorBitDepth){
-    init(cameraSize, projectorSize, cameraBitDepth, projectorBitDepth);
+ProCam::ProCam(const cv::Size* const projectorSize){
+    init(projectorSize);
+}
+
+///////////////////////////////  destructor ///////////////////////////////
+// デストラクタ
+ProCam::~ProCam(void){
+    free(m_accessMapCam2Pro);
+    free(m_cameraResponse);
+    free(m_projectorResponse);
+    m_video.release();
 }
 
 ///////////////////////////////  set method ///////////////////////////////
@@ -37,17 +48,17 @@ bool ProCam::setProjectorSize(const cv::Size* const projectorSize){
 // input / mapSize            : アクセスマップの大きさ
 bool ProCam::setAccessMapCam2Pro(const cv::Point* const accessMapCam2Pro, const cv::Size* const mapSize){
     // 実際のカメラのサイズを取得
-    Size cameraSize;
+    cv::Size cameraSize;
     getCameraSize(&cameraSize);
     
     // error processing
     if (cameraSize.width != mapSize->width) {
-        cerr << "error is width of size" << endl;
+        std::cerr << "error is width of size" << std::endl;
         ERROR_PRINT(cameraSize);
         ERROR_PRINT(mapSize);
         return false;
     } else if (cameraSize.height != mapSize->height) {
-        cerr << "error is height of size" << endl;
+        std::cerr << "error is height of size" << std::endl;
         ERROR_PRINT(cameraSize);
         ERROR_PRINT(mapSize);
         return false;
@@ -61,6 +72,47 @@ bool ProCam::setAccessMapCam2Pro(const cv::Point* const accessMapCam2Pro, const 
         }
     }
     
+    return true;
+}
+
+// カメラ応答特性サイズ（m_cameraResponseSize）の設定
+// input / camResSize   : 設定したい大きさ
+// return               : 成功したかどうか
+bool ProCam::setCameraResponseSize(const int camResSize){
+    if (camResSize <= 0) return false;
+    m_cameraResponseSize = camResSize;
+    return true;
+}
+
+// プロジェクタ応答特性サイズ（m_projectorResponseSize）の設定
+// input / prjResSize   : 設定したい大きさ
+// return               : 成功したかどうか
+bool ProCam::setProjectorResponseSize(const int prjResSize){
+    if (prjResSize <= 0) return false;
+    m_projectorResponseSize = prjResSize;
+    return true;
+}
+
+bool ProCam::setCameraResponse(const double* const camRes, const int camResSize){
+    // error processing
+    if (camResSize <= 0) return false;
+    
+    // setting
+    for (int i = 0; i < camResSize; ++ i) {
+        *(m_cameraResponse + i) = *(camRes + i);
+    }
+
+    return true;
+}
+bool ProCam::setProjectorResponse(const double* const prjRes, const int prjResSize){
+    // error processing
+    if (prjResSize <= 0) return false;
+    
+    // setting
+    for (int i = 0; i < prjResSize; ++ i) {
+        *(m_projectorResponse + i) = *(prjRes + i);
+    }
+    _print(prjResSize);
     return true;
 }
 
@@ -90,17 +142,17 @@ bool ProCam::getCaptureImage(cv::Mat* const image){
 // input / mapSize              : アクセスマップの大きさ
 bool ProCam::getAccessMapCam2Pro(cv::Point* const accessMapCam2Pro, const cv::Size* const mapSize){
     // 実際のカメラのサイズを取得
-    Size cameraSize;
+    cv::Size cameraSize;
     getCameraSize(&cameraSize);
     
     // error processing
     if (cameraSize.width != mapSize->width) {
-        cerr << "error is width of size" << endl;
+        std::cerr << "error is width of size" << std::endl;
         ERROR_PRINT(cameraSize);
         ERROR_PRINT(mapSize);
         return false;
     } else if (cameraSize.height != mapSize->height) {
-        cerr << "error is height of size" << endl;
+        std::cerr << "error is height of size" << std::endl;
         ERROR_PRINT(cameraSize);
         ERROR_PRINT(mapSize);
         return false;
@@ -117,30 +169,56 @@ bool ProCam::getAccessMapCam2Pro(cv::Point* const accessMapCam2Pro, const cv::Si
     return true;
 }
 
+// カメラ応答特性サイズの取得
+// return   : 応答特性の大きさ
+int ProCam::getCameraResponseSize(void){
+    return m_cameraResponseSize;
+}
+
+// カメラ応答特性サイズの取得
+// return   : 応答特性の大きさ
+int ProCam::getProjectorResponseSize(void){
+    return m_projectorResponseSize;
+}
+
 ///////////////////////////////  init method ///////////////////////////////
 
 // ProCamクラスの初期化
-bool ProCam::init(const cv::Size* const cameraSize, const cv::Size* const projectorSize, const int cameraBitDepth, const int projectorBitDepth){
-    setCameraSize(cameraSize);
-    setProjectorSize(projectorSize);
-    initVideoCapture();
+bool ProCam::init(const cv::Size* const projectorSize){
+    // カメラの初期化
+    if ( !initVideoCapture() ) return false;
+    if ( !initCameraSize() ) return false;
+    if ( !initCameraResponseSize() ) return false;
+    if ( !initCameraResponse(getCameraResponseSize()) ) return false;
+
+    // プロジェクタの初期化
+    if ( !setProjectorSize(projectorSize) ) return false;
+    if ( !initProjectorResponseSize() ) return false;
+    if ( !initProjectorResponse(getProjectorResponseSize()) ) return false;
+    if ( !linearlizeOfProjector() ) return false;
+    
+    // アクセスマップの初期化
+    if (!initAccessMapCam2Pro() ) return false;
+    
     return true;
 }
 
 // m_cameraSizeの初期化
 // return   : 成功したかどうか
-////////////////////////////////ここ作る！！！///////////////////////////////////////////
 bool ProCam::initCameraSize(void){
     // videoCaptureからサイズを取得する
-    //m_cameraSize = Size();
+    cv::Size videoSize(m_video.get(CV_CAP_PROP_FRAME_WIDTH), m_video.get(CV_CAP_PROP_FRAME_HEIGHT));
+    _print(videoSize);
+    // setting
+    if( !setCameraSize(&videoSize) ) return false;
+
     return true;
 }
-////////////////////////////////ここ作る！！！///////////////////////////////////////////
 
 // ビデオキャプチャーの初期化
 // return   : 成功したかどうか
 bool ProCam::initVideoCapture(void){
-    m_video = VideoCapture(0);
+    m_video = cv::VideoCapture(0);
     if( !m_video.isOpened() ){
         std::cerr << "ERROR : camera is not opened !!" << std::endl;
         return false;
@@ -149,33 +227,54 @@ bool ProCam::initVideoCapture(void){
 }
 
 // アクセスマップの初期化
-bool ProCam::initAccessMapCam2Pro(cv::Point* const accessMapCam2Pro, const cv::Size* const mapSize){
+bool ProCam::initAccessMapCam2Pro(void){
     // 実際のカメラのサイズを取得
-    Size cameraSize;
+    cv::Size cameraSize;
     getCameraSize(&cameraSize);
     
-    // error processing
-    if (cameraSize.width != mapSize->width) {
-        cerr << "error is width of size" << endl;
-        ERROR_PRINT(cameraSize);
-        ERROR_PRINT(mapSize);
-        return false;
-    } else if (cameraSize.height != mapSize->height) {
-        cerr << "error is height of size" << endl;
-        ERROR_PRINT(cameraSize);
-        ERROR_PRINT(mapSize);
-        return false;
-    }
-    
     // init
-    m_accessMapCam2Pro = (Point*)malloc(sizeof(Point) * mapSize->area());
-    for (int y = 0; y < mapSize->height; ++ y) {
-        for (int x = 0; x < mapSize->width; ++ x) {
-            int ptr = y * mapSize->width + x;
-            *(m_accessMapCam2Pro + ptr) = Size(0, 0);
+    m_accessMapCam2Pro = (cv::Point*)malloc(sizeof(cv::Point) * cameraSize.area());
+    for (int y = 0; y < cameraSize.height; ++ y) {
+        for (int x = 0; x < cameraSize.width; ++ x) {
+            int ptr = y * cameraSize.width + x;
+            *(m_accessMapCam2Pro + ptr) = cv::Size(0, 0);
         }
     }
     
+    return true;
+}
+
+// カメラ応答特性サイズ（m_cameraResponseSize）の初期化
+// return   : 成功したかどうか
+bool ProCam::initCameraResponseSize(void){
+    if ( !setCameraResponseSize(RESPONSE_SIZE) ) return false;
+    return true;
+}
+
+// プロジェクタ応答特性サイズ（m_projectorResponseSize）の初期化
+// return   : 成功したかどうか
+bool ProCam::initProjectorResponseSize(void){
+    if ( !setProjectorResponseSize(RESPONSE_SIZE) ) return false;
+    return true;
+}
+
+// カメラ応答特性の初期化
+// input / camResSize   : 生成する応答特性の大きさ
+// return               : 成功したかどうか
+bool ProCam::initCameraResponse(const int camResSize){
+    if (camResSize <= 0) return false;
+    m_cameraResponse = (double*)malloc(sizeof(double) * camResSize);
+    memset(m_cameraResponse, 0, sizeof(double) * camResSize);
+    return true;
+}
+
+// プロジェクタ応答特性の初期化
+// input / prjResSize   : 生成する応答特性の大きさ
+// return               : 成功したかどうか
+bool ProCam::initProjectorResponse(const int prjResSize){
+    if (prjResSize <= 0) return false;
+    m_projectorResponse = (double*)malloc(sizeof(double) * prjResSize);
+    memset(m_projectorResponse, 0, sizeof(double) * prjResSize);
     return true;
 }
 
@@ -185,5 +284,36 @@ bool ProCam::initAccessMapCam2Pro(cv::Point* const accessMapCam2Pro, const cv::S
 // input / projectionImage  : 投影したい画像
 // return                   : 成功したかどうか
 bool ProCam::captureFromLight(cv::Mat* const captureImage, const cv::Mat* const projectionImage){
+    // 投影
+    imshow("projection", *projectionImage);
+    cv::waitKey(SLEEP_TIME);
+    
+    // 撮影
+    cv::Mat image;
+    for (int i = 0; i < CAPTURE_NUM; ++ i) {
+        getCaptureImage(&image);
+    }
+    *captureImage = image.clone();
+    //imshow(W_NAME_GEO_CAMERA, *captureImage);
+	//cvMoveWindow(W_NAME_GEO_CAMERA, projectionImage->rows, 0);
+    cv::waitKey(SLEEP_TIME);
+
     return true;
 }
+
+// プロジェクタの線形化を行う
+// return   : 成功したかどうか
+bool ProCam::linearlizeOfProjector(void){
+    // 線形化配列を一旦ローカルに落とす
+    int prjResSize = getProjectorResponseSize();
+    double* responsePrj = (double*)malloc(sizeof(double) * prjResSize);
+    if ( !linearPrj->linearlize(responsePrj) ) return false;
+    
+    // 落とした配列をメンバ配列に代入する
+    if ( !setProjectorResponse(responsePrj, prjResSize) ) return false;
+    
+    // 後処理
+    free(responsePrj);
+    return true;
+}
+
