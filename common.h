@@ -43,7 +43,14 @@
 #define _print_gnuplot7(output, var1, var2, var3, var4, var5, var6, var7) output<<(var1)<<"\t"<<(var2)<<"\t"<<(var3)<<"\t"<<(var4)<<"\t"<<(var5)<<"\t"<<(var6)<<"\t"<<(var7)<<std::endl
 #define _print_gnuplot8(output, var1, var2, var3, var4, var5, var6, var7, var8) output<<(var1)<<"\t"<<(var2)<<"\t"<<(var3)<<"\t"<<(var4)<<"\t"<<(var5)<<"\t"<<(var6)<<"\t"<<(var7)<<"\t"<<(var8)<<std::endl
 #define _print_gnuplot9(output, var1, var2, var3, var4, var5, var6, var7, var8, var9) output<<(var1)<<"\t"<<(var2)<<"\t"<<(var3)<<"\t"<<(var4)<<"\t"<<(var5)<<"\t"<<(var6)<<"\t"<<(var7)<<"\t"<<(var8)<<"\t"<<(var9)<<std::endl
-
+// output mat
+#define _print_gnuplot_mat2(output, index, mat1, mat2) _print_gnuplot4(output, index, (mat1).at<double>(0, 0), (mat2).at<double>(0, 0))
+#define _print_gnuplot_mat3(output, index, mat1, mat2, mat3) _print_gnuplot4(output, index, (mat1).at<double>(0, 0), (mat2).at<double>(0, 0), (mat3).at<double>(0, 0))
+#define _print_gnuplot_mat4(output, index, mat1, mat2, mat3, mat4) _print_gnuplot5(output, index, (mat1).at<double>(0, 0), (mat2).at<double>(0, 0), (mat3).at<double>(0, 0), (mat4).at<double>(0, 0))
+#define _print_gnuplot_mat5(output, index, mat1, mat2, mat3, mat4, mat5) _print_gnuplot6(output, index, (mat1).at<double>(0, 0), (mat2).at<double>(0, 0), (mat3).at<double>(0, 0), (mat4).at<double>(0, 0), (mat5).at<double>(0, 0))
+#define _print_gnuplot_mat6(output, index, mat1, mat2, mat3, mat4, mat5, mat6) _print_gnuplot7(output, index, (mat1).at<double>(0, 0), (mat2).at<double>(0, 0), (mat3).at<double>(0, 0), (mat4).at<double>(0, 0), (mat5).at<double>(0, 0), (mat6).at<double>(0, 0))
+#define _print_gnuplot_mat7(output, index, mat1, mat2, mat3, mat4, mat5, mat6, mat7) _print_gnuplot8(output, index, (mat1).at<double>(0, 0), (mat2).at<double>(0, 0), (mat3).at<double>(0, 0), (mat4).at<double>(0, 0), (mat5).at<double>(0, 0), (mat6).at<double>(0, 0), (mat7).at<double>(0, 0))
+#define _print_gnuplot_mat8(output, index, mat1, mat2, mat3, mat4, mat5, mat6, mat7, mat8) _print_gnuplot9(output, index, (mat1).at<double>(0, 0), (mat2).at<double>(0, 0), (mat3).at<double>(0, 0), (mat4).at<double>(0, 0), (mat5).at<double>(0, 0), (mat6).at<double>(0, 0), (mat7).at<double>(0, 0), (mat8).at<double>(0, 0))
 
 // 定義
 //#define PRJ_SIZE_WIDTH 10
@@ -78,6 +85,7 @@
 #define BINARY_THRESH 0     // ネガポジの二値化を行うときの閾値
 #define CAPTURE_NUM 10
 #define NOISE_RANGE 0.01
+//#define NOISE_RANGE 0.05
 
 // window name
 #define W_NAME_GEO_CAMERA "geometric calibration camera"

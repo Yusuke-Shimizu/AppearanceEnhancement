@@ -30,10 +30,14 @@ public:
     bool setK(const cv::Mat& K);
     bool setF(const cv::Mat& F);
     bool setCfull(const cv::Mat& Cfull);
+    bool setCfull(const double& red, const double& blue, const double& green);
+    bool setCfull(const double& luminance);
     bool setC0(const cv::Mat& C0);
+    bool setC0(const double& red, const double& blue, const double& green);
+    bool setC0(const double& luminance);
     // get method
-    bool getCfull(cv::Mat* Cfull);
-    bool getC0(cv::Mat* C0);
+    bool getCfull(cv::Mat* const Cfull);
+    bool getC0(cv::Mat* const C0);
     // init method
     bool init(void);
     bool initRadiometricModel(void);
@@ -44,10 +48,11 @@ public:
     bool initCfull(void);
     bool initC0(void);
     // print method
-    //bool printData(std::ofstream* ofs, const cv::Mat& data);
-    bool printData(std::ofstream* ofs, const int index, const cv::Mat& ansK1, const cv::Mat& ansK2, const cv::Mat& estK, const cv::Mat& ansF1, const cv::Mat& ansF2, const cv::Mat& estF);
-    bool printData1(std::ofstream* ofs);
-    void testtest(std::ostream& ost);
+//    bool printData(std::ofstream* ofs, const cv::Mat& data);
+//    bool printData(std::ofstream* ofs, const int index, const cv::Mat& ansK1, const cv::Mat& ansK2, const cv::Mat& estK, const cv::Mat& ansF1, const cv::Mat& ansF2, const cv::Mat& estF);
+    bool printStandardDeviationOfRadiometricModel(void);
+    bool printSwitchIteratorError(void);
+    bool printSimultaneousIteratorError(void);
     // other method
     bool test_RadiometricModel(void);
     bool calcReflectAndAmbient(cv::Mat* const _K, cv::Mat* const _F, const cv::Mat& _P1, const cv::Mat& _C1, const cv::Mat& _P2, const cv::Mat& _C2);
@@ -56,6 +61,7 @@ public:
     bool calcIdealCamera(cv::Mat* const _C, const cv::Mat& _K, const cv::Mat& _F, const cv::Mat& _P);
     bool calcCameraAddedNoise(cv::Mat* const _C, const cv::Mat& _K, const cv::Mat& _F, const cv::Mat& _P, const double& noiseRange);
     bool calcCameraAddedFixNoise(cv::Mat* const _C, const cv::Mat& _K, const cv::Mat& _F, const cv::Mat& _P, const double& noise);
+    bool calcNextProjection(cv::Mat* const _P, const cv::Mat& _C, const cv::Mat& _K, const cv::Mat& _F);
 //    bool outputMat();
 };
 

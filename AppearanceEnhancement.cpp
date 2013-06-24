@@ -13,7 +13,7 @@
 #include "myOpenCV.h"
 #include "common.h"
 #include <vector>
-#include "myMath.h"
+#include "myMath.hpp"
 
 using namespace std;
 using namespace cv;
@@ -70,28 +70,42 @@ bool AppearanceEnhancement::setF(const cv::Mat& F){
 // 最大輝度撮影色の設定
 // input / Cfull    : 設定する色
 // return           : 成功したかどうか
-bool AppearanceEnhancement::setCfull(const cv::Mat& Cfull){
-    m_Cfull = Cfull;
-    return true;
+bool AppearanceEnhancement::setCfull(const cv::Mat& _Cfull){
+    return setColor(&m_Cfull, _Cfull);
 }
+bool AppearanceEnhancement::setCfull(const double& red, const double& blue, const double& green){
+    Mat Cfull = (Mat_<double>(3, 1) << red, blue, green);
+    return setCfull(Cfull);
+}
+bool AppearanceEnhancement::setCfull(const double& _luminance){
+    return setCfull(_luminance, _luminance, _luminance);
+}
+
 
 // 最小輝度撮影色の設定
 // input / C0   : 設定する色
 // return       : 成功したかどうか
-bool AppearanceEnhancement::setC0(const cv::Mat& C0){
-    m_C0 = C0;
+bool AppearanceEnhancement::setC0(const cv::Mat& _C0){
+    setColor(&m_C0, _C0);
     return true;
+}
+bool AppearanceEnhancement::setC0(const double& red, const double& blue, const double& green){
+    Mat C0 = (Mat_<double>(3, 1) << red, blue, green);
+    return setC0(C0);
+}
+bool AppearanceEnhancement::setC0(const double& luminance){
+    return setC0(luminance, luminance, luminance);
 }
 
 ///////////////////////////////  get method ///////////////////////////////
 // m_Cfullの取得
-bool AppearanceEnhancement::getCfull(cv::Mat* Cfull){
+bool AppearanceEnhancement::getCfull(cv::Mat* const Cfull){
     *Cfull = m_Cfull;
     return true;
 }
 
 // m_C0の取得
-bool AppearanceEnhancement::getC0(cv::Mat* C0){
+bool AppearanceEnhancement::getC0(cv::Mat* const C0){
     *C0 = m_C0;
     return true;
 }
@@ -118,48 +132,42 @@ bool AppearanceEnhancement::initRadiometricModel(void){
 // カメラ色(C)の初期化
 // return   : 初期化出来たかどうか
 bool AppearanceEnhancement::initC(void){
-    Mat C = cv::Mat::zeros(3, 1, CV_64FC1);
-    setC(C);
+    m_C = cv::Mat::zeros(3, 1, CV_64FC1);
     return true;
 }
 
 // プロジェクタ色(P)の初期化
 // return   : 初期化出来たかどうか
 bool AppearanceEnhancement::initP(void){
-    Mat P = cv::Mat::zeros(3, 1, CV_64FC1);
-    setP(P);
+    m_P = cv::Mat::zeros(3, 1, CV_64FC1);
     return true;
 }
 
 // 反射率(K)の初期化
 // return   : 初期化出来たかどうか
 bool AppearanceEnhancement::initK(void){
-    Mat K = cv::Mat::eye(3, 3, CV_64FC1);
-    setK(K);
+    m_K = cv::Mat::eye(3, 3, CV_64FC1);
     return true;
 }
 
 // 環境光(F)の初期化
 // return   : 初期化出来たかどうか
 bool AppearanceEnhancement::initF(void){
-    Mat F = cv::Mat::zeros(3, 1, CV_64FC1);
-    setF(F);
+    m_F = cv::Mat::zeros(3, 1, CV_64FC1);
     return true;
 }
 
 // 最大輝度撮影色(Cfull)の初期化
 // return   : 初期化出来たかどうか
 bool AppearanceEnhancement::initCfull(void){
-    Mat Cfull = cv::Mat::zeros(3, 1, CV_64FC1);
-    setCfull(Cfull);
+    m_Cfull = cv::Mat::zeros(3, 1, CV_64FC1);
     return true;
 }
 
 // 最小輝度撮影色(C0)の初期化
 // return   : 初期化出来たかどうか
 bool AppearanceEnhancement::initC0(void){
-    Mat C0 = cv::Mat::zeros(3, 1, CV_64FC1);
-    setC0(C0);
+    m_C0 = cv::Mat::zeros(3, 1, CV_64FC1);
     return true;
 }
 
@@ -182,22 +190,23 @@ bool AppearanceEnhancement::initC0(void){
 }*/
 
 //
-bool printData(std::ofstream* ofs, const int index, const cv::Mat& ansK1, const cv::Mat& ansK2, const cv::Mat& estK, const cv::Mat& ansF1, const cv::Mat& ansF2, const cv::Mat& estF){
-    //_print_gnuplot7(ofs, index, ansK1.at<double>(0, 0), ansK2.at<double>(0, 0), estK.at<double>(0, 0), ansF1.at<double>(0, 0), ansF2.at<double>(0, 0), estF.at<double>(0, 0));
-    //*ofs << "test" << endl;
+bool printData(std::ostream& os, const int index, const cv::Mat& _C, const cv::Mat& _P, const cv::Mat& _K){
+    _print_gnuplot4(os, index, _C.at<double>(0, 0), _P.at<double>(0, 0), _K.at<double>(0, 0));
+//    _print_gnuplot_mat3(os, index, _C, _P, _K);
     return true;
 }
-bool printData1(std::ofstream* ofs){
+bool printData(std::ostream& os, const int index, const cv::Mat& ansK1, const cv::Mat& ansK2, const cv::Mat& estK, const cv::Mat& ansF1, const cv::Mat& ansF2, const cv::Mat& estF){
+    _print_gnuplot7(os, index, ansK1.at<double>(0, 0), ansK2.at<double>(0, 0), estK.at<double>(0, 0), ansF1.at<double>(0, 0), ansF2.at<double>(0, 0), estF.at<double>(0, 0));
     return true;
-}
-void testtest(std::ostream& ost){
-    
 }
 
-///////////////////////////////  other method ///////////////////////////////
-// 光学モデルのテスト ( C=K{(C_full-C_0)P + C_0 + F} )
-// return   : テストが合ってるかどうか
-bool AppearanceEnhancement:: test_RadiometricModel(void){
+// 現在光学モデルで用いている値を出力
+void printRadiometricModel(std::ostream& os, const cv::Mat& _C, const cv::Mat& _P, const cv::Mat& _K, const cv::Mat& _F, const cv::Mat& _Cfull, const cv::Mat& _C0){
+    _print_gnuplot6(os, _C.at<double>(0, 0), _P.at<double>(0, 0), _K.at<double>(0, 0), _F.at<double>(0, 0), _Cfull.at<double>(0, 0), _C0.at<double>(0, 0));
+}
+
+// 光学モデルの１から２５５までの平均・標準偏差を出力する
+bool AppearanceEnhancement::printStandardDeviationOfRadiometricModel(void){
     // init
     Mat ansK = Mat::eye(3, 3, CV_64FC1) * 0.5;
     Mat ansF = Mat::ones(3, 1, CV_64FC1) * 0.1;
@@ -207,62 +216,203 @@ bool AppearanceEnhancement:: test_RadiometricModel(void){
     Mat estF = Mat::zeros(3, 1, CV_64FC1);
     Mat estOnlyK = Mat::zeros(3, 3, CV_64FC1);
     Mat estOnlyF = Mat::zeros(3, 1, CV_64FC1);
-    Mat P1 = Mat::zeros(3, 3, CV_64FC1);
-    Mat P2 = Mat::zeros(3, 3, CV_64FC1);
-    Mat C1 = Mat::zeros(3, 3, CV_64FC1);
-    Mat C2 = Mat::zeros(3, 3, CV_64FC1);
-    Mat Cfull = Mat::ones(3, 1, CV_64FC1) * 0.8;
-    Mat C0 = Mat::ones(3, 1, CV_64FC1) * 0.2;
-    setCfull(Cfull);
-    setC0(C0);
-    Cfull.release();
-    C0.release();
-    const int sampling = 1000;
+    Mat P1 = Mat::zeros(3, 1, CV_64FC1);
+    Mat P2 = Mat::zeros(3, 1, CV_64FC1);
+    Mat C1 = Mat::zeros(3, 1, CV_64FC1);
+    Mat C2 = Mat::zeros(3, 1, CV_64FC1);
+    const int sampling = 256;
     const double step = 1.0 / sampling;
-    const int cstStep = 200;
-//    const int samplingNum = 100;
-    vector<double> vec;
-
-    cout << "index\tansK\tansK2\testK\testOnlyK\tansF\tansF2\testF\testOnlyF" << endl;
+    //    const int cstStep = 200;
+    const int variance_sampling = 100;
+    
+    //    cout << "index\tansK\tansK2\testK\testOnlyK\tansF\tansF2\testF\testOnlyF" << endl;
     ofstream ofs("output.txt");
     for (int i = 1; i <= sampling; ++ i) {
-        double up = 0.11, dw = 0.09;
+        // init
+        vector<double> vec[4];
+        double vec_ave[4] = {0, 0, 0, 0};
+        double vec_var[4] = {0, 0, 0, 0};
+        double vec_sb[4] = {0, 0, 0, 0};
         double index = step * (double)i;
-        double index_comp = (up - dw) * index + dw;
-        setColor(&P1, step * (double)i);
-//        setColor(&P1, step * cstStep);
-//        ansK = Mat::eye(3, 3, CV_64FC1) * index;
-//        ansK2 = Mat::eye(3, 3, CV_64FC1) * index;
-//        ansF = Mat::eye(3, 1, CV_64FC1) * index;
-//        ansF2 = Mat::eye(3, 1, CV_64FC1) * index;
-//        ansK2 = Mat::eye(3, 3, CV_64FC1) * ((step * (double)i * (up-dw))+dw);
-//        calcIdealCamera(&C1, ansK, ansF, P1);
-//        calcIdealCamera(&C2, ansK, ansF, P2);
-        calcCameraAddedNoise(&C1, ansK, ansF, P1, NOISE_RANGE);
-        calcCameraAddedNoise(&C2, ansK2, ansF2, P2, NOISE_RANGE);
-//        calcCameraAddedFixNoise(&C1, ansK, ansF, P1, NOISE_RANGE);
-//        calcCameraAddedFixNoise(&C2, ansK, ansF, P2, NOISE_RANGE);
+        //        double up = 0.11, dw = 0.09;
+        //        double index_comp = (up - dw) * index + dw;
+        setColor(&P1, index);
+        //        setColor(&P1, step * cstStep);
         
-        // 反射率と環境光を計算
-        calcReflectAndAmbient(&estK, &estF, P1, C1, P2, C2);
-        calcReflect(&estOnlyK, P1, C1, ansF);
-        calcAmbient(&estOnlyF, P1, C1, ansK);
+        for (int j = 0; j < variance_sampling; ++ j) {
+            //        calcIdealCamera(&C1, ansK, ansF, P1);
+            //        calcIdealCamera(&C2, ansK, ansF, P2);
+            calcCameraAddedNoise(&C1, ansK, ansF, P1, NOISE_RANGE);
+            calcCameraAddedNoise(&C2, ansK2, ansF2, P2, NOISE_RANGE);
+            //        calcCameraAddedFixNoise(&C1, ansK, ansF, P1, NOISE_RANGE);
+            //        calcCameraAddedFixNoise(&C2, ansK, ansF, P2, NOISE_RANGE);
+            
+            // 反射率と環境光を計算
+            calcReflectAndAmbient(&estK, &estF, P1, C1, P2, C2);
+            calcReflect(&estOnlyK, P1, C1, ansF);
+            calcAmbient(&estOnlyF, P1, C1, ansK);
+            _print4(C1, C2, P1, P2);
+            
+            // 推定値をベクターに入れる
+            vec[0].push_back(estK.at<double>(0, 0));
+            vec[1].push_back(estF.at<double>(0, 0));
+            vec[2].push_back(estOnlyK.at<double>(0, 0));
+            vec[3].push_back(estOnlyF.at<double>(0, 0));
+        }
         
-//        double diffEstK, diffEstOnlyK, diffEstF, diffEstOnlyF;
-//        getAvgOfDiffMat(&diffEstK       , ansK, estK);
-//        getAvgOfDiffMat(&diffEstOnlyK   , ansK, estOnlyK);
-//        getAvgOfDiffMat(&diffEstF       , ansF, estF);
-//        getAvgOfDiffMat(&diffEstOnlyF   , ansF, estOnlyF);
+        // calc average, variance and standard derivation
+        for (int k = 0; k < 4; ++ k) {
+            vec_ave[k] = mean(vec[k]);
+            vec_var[k] = var(vec[k]);
+            vec_sb[k] = sd(vec[k]);
+        }
         
-        vec.push_back(estK.at<double>(0, 0));
-        
-        _print_gnuplot9(ofs, index, ansK.at<double>(0, 0), ansK2.at<double>(0, 0), estK.at<double>(0, 0), estOnlyK.at<double>(0, 0), ansF.at<double>(0, 0), ansF2.at<double>(0, 0), estF.at<double>(0, 0), estOnlyF.at<double>(0, 0));
-        _print_excel9(index, ansK.at<double>(0, 0), ansK2.at<double>(0, 0), estK.at<double>(0, 0), estOnlyK.at<double>(0, 0), ansF.at<double>(0, 0), ansF2.at<double>(0, 0), estF.at<double>(0, 0), estOnlyF.at<double>(0, 0));
+        // output
+        _print_excel9(index, vec_ave[0], vec_sb[0], vec_ave[1], vec_sb[1], vec_ave[2], vec_sb[2], vec_ave[3], vec_sb[3]);
+        _print_gnuplot9(ofs, index, vec_ave[0], vec_sb[0], vec_ave[1], vec_sb[1], vec_ave[2], vec_sb[2], vec_ave[3], vec_sb[3]);
     }
     ofs.close();
     
-//    double estKvar = var(vec);
-//    _print(estKvar);
+    
+    return true;
+}
+
+// 光学モデルの繰り返し使用による誤差を出力
+bool AppearanceEnhancement::printSwitchIteratorError(void){
+    // init
+    Mat ansK = Mat::eye(3, 3, CV_64FC1) * 0.5;
+    Mat ansF = Mat::ones(3, 1, CV_64FC1) * 0.2;
+    Mat estOnlyK = Mat::zeros(3, 3, CV_64FC1);
+    Mat estOnlyF = Mat::zeros(3, 1, CV_64FC1);
+    Mat P1 = Mat::zeros(3, 1, CV_64FC1);
+    Mat C1 = Mat::zeros(3, 1, CV_64FC1);
+    Mat desireC = Mat::ones(3, 1, CV_64FC1) * 0.3;
+    const int sampling = 256;
+    const double step = 1.0 / sampling;
+    const int cstStep = 200;
+    const double prjNum = cstStep * step;
+    const double loopNum = 200;
+    const double inv_loopNum = 1.0 / loopNum;
+    setColor(&P1, prjNum);
+    
+    ofstream ofs("output_iterator_onlyK.txt");
+    
+    for (int i = 0; i < loopNum; ++ i) {
+        Mat C0, Cfull;
+        getC0(&C0);
+        getCfull(&Cfull);
+        double rate = 0.4;
+        if (i > 150) {
+            rate = 0.4;
+        } else if (i > 120) {
+            rate = 0.36;
+        } else if (i > 80) {
+            rate = 0.33;
+        } else if (i > 40) {
+            rate = 0.3;
+//            ansK = Mat::eye(3, 3, CV_64FC1) * rate;
+        } else {
+            rate = inv_loopNum * (i+1);
+        }
+        double a = 0.4;
+        if (i == 100) {
+            a = 0.9;
+        }
+//        ansK = Mat::eye(3, 3, CV_64FC1) * (rate + 0.05);
+        ansK = Mat::eye(3, 3, CV_64FC1) * a;
+        ansF = Mat::ones(3, 1, CV_64FC1) * rate;
+//        desireC = Mat::ones(3, 1, CV_64FC1) * ((double)(i+1) / loopNum);
+
+        // カメラ値を取得
+        if ( !calcCameraAddedNoise(&C1, ansK, ansF, P1, NOISE_RANGE) ) return false;
+        
+        // 反射率か環境光を計算
+        if (i % 2 == 0) {
+            if ( !calcReflect(&estOnlyK, P1, C1, ansF) ) return false;
+        } else {
+            if ( !calcAmbient(&estOnlyF, P1, C1, ansK) ) return false;
+        }
+
+//        _print_gnuplot_mat6(ofs, i, C1, P1, estOnlyK, estOnlyF, Cfull, C0);
+//        _print_gnuplot_mat6(std::cout, i, C1, P1, estOnlyK, estOnlyF, Cfull, C0);
+        _print_gnuplot_mat7(ofs, i, C1, desireC, P1, ansK, estOnlyK, ansF, estOnlyF);
+        _print_gnuplot_mat7(std::cout, i, C1, desireC, P1, ansK, estOnlyK, ansF, estOnlyF);
+
+        // 次の投影値を取得
+//        if ( !calcNextProjection(&P1, desireC, estOnlyK, ansF) ) return false;
+//        if ( !calcNextProjection(&P1, desireC, ansK, estOnlyF) ) return false;
+        if ( !calcNextProjection(&P1, desireC, estOnlyK, estOnlyF) ) return false;
+    }
+    ofs.close();
+
+    return true;
+}
+
+//
+bool AppearanceEnhancement::printSimultaneousIteratorError(void){
+    // init
+    Mat ansK = Mat::eye(3, 3, CV_64FC1) * 0.5;
+    Mat ansF = Mat::ones(3, 1, CV_64FC1) * 0.2;
+    Mat estK = Mat::zeros(3, 3, CV_64FC1);
+    Mat estF = Mat::zeros(3, 1, CV_64FC1);
+    Mat P1 = Mat::zeros(3, 1, CV_64FC1);
+    Mat C1 = Mat::zeros(3, 1, CV_64FC1);
+    Mat P2 = Mat::zeros(3, 1, CV_64FC1);
+    Mat C2 = Mat::zeros(3, 1, CV_64FC1);
+    Mat desireC = Mat::ones(3, 1, CV_64FC1) * 0.3;
+    const int sampling = 256;
+    const double step = 1.0 / sampling;
+    const int cstStep = 200;
+    const double prjNum = cstStep * step;
+    const double loopNum = 200;
+    setColor(&P1, prjNum);
+    
+    ofstream ofs("output_iterator_onlyK.txt");
+    
+    for (int i = 0; i < loopNum; ++ i) {
+        Mat C0, Cfull;
+        getC0(&C0);
+        getCfull(&Cfull);
+        double rate = 0.3;
+        if (i > 150) {
+            rate = 0.5;
+        } else if (i > 120) {
+            rate = 0.4;
+        }
+//        ansK = Mat::eye(3, 3, CV_64FC1) * rate;
+//        ansF = Mat::ones(3, 1, CV_64FC1) * rate;
+//        desireC = Mat::ones(3, 1, CV_64FC1) * ((double)(i+1) / loopNum);
+        
+        // カメラ値を取得
+        if ( !calcCameraAddedNoise(&C1, ansK, ansF, P1, NOISE_RANGE) ) return false;
+        
+        // 反射率と環境光を推定
+        calcReflectAndAmbient(&estK, &estF, P1, C1, P2, C2);
+
+        // print
+        _print_gnuplot_mat8(ofs, i, C1, P1, ansK, estK, ansF, estF, Cfull, C0);
+        _print_gnuplot_mat8(std::cout, i, C1, P1, ansK, estK, ansF, estF, Cfull, C0);
+        
+        // 次の投影値を取得
+        P2 = P1;
+        C2 = C1;
+        if ( !calcNextProjection(&P1, desireC, estK, estF) ) return false;
+    }
+    ofs.close();
+    
+    return true;
+}
+
+///////////////////////////////  other method ///////////////////////////////
+// 光学モデルのテスト ( C=K{(C_full-C_0)P + C_0 + F} )
+// return   : テストが合ってるかどうか
+bool AppearanceEnhancement:: test_RadiometricModel(void){
+    setCfull(0.8);
+    setC0(0.1);
+
+//    printStandardDeviationOfRadiometricModel();
+    printSwitchIteratorError();
+//    printSimultaneousIteratorError();
     
     return true;
 }
@@ -385,6 +535,21 @@ bool AppearanceEnhancement::calcCameraAddedNoise(cv::Mat* const _C, const cv::Ma
 
 // 上のノイズを固定にした場合
 bool AppearanceEnhancement::calcCameraAddedFixNoise(cv::Mat* const _C, const cv::Mat& _K, const cv::Mat& _F, const cv::Mat& _P, const double& noise){
+    // error processing
+    Mat mat3x1 = Mat::zeros(3, 1, CV_8SC1);
+    Mat mat3x3 = Mat::zeros(3, 3, CV_8SC1);
+    if ( !checkMatSize(mat3x1, *_C, _P, _F) ) {
+        std::cerr << "mat size is different" << endl;
+        ERROR_PRINT3(*_C, _P, _F);
+        return false;
+    } else if ( !checkMatSize(mat3x3, _K) ) {
+        std::cerr << "mat size is different" << endl;
+        ERROR_PRINT(_K);
+        return false;
+    }
+    mat3x1.release();
+    mat3x3.release();
+    
     // init
     Mat C = Mat::zeros(3, 1, CV_64FC1);
     Mat Cfull, C0;
@@ -397,6 +562,56 @@ bool AppearanceEnhancement::calcCameraAddedFixNoise(cv::Mat* const _C, const cv:
     }
     *_C = C;
 
+    return true;
+}
+
+// 次に投影するPを計算する
+// output / _P  : 計算した投影色を入れる変数
+// input / _C   : 撮影色
+// input / _K   : 反射率
+// input / _F   : 環境光
+// return       : 成功したかどうか
+bool AppearanceEnhancement::calcNextProjection(cv::Mat* const _P, const cv::Mat& _C, const cv::Mat& _K, const cv::Mat& _F){
+    // error processing
+    Mat color = Mat::zeros(3, 1, CV_8SC1);
+    Mat ref = Mat::zeros(3, 3, CV_8SC1);
+    if ( !checkMatSize(color, *_P, _C, _F) ) {
+        std::cerr << "size is different" << std::endl;
+        ERROR_PRINT3(*_P, _C, _F);
+        return false;
+    } else if ( !checkMatSize(ref, _K) ) {
+        std::cerr << "size is different" << std::endl;
+        ERROR_PRINT(_K);
+        ERROR_PRINT(ref);
+        return false;
+    }
+    color.release();
+    ref.release();
+    
+    // init
+    Mat Cfull, C0, Cfull_0;
+    getC0(&C0);
+    getCfull(&Cfull);
+    Cfull_0 = Cfull - C0;
+    Cfull.release();
+
+    // calc _P
+    Mat P = Mat::zeros(3, 1, CV_64FC1);
+    divElmByElm(&P, _C, _K.diag()); // P = C ./ K
+    P -= C0 + _F;                   // P = C ./ K - (C0 + F)
+    divElmByElm(&P, P, Cfull_0);    // P = { C ./ K - (C0 + F) } / (Cfull - C0)
+    
+    // compress 0 to 1
+    for (int c = 0; c < 3; ++ c) {
+        if (P.at<double>(0, c) > 1) {
+            P.at<double>(0, c) = 1;
+        } else if (P.at<double>(0, c) < 0) {
+            P.at<double>(0, c) = 0;
+        }
+    }
+    
+    // Pに出力
+    *_P = P;
     return true;
 }
 

@@ -12,7 +12,7 @@
 
 using namespace cv;
 
-// セッティング
+///////////////////////////////  set method ///////////////////////////////
 // 色のセッティング
 // it -> (red, green, blue)
 void setColor(const MatIterator_<Vec3b> it, const uchar red, const uchar green, const uchar blue){
@@ -23,26 +23,39 @@ void setColor(const MatIterator_<Vec3b> it, const uchar red, const uchar green, 
 void setColor(const MatIterator_<Vec3b> it, const uchar luminance){
     setColor(it, luminance, luminance, luminance);
 }
-void setColor(cv::Mat* const mat, const double& red, const double& green, const double& blue){
-    mat->at<double>(0, 0) = blue;
-    mat->at<double>(0, 1) = green;
-    mat->at<double>(0, 2) = red;
+void setColor(cv::Mat* const _mat, const double& _red, const double& _green, const double& _blue){
+    _mat->at<double>(0, 0) = _blue;
+    _mat->at<double>(0, 1) = _green;
+    _mat->at<double>(0, 2) = _red;
 }
-void setColor(cv::Mat* const mat, const double& luminance){
-    setColor(mat, luminance, luminance, luminance);
+void setColor(cv::Mat* const _mat, const double& _luminance){
+    setColor(_mat, _luminance, _luminance, _luminance);
+}
+bool setColor(cv::Mat* const _dst, const cv::Mat& _src){
+    // check size
+    Mat color = Mat::zeros(3, 1, CV_8SC1);
+    if ( !checkMatSize(*_dst, _src, color) ){
+        std::cerr << "mat size is different" << std::endl;
+        ERROR_PRINT3(*_dst, _src, color);
+        return false;
+    }
+    color.release();
+    
+    // setting
+    setColor(_dst, _src.at<double>(0, 0), _src.at<double>(0, 1), _src.at<double>(0, 2));
+    
+    return true;
 }
 
 
 // Pointのセッティング
-void setPoint(cv::Point* const p, const int _x, const int _y){
-    p->x = _x;
-    p->y = _y;
+void setPoint(cv::Point* const _p, const int _x, const int _y){
+    _p->x = _x;
+    _p->y = _y;
 }
 
 
-/**
- * 表示関数群
- */
+///////////////////////////////  print method ///////////////////////////////
 // Matの様々な要素を表示
 void printMatPropaty(const Mat& m1){
     std::cout << "--------------------------"  << std::endl;
@@ -86,7 +99,7 @@ void printOpenCVVersion(void) {
     std::cout << "OpenCV >= 2.0.0: " << (OPENCV_VERSION_CODE>=OPENCV_VERSION(2,0,0)?"true":"false") << std::endl;
 }
 
-// 初期化関数群
+///////////////////////////////  init method ///////////////////////////////
 // Pointの初期化
 void initPoint(cv::Point* const p, const int size){
     for (int i = 0; i < size; ++ i) {
@@ -95,7 +108,87 @@ void initPoint(cv::Point* const p, const int size){
     }
 }
 
-// その他の関数
+///////////////////////////////  check method ///////////////////////////////
+// Matの大きさのチェック
+// return   : 大きさが同じならtrue，違うならfalse
+bool checkMatSize(const cv::Mat& m1, const cv::Mat& m2){
+    if (m1.size() != m2.size()) {
+        //        Size m1size = m1.size(), m2size = m2.size();
+        //        ERROR_PRINT2(m1size, m2size);
+        //        ERROR_PRINT2(m1, m2);
+        return false;
+    } else {
+        return true;
+    }
+}
+bool checkMatSize(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3){
+    if ( checkMatSize(m1, m2) && checkMatSize(m2, m3)) {
+        return true;
+    } else {
+        return false;
+    }
+}
+bool checkMatSize(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4){
+    if ( checkMatSize(m1, m2, m3) && checkMatSize(m3, m4)) {
+        return true;
+    } else {
+        return false;
+    }
+}
+bool checkMatSize(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4, const cv::Mat& m5){
+    if ( checkMatSize(m1, m2, m3, m4) && checkMatSize(m4, m5)) {
+        return true;
+    } else {
+        return false;
+    }
+}
+bool checkMatSize(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4, const cv::Mat& m5, const cv::Mat& m6){
+    if ( checkMatSize(m1, m2, m3, m4, m5) && checkMatSize(m5, m6)) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+// 複数のMatの連続性の確認
+bool checkContinuous(const cv::Mat& m1, const cv::Mat& m2){
+    if (m1.isContinuous() && m2.isContinuous()) {
+        return true;
+    } else {
+        return false;
+    }
+}
+bool checkContinuous(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3){
+    if (checkContinuous(m1, m2) && m3.isContinuous()) {
+        return true;
+    } else{
+        return false;
+    }
+}
+bool checkContinuous(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4){
+    if (checkContinuous(m1, m2, m3) && m4.isContinuous()) {
+        return true;
+    } else{
+        return false;
+    }
+}
+bool checkContinuous(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4, const cv::Mat& m5){
+    if (checkContinuous(m1, m2, m3, m4) && m5.isContinuous()) {
+        return true;
+    } else{
+        return false;
+    }
+}
+bool checkContinuous(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4, const cv::Mat& m5, const cv::Mat& m6){
+    if (checkContinuous(m1, m2, m3, m4, m5) && m6.isContinuous()) {
+        return true;
+    } else{
+        return false;
+    }
+}
+
+///////////////////////////////  other method ///////////////////////////////
 // matからopenGL型に変換
 void mat2char(unsigned char c[], const Mat *m){
 	_print(m->rows);
@@ -159,7 +252,7 @@ void convertMatDepth16sTo8u(cv::Mat* const dst8u, const cv::Mat* const src16s){
     int rows = src16s->rows, cols = src16s->cols;   // 行と列の大きさ
     
     // 連続性の確認
-    if (src16s->isContinuous() && dst8u->isContinuous()) {
+    if ( checkContinuous(*src16s, *dst8u) ) {
         // 連続ならばループを二重から一重に変更
         cols *= rows;
         rows = 1;
@@ -435,44 +528,66 @@ bool showData(const cv::Mat& data){
     return true;
 }
 
-// Matの大きさのチェック
-// return   : 大きさが同じならtrue，違うならfalse
-bool checkMatSize(const cv::Mat& m1, const cv::Mat& m2){
-    if (m1.size() != m2.size()) {
-        Size m1size = m1.size(), m2size = m2.size();
-        ERROR_PRINT2(m1size, m2size);
-        return false;
-    } else {
-        return true;
-    }
-}
-bool checkMatSize(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3){
-    if ( checkMatSize(m1, m2) && checkMatSize(m2, m3)) {
-        return true;
-    } else {
-        return false;
-    }
-}
-bool checkMatSize(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4){
-    if ( checkMatSize(m1, m2) && checkMatSize(m2, m3, m4)) {
-        return true;
-    } else {
-        return false;
-    }
-}
-
 // 要素ごとのかけ算
 bool mulElmByElm(cv::Mat* const dst, const cv::Mat& src1, const cv::Mat& src2){
-    if ( !checkMatSize(*dst, src1, src2) ) return false;
+    // error processing
+    if ( !checkMatSize(*dst, src1, src2) ){
+        std::cerr << "Mat size is diffarent" << std::endl;
+        ERROR_PRINT3(*dst, src1, src2);
+        return false;
+    }
     
+    // 連続性の確認
+    int cols = dst->cols, rows = dst->rows;
+    if ( checkContinuous(*dst, src1, src2) ) {
+        // 連続ならばループを二重から一重に変更
+        cols *= rows;
+        rows = 1;
+    }
     
+    // 行列へアクセスし個々に変換
+    for (int y = 0; y < rows; ++ y) {
+        // init pointer
+        double *p_dst = dst->ptr<double>(y);
+        const double *p_src1 = src1.ptr<double>(y);
+        const double *p_src2 = src2.ptr<double>(y);
+        
+        for (int x = 0; x < cols; ++ x) {
+            p_dst[x] = p_src1[x] * p_src2[x];
+        }
+    }
     
     return true;
 }
 
 // 要素ごとの割り算
 bool divElmByElm(cv::Mat* const dst, const cv::Mat& src1, const cv::Mat& src2){
-    if ( !checkMatSize(*dst, src1, src2) ) return false;
+    // error processing
+    if ( !checkMatSize(*dst, src1, src2) ){
+        std::cerr << "Mat size is diffarent" << std::endl;
+        ERROR_PRINT3(*dst, src1, src2);
+        return false;
+    }
+    
+    // 連続性の確認
+    int cols = dst->cols, rows = dst->rows;
+    if ( checkContinuous(*dst, src1, src2) ) {
+        // 連続ならばループを二重から一重に変更
+        cols *= rows;
+        rows = 1;
+    }
+    
+    // 行列へアクセスし個々に変換
+    for (int y = 0; y < rows; ++ y) {
+        // init pointer
+        double *p_dst = dst->ptr<double>(y);
+        const double *p_src1 = src1.ptr<double>(y);
+        const double *p_src2 = src2.ptr<double>(y);
+        
+        for (int x = 0; x < cols; ++ x) {
+            p_dst[x] = p_src1[x] / p_src2[x];
+        }
+    }
     
     return true;
 }

@@ -22,12 +22,24 @@ void setColor(const cv::MatIterator_<cv::Vec3b> it, const uchar red, const uchar
 void setColor(const cv::MatIterator_<cv::Vec3b> it, const uchar luminance);
 void setColor(cv::Mat* const mat, const double& red, const double& green, const double& blue);
 void setColor(cv::Mat* const mat, const double& luminance);
+bool setColor(cv::Mat* const dst, const cv::Mat& src);
 void setPoint(cv::Point* const p, const int _x, const int _y);
 // print method
 void printMatPropaty(const cv::Mat* const m1);
 void printOpenCVVersion(void);
 // init method
 void initPoint(cv::Point* const p, const int size);
+// check method
+bool checkMatSize(const cv::Mat& m1, const cv::Mat& m2);
+bool checkMatSize(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3);
+bool checkMatSize(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4);
+bool checkMatSize(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4, const cv::Mat& m5);
+bool checkMatSize(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4, const cv::Mat& m5, const cv::Mat& m6);
+bool checkContinuous(const cv::Mat& m1, const cv::Mat& m2);
+bool checkContinuous(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3);
+bool checkContinuous(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4);
+bool checkContinuous(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4, const cv::Mat& m5);
+bool checkContinuous(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4, const cv::Mat& m5, const cv::Mat& m6);
 // other method
 void mat2char(unsigned char c[], const cv::Mat *m);
 uchar convertNumber16sTo8u(const short src, const cv::Size* charRange, const cv::Size* intRange);
@@ -49,9 +61,6 @@ bool getRateOfDiffMat(double* const diff, const cv::Mat& m1, const cv::Mat& m2);
 void test_sizeCompare(void);
 void doAnyMethodForAllPixelOfMat(cv::Mat* const m1);
 bool showData(const cv::Mat& data);
-bool checkMatSize(const cv::Mat& m1, const cv::Mat& m2);
-bool checkMatSize(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3);
-bool checkMatSize(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4);
 bool mulElmByElm(cv::Mat* const dst, const cv::Mat& src1, const cv::Mat& src2);
 bool divElmByElm(cv::Mat* const dst, const cv::Mat& src1, const cv::Mat& src2);
 
