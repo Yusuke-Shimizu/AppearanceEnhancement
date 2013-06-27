@@ -12,6 +12,22 @@
 #include <iostream>
 #include "myOpenCV.h"
 
+// 型による色の定義
+#define BOOL_BLACK 0
+#define BOOL_WHITE 1
+#define CHAR_BLACK UCHAR_MIN
+#define CHAR_WHITE UCHAR_MAX
+
+// その他
+#define SLEEP_TIME 50    // スリープ時間(ms)
+#define MAX_WINDOW_SIZE 10000   // ウィンドウの最大値
+#define BINARY_THRESH 0     // ネガポジの二値化を行うときの閾値
+#define CAPTURE_NUM 10
+
+// window name
+#define W_NAME_GEO_CAMERA "geometric calibration camera"
+#define W_NAME_GEO_PROJECTOR "geometric calibration projector"
+
 class GeometricCalibration{
 private:
     //cv::Point* accessMap;
@@ -21,7 +37,7 @@ public:
 
     GeometricCalibration(void);
     GeometricCalibration(const cv::Size* const _size);
-    bool doCalibration(void);
+    bool doCalibration(cv::Point* const _accessMapCam2Pro);
     void printCurrentPattern(const bool* const pattern, const int patternSize);
     void printPatternMap(const bool* const map, const cv::Size* const mapSize);
     void printAccessMap(const bool* const accessMap, const cv::Size* const mapSize, const int mapDepth);
@@ -35,7 +51,7 @@ public:
     void pattern2map(bool *map, const bool* const pattern, const cv::Size* const mapSize, const stripeDirection direction);
     void map2image(cv::Mat *image, const bool* const map, const cv::Size* const mapSize);
     void image2map(bool* const map, cv::Mat* const image, const cv::Size* const mapSize);
-    void accessMap2image(cv::Mat *image, const cv::Point* const accessMap, const cv::Size* const mapSize, const cv::Size* const maxSize);
+    void accessMap2image(cv::Mat *image, const cv::Point* const accessMap, const cv::Size& mapSize, const cv::Size& maxSize);
     void createBinaryMap(bool *binaryMap, const cv::Size* const mapSize, const unsigned int layerNum, const stripeDirection direction);
     void insertAccessMap(bool* accessMap, const cv::Size* const mapSize, const int bitDepth, const bool* const patternMap, const int offsetBit);
     void test_insertAccessMap(void);
@@ -51,9 +67,8 @@ public:
     void setAccessMap(cv::Point* const c2pMap, const bool* codeMapCamera, const bool* codeMapProjector, const cv::Size* cameraSize, const cv::Size* projectorSize, const cv::Size* const depthSize);
     bool test_setAccessMap(void);
     void getProjectorPoint(cv::Point* const projector, const cv::Point* const camera, const cv::Point* const accessMapC2P, const int cameraWidth);
-    void test_accessMap(const cv::Point* const accessMapCam2Pro, const cv::Size* const cameraSize, const cv::Size* const projectorSize);
+    void test_accessMap(const cv::Point* const accessMapCam2Pro, const cv::Size& cameraSize, const cv::Size& projectorSize, const char* _fileName);
     void test_geometricCalibration(cv::Point* const accessMapC2P, cv::VideoCapture *video, const cv::Size* const cameraSize, const cv::Size* const projectorSize);
-
 };
 
 #endif /* defined(__cameraBase03__GeometricCalibration__) */

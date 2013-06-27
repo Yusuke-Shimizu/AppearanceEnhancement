@@ -54,6 +54,16 @@ void setPoint(cv::Point* const _p, const int _x, const int _y){
     _p->y = _y;
 }
 
+///////////////////////////////  get method ///////////////////////////////
+// Pointの値をx, yに代入
+// output / _x  : x座標を入れる値
+// output / _y  : y座標を入れる値
+// input / _p  : x座標を入れる値
+bool getPoint(int* const _x, int* const _y, const cv::Point& _p){
+    *_x = _p.x;
+    *_y = _p.y;
+    return true;
+}
 
 ///////////////////////////////  print method ///////////////////////////////
 // Matの様々な要素を表示
@@ -188,6 +198,17 @@ bool checkContinuous(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, co
     } else{
         return false;
     }
+}
+
+// Point配列が全て正しいかどうか判定
+bool isEqualPoint(const cv::Point* const p1, const cv::Point* const p2, const int length){
+    for (int i = 0; i < length; ++ i) {
+        if (*(p1 + i) != *(p2 + i)) {
+            return false;
+        }
+    }
+    
+    return true;
 }
 
 ///////////////////////////////  other method ///////////////////////////////

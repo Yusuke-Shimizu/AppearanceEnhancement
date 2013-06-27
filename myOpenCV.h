@@ -15,6 +15,13 @@
 #define OPENCV_VERSION(a,b,c) (((a) << 16) + ((b) << 8) + (c))
 #define OPENCV_VERSION_CODE OPENCV_VERSION(CV_MAJOR_VERSION, CV_MINOR_VERSION, CV_SUBMINOR_VERSION)
 
+// 符号有無Nビットの範囲
+#define UCHAR_MIN 0
+#define DEPTH_U8BIT_MIN 0
+#define DEPTH_U8BIT_MAX 255
+#define DEPTH_S16BIT_MIN -32768
+#define DEPTH_S16BIT_MAX 32767
+
 //const double M_PI = 3.14159265358979;
 
 // set method
@@ -23,7 +30,9 @@ void setColor(const cv::MatIterator_<cv::Vec3b> it, const uchar luminance);
 void setColor(cv::Mat* const mat, const double& red, const double& green, const double& blue);
 void setColor(cv::Mat* const mat, const double& luminance);
 bool setColor(cv::Mat* const dst, const cv::Mat& src);
-void setPoint(cv::Point* const p, const int _x, const int _y);
+void setPoint(cv::Point* const _p, const int _x, const int _y);
+// get method
+bool getPoint(int* const _x, int* const _y, const cv::Point& _p);
 // print method
 void printMatPropaty(const cv::Mat* const m1);
 void printOpenCVVersion(void);
@@ -47,6 +56,7 @@ bool checkContinuous(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3);
 bool checkContinuous(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4);
 bool checkContinuous(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4, const cv::Mat& m5);
 bool checkContinuous(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4, const cv::Mat& m5, const cv::Mat& m6);
+bool isEqualPoint(const cv::Point* const p1, const cv::Point* const p2, const int length);
 // other method
 void mat2char(unsigned char c[], const cv::Mat *m);
 uchar convertNumber16sTo8u(const short src, const cv::Size* charRange, const cv::Size* intRange);

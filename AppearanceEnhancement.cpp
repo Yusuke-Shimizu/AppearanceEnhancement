@@ -285,8 +285,10 @@ bool AppearanceEnhancement::printSwitchIteratorError(void){
     Mat ansF = Mat::ones(3, 1, CV_64FC1) * 0.0;
 //    Mat estOnlyK = Mat::zeros(3, 3, CV_64FC1);
 //    Mat estOnlyF = Mat::zeros(3, 1, CV_64FC1);
-    Mat estOnlyK = ansK.clone();
-    Mat estOnlyF = ansF.clone();
+//    Mat estOnlyK = ansK.clone();
+//    Mat estOnlyF = ansF.clone();
+    Mat estOnlyK = Mat::eye(3, 3, CV_64FC1) * 0.95;
+    Mat estOnlyF = Mat::ones(3, 1, CV_64FC1) * 0.05;
     Mat P1 = Mat::zeros(3, 1, CV_64FC1);
     Mat C1 = Mat::zeros(3, 1, CV_64FC1);
     Mat desireC = Mat::ones(3, 1, CV_64FC1) * 0.3;
@@ -301,11 +303,11 @@ bool AppearanceEnhancement::printSwitchIteratorError(void){
         getCfull(&Cfull);
 
         // カメラ値を取得
-        if ( !calcCameraAddedNoise(&C1, ansK, ansF, P1, NOISE_RANGE) ) return false;
-//        if ( !calcIdealCamera(&C1, ansK, ansF, P1) ) return false;
+//        if ( !calcCameraAddedNoise(&C1, ansK, ansF, P1, NOISE_RANGE) ) return false;
+        if ( !calcIdealCamera(&C1, ansK, ansF, P1) ) return false;
         
         // 反射率か環境光を計算
-        if (i % 2 == 0) {
+        if (i % 2 == 1) {
             if ( !calcReflect(&estOnlyK, P1, C1, estOnlyF) ) return false;
         } else {
             if ( !calcAmbient(&estOnlyF, P1, C1, estOnlyK) ) return false;

@@ -53,10 +53,13 @@
 #define _print_gnuplot_mat8(output, index, mat1, mat2, mat3, mat4, mat5, mat6, mat7, mat8) _print_gnuplot9(output, index, (mat1).at<double>(0, 0), (mat2).at<double>(0, 0), (mat3).at<double>(0, 0), (mat4).at<double>(0, 0), (mat5).at<double>(0, 0), (mat6).at<double>(0, 0), (mat7).at<double>(0, 0), (mat8).at<double>(0, 0))
 
 // 定義
+#define VGA_WIDTH 640
+#define VGA_HEIGHT 480
+
 //#define PRJ_SIZE_WIDTH 10
 //#define PRJ_SIZE_HEIGHT 7
-#define PRJ_SIZE_WIDTH 512
-#define PRJ_SIZE_HEIGHT 512
+//#define PRJ_SIZE_WIDTH 512
+//#define PRJ_SIZE_HEIGHT 512
 //#define PRJ_SIZE_WIDTH 800
 //#define PRJ_SIZE_HEIGHT 700
 //#define PRJ_SIZE_WIDTH 768
@@ -65,30 +68,10 @@
 //#define PRJ_SIZE_HEIGHT 768
 //#define PRJ_SIZE_WIDTH 1024
 //#define PRJ_SIZE_HEIGHT 1024
+#define PRJ_SIZE_WIDTH VGA_WIDTH
+#define PRJ_SIZE_HEIGHT VGA_HEIGHT
 
-// 符号有無Nビットの範囲
-#define UCHAR_MIN 0
-#define DEPTH_U8BIT_MIN 0
-#define DEPTH_U8BIT_MAX 255
-#define DEPTH_S16BIT_MIN -32768
-#define DEPTH_S16BIT_MAX 32767
-
-// 型による色の定義
-#define BOOL_BLACK 0
-#define BOOL_WHITE 1
-#define CHAR_BLACK UCHAR_MIN
-#define CHAR_WHITE UCHAR_MAX
-
-// その他
-#define SLEEP_TIME 300    // スリープ時間(ms)
-#define MAX_WINDOW_SIZE 10000   // ウィンドウの最大値
-#define BINARY_THRESH 0     // ネガポジの二値化を行うときの閾値
-#define CAPTURE_NUM 10
 #define NOISE_RANGE 0.01
 //#define NOISE_RANGE 0.05
-
-// window name
-#define W_NAME_GEO_CAMERA "geometric calibration camera"
-#define W_NAME_GEO_PROJECTOR "geometric calibration projector"
 
 #endif

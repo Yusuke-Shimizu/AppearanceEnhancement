@@ -251,24 +251,23 @@ void GeometricCalibration::image2map(bool* const map, Mat* const image, const Si
 // image    : 生成する画像
 // map      : 参照するパターンマップ
 // mapSize  : 上二つの大きさ
-void GeometricCalibration::accessMap2image(Mat *image, const Point* const accessMap, const Size* const mapSize, const Size* const maxSize){
+void GeometricCalibration::accessMap2image(Mat *image, const Point* const accessMap, const Size& mapSize, const Size& maxSize){
     // error processing
-    if (image->rows != mapSize->height) {
-        cout << "error is (row, height) = " << image->rows << ", " << mapSize->height << endl;
-        return;
-    } else if (image->cols != mapSize->width) {
-        cout << "error is (col, height) = " << image->cols << ", " << mapSize->width << endl;
+    Size imageSize(image->rows, image->cols);
+    if ( mapSize != imageSize) {
+        cerr << "map size is different from image size" << endl;
+        ERROR_PRINT2(mapSize, imageSize);
         return;
     }
     
     // パターンマップを参照し画像を生成
     MatIterator_<Vec3b> imageItr = image->begin<Vec3b>();
-    for (int y = 0; y < mapSize->height; ++ y) {
-        for (int x = 0; x < mapSize->width; ++ x, ++ imageItr) {
+    for (int y = 0; y < mapSize.height; ++ y) {
+        for (int x = 0; x < mapSize.width; ++ x, ++ imageItr) {
             char color = 0;
             
             // マップを参照し色を決定
-            color = (accessMap + x + y * mapSize->width)->x * UCHAR_MAX / maxSize->width;
+            color = (accessMap + x + y * mapSize.width)->x * UCHAR_MAX / maxSize.width;
             
             // 色を画像に入れる
             setColor(imageItr, color);
@@ -710,14 +709,14 @@ void GeometricCalibration::test_geometricCalibration(Point* const accessMapC2P, 
 	}
 }
 
-void GeometricCalibration::test_accessMap(const Point* const accessMapCam2Pro, const Size* const cameraSize, const Size* const projectorSize){
-    Mat accessImage = Mat::zeros(*cameraSize, CV_8UC3); // アクセスマップ画像
+void GeometricCalibration::test_accessMap(const Point* const accessMapCam2Pro, const Size& cameraSize, const Size& projectorSize, const char* _fileName){
+    Mat accessImage = Mat::zeros(cameraSize, CV_8UC3); // アクセスマップ画像
     accessMap2image(&accessImage, accessMapCam2Pro, cameraSize, projectorSize);
-    imshow("access map image", accessImage);
+    imshow(_fileName, accessImage);
 }
 
 // 幾何キャリブレーション
-bool GeometricCalibration::doCalibration(void){
+bool GeometricCalibration::doCalibration(cv::Point* const _accessMapCam2Pro){
     // init camera
     VideoCapture camera(0);
     if( !camera.isOpened() ){
@@ -728,7 +727,6 @@ bool GeometricCalibration::doCalibration(void){
     Mat frame;                                  // カメラ画像
     camera >> frame;
     Size cameraSize(frame.cols, frame.rows);    // カメラの大きさ
-    _print(cameraSize);
     
     // init projection image
     Size projectionSize(PRJ_SIZE_WIDTH, PRJ_SIZE_HEIGHT);       // 投影サイズ
@@ -759,22 +757,17 @@ bool GeometricCalibration::doCalibration(void){
 	destroyWindow(W_NAME_GEO_PROJECTOR);
     
     // プロカム間のアクセスマップを作る
-    Point *accessMapCam2Pro = (Point*)malloc(sizeof(Point) * pixelNumCamera);// カメラからプロジェクタへのアクセスマップ
-    initPoint(accessMapCam2Pro, pixelNumCamera);
-    setAccessMap(accessMapCam2Pro, grayCodeMapCamera, grayCodeMapProjector, &cameraSize, &projectionSize, &layerSize);
+    setAccessMap(_accessMapCam2Pro, grayCodeMapCamera, grayCodeMapProjector, &cameraSize, &projectionSize, &layerSize);
     
     // 空間コード画像の解放
 	free(grayCodeMapProjector);
 	free(grayCodeMapCamera);
     
     // アクセスマップのテスト
-    test_accessMap(accessMapCam2Pro, &cameraSize, &projectionSize);
+    test_accessMap(_accessMapCam2Pro, cameraSize, projectionSize, "access map image");
     
 	// 幾何キャリブレーションのテスト
-	test_geometricCalibration(accessMapCam2Pro, &camera, &cameraSize, &projectionSize);
-    
-	// アクセスマップの解放
-	free(accessMapCam2Pro);
+//	test_geometricCalibration(_accessMapCam2Pro, &camera, &cameraSize, &projectionSize);
     
     return true;
 }
