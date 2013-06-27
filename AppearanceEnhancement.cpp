@@ -14,6 +14,7 @@
 #include "common.h"
 #include <vector>
 #include "myMath.hpp"
+//#include "gnuplot.h"
 
 using namespace std;
 using namespace cv;
@@ -280,71 +281,48 @@ bool AppearanceEnhancement::printStandardDeviationOfRadiometricModel(void){
 // 光学モデルの繰り返し使用による誤差を出力
 bool AppearanceEnhancement::printSwitchIteratorError(void){
     // init
-    Mat ansK = Mat::eye(3, 3, CV_64FC1) * 0.5;
-    Mat ansF = Mat::ones(3, 1, CV_64FC1) * 0.2;
-    Mat estOnlyK = Mat::zeros(3, 3, CV_64FC1);
-    Mat estOnlyF = Mat::zeros(3, 1, CV_64FC1);
+    Mat ansK = Mat::eye(3, 3, CV_64FC1) * 1.0;
+    Mat ansF = Mat::ones(3, 1, CV_64FC1) * 0.0;
+//    Mat estOnlyK = Mat::zeros(3, 3, CV_64FC1);
+//    Mat estOnlyF = Mat::zeros(3, 1, CV_64FC1);
+    Mat estOnlyK = ansK.clone();
+    Mat estOnlyF = ansF.clone();
     Mat P1 = Mat::zeros(3, 1, CV_64FC1);
     Mat C1 = Mat::zeros(3, 1, CV_64FC1);
     Mat desireC = Mat::ones(3, 1, CV_64FC1) * 0.3;
-    const int sampling = 256;
-    const double step = 1.0 / sampling;
-    const int cstStep = 200;
-    const double prjNum = cstStep * step;
-    const double loopNum = 200;
-    const double inv_loopNum = 1.0 / loopNum;
-    setColor(&P1, prjNum);
+    roundDesireC(&desireC, ansK, ansF);
+    const double loopNum = 1000;
     
     ofstream ofs("output_iterator_onlyK.txt");
-    
+    cout << "i\tC1\tdesireC\tP1\tansK\testOnlyK\tansF\testOnlyF" << endl;
     for (int i = 0; i < loopNum; ++ i) {
         Mat C0, Cfull;
         getC0(&C0);
         getCfull(&Cfull);
-        double rate = 0.4;
-        if (i > 150) {
-            rate = 0.4;
-        } else if (i > 120) {
-            rate = 0.36;
-        } else if (i > 80) {
-            rate = 0.33;
-        } else if (i > 40) {
-            rate = 0.3;
-//            ansK = Mat::eye(3, 3, CV_64FC1) * rate;
-        } else {
-            rate = inv_loopNum * (i+1);
-        }
-        double a = 0.4;
-        if (i == 100) {
-            a = 0.9;
-        }
-//        ansK = Mat::eye(3, 3, CV_64FC1) * (rate + 0.05);
-        ansK = Mat::eye(3, 3, CV_64FC1) * a;
-        ansF = Mat::ones(3, 1, CV_64FC1) * rate;
-//        desireC = Mat::ones(3, 1, CV_64FC1) * ((double)(i+1) / loopNum);
 
         // カメラ値を取得
         if ( !calcCameraAddedNoise(&C1, ansK, ansF, P1, NOISE_RANGE) ) return false;
+//        if ( !calcIdealCamera(&C1, ansK, ansF, P1) ) return false;
         
         // 反射率か環境光を計算
         if (i % 2 == 0) {
-            if ( !calcReflect(&estOnlyK, P1, C1, ansF) ) return false;
+            if ( !calcReflect(&estOnlyK, P1, C1, estOnlyF) ) return false;
         } else {
-            if ( !calcAmbient(&estOnlyF, P1, C1, ansK) ) return false;
+            if ( !calcAmbient(&estOnlyF, P1, C1, estOnlyK) ) return false;
         }
-
-//        _print_gnuplot_mat6(ofs, i, C1, P1, estOnlyK, estOnlyF, Cfull, C0);
-//        _print_gnuplot_mat6(std::cout, i, C1, P1, estOnlyK, estOnlyF, Cfull, C0);
+        
+        // 目標値の決定
+        desireC = estOnlyK.diag() * 0.5;
+        roundDesireC(&desireC, ansK, ansF);
+        
         _print_gnuplot_mat7(ofs, i, C1, desireC, P1, ansK, estOnlyK, ansF, estOnlyF);
         _print_gnuplot_mat7(std::cout, i, C1, desireC, P1, ansK, estOnlyK, ansF, estOnlyF);
 
         // 次の投影値を取得
-//        if ( !calcNextProjection(&P1, desireC, estOnlyK, ansF) ) return false;
-//        if ( !calcNextProjection(&P1, desireC, ansK, estOnlyF) ) return false;
         if ( !calcNextProjection(&P1, desireC, estOnlyK, estOnlyF) ) return false;
     }
     ofs.close();
-
+    
     return true;
 }
 
@@ -360,12 +338,7 @@ bool AppearanceEnhancement::printSimultaneousIteratorError(void){
     Mat P2 = Mat::zeros(3, 1, CV_64FC1);
     Mat C2 = Mat::zeros(3, 1, CV_64FC1);
     Mat desireC = Mat::ones(3, 1, CV_64FC1) * 0.3;
-    const int sampling = 256;
-    const double step = 1.0 / sampling;
-    const int cstStep = 200;
-    const double prjNum = cstStep * step;
     const double loopNum = 200;
-    setColor(&P1, prjNum);
     
     ofstream ofs("output_iterator_onlyK.txt");
     
@@ -403,6 +376,45 @@ bool AppearanceEnhancement::printSimultaneousIteratorError(void){
     return true;
 }
 
+// 天野先生論文のシミュレーション結果を出力
+bool AppearanceEnhancement::printAmanoMethod(void){
+    // init
+    Mat ansK = Mat::eye(3, 3, CV_64FC1) * 1.0;
+    Mat ansF = Mat::zeros(3, 1, CV_64FC1);
+    Mat estOnlyK = Mat::zeros(3, 3, CV_64FC1);
+    Mat P1 = Mat::zeros(3, 1, CV_64FC1);
+    Mat C1 = Mat::zeros(3, 1, CV_64FC1);
+    Mat desireC = Mat::ones(3, 1, CV_64FC1) * 0.3;
+    const double loopNum = 200;
+    
+    ofstream ofs("output_iterator_onlyK.txt");
+    cout << "i\tC1\tdesireC\tP1\tansK\testOnlyK\tCfull\tC0" << endl;
+    for (int i = 0; i < loopNum; ++ i) {
+        // get C0 and Cfull
+        Mat C0, Cfull;
+        getC0(&C0);
+        getCfull(&Cfull);
+        
+        // カメラ値を取得
+        if ( !calcCameraAddedNoise(&C1, ansK, ansF, P1, NOISE_RANGE) ) return false;
+//        if ( !calcIdealCamera(&C1, ansK, ansF, P1) ) return false;
+        
+        // 反射率を計算
+        if ( !calcReflect(&estOnlyK, P1, C1, ansF) ) return false;
+        
+        desireC = estOnlyK.diag() * 0.1;
+        
+        _print_gnuplot_mat7(ofs, i, C1, desireC, P1, ansK, estOnlyK, Cfull, C0);
+        _print_gnuplot_mat7(std::cout, i, C1, desireC, P1, ansK, estOnlyK, Cfull, C0);
+        
+        // 次の投影値を取得
+        if ( !calcNextProjection(&P1, desireC, estOnlyK, ansF) ) return false;
+    }
+    ofs.close();
+    
+    return true;
+}
+
 ///////////////////////////////  other method ///////////////////////////////
 // 光学モデルのテスト ( C=K{(C_full-C_0)P + C_0 + F} )
 // return   : テストが合ってるかどうか
@@ -413,6 +425,7 @@ bool AppearanceEnhancement:: test_RadiometricModel(void){
 //    printStandardDeviationOfRadiometricModel();
     printSwitchIteratorError();
 //    printSimultaneousIteratorError();
+//    printAmanoMethod();
     
     return true;
 }
@@ -455,6 +468,10 @@ bool AppearanceEnhancement::calcReflectAndAmbient(cv::Mat* const _K, cv::Mat* co
 //        calcK.at<double>(color, color) = C2_1.at<double>(0, color) / (Cfull_0.at<double>(0, color) * P2_1.at<double>(0, color));
 //        calcF.at<double>(0, color) = ((Cfull_0.at<double>(0, color) * (_C1.at<double>(0, color) * _P2.at<double>(0, color)))) / C2_1.at<double>(0, color);
     }
+    
+    // 丸め込み
+    roundReflectance(&calcK);
+    roundAmbient(&calcF);
 
     // 出力
     *_K = calcK;
@@ -484,6 +501,9 @@ bool AppearanceEnhancement::calcReflect(cv::Mat* const _K, const cv::Mat& _P, co
         calcK.at<double>(c, c) = _C.at<double>(0, c) / (Cfull_0.at<double>(0, c) * _P.at<double>(0,c) + C0.at<double>(0, c) + _F.at<double>(0, c));
     }
     
+    // 丸め込み
+    roundReflectance(&calcK);
+
     // get estimated K
     *_K = calcK;
 
@@ -511,7 +531,10 @@ bool AppearanceEnhancement::calcAmbient(cv::Mat* const _F, const cv::Mat& _P, co
         calcF.at<double>(0, c) = _C.at<double>(0, c) / _K.at<double>(c, c) - (Cfull_0.at<double>(0, c) * _P.at<double>(0,c) + C0.at<double>(0, c));
     }
     
-    // get estimated K
+    // round calcF
+    roundAmbient(&calcF);
+    
+    // get estimated F
     *_F = calcF;
 
     return true;
@@ -593,7 +616,7 @@ bool AppearanceEnhancement::calcNextProjection(cv::Mat* const _P, const cv::Mat&
     getC0(&C0);
     getCfull(&Cfull);
     Cfull_0 = Cfull - C0;
-    Cfull.release();
+//    Cfull.release();
 
     // calc _P
     Mat P = Mat::zeros(3, 1, CV_64FC1);
@@ -601,17 +624,103 @@ bool AppearanceEnhancement::calcNextProjection(cv::Mat* const _P, const cv::Mat&
     P -= C0 + _F;                   // P = C ./ K - (C0 + F)
     divElmByElm(&P, P, Cfull_0);    // P = { C ./ K - (C0 + F) } / (Cfull - C0)
     
-    // compress 0 to 1
-    for (int c = 0; c < 3; ++ c) {
-        if (P.at<double>(0, c) > 1) {
-            P.at<double>(0, c) = 1;
-        } else if (P.at<double>(0, c) < 0) {
-            P.at<double>(0, c) = 0;
-        }
-    }
+    // round 0 to 1
+    round0to1ForMat(&P);
     
     // Pに出力
     *_P = P;
     return true;
 }
+
+// range = K * ( (Cfull - C0) * [0-1] + C0 + F)
+// output / _rangeTop   : 計算する範囲の上端
+// outpute / _rangeDown : 計算する範囲の下端
+// input / _K           : 反射率
+// input / _F           : 環境光
+bool AppearanceEnhancement::calcRangeOfDesireC(cv::Mat* const _rangeTop, cv::Mat* const _rangeDown, const cv::Mat& _K, const cv::Mat& _F){
+    // init
+    const Mat PBottom = Mat::zeros(3, 1, CV_64FC1);
+    const Mat PTop = Mat::ones(3, 1, CV_64FC1);
+    Mat Cfull, C0;
+    getCfull(&Cfull);
+    getC0(&C0);
+    Mat Cfull_0 = Cfull - C0;
+    Cfull.release();
+    Mat rangeTop = Mat::zeros(3, 1, CV_64FC1), rangeBottom = Mat::zeros(3, 1, CV_64FC1);
+    
+    // calculation
+    mulElmByElm(&rangeTop, Cfull_0, PTop);
+    mulElmByElm(&rangeBottom, Cfull_0, PBottom);
+    
+    rangeTop += C0 + _F;
+    rangeBottom += C0 + _F;
+    
+    rangeTop = _K * rangeTop;
+    rangeBottom = _K * rangeBottom;
+    
+    // 代入
+    *_rangeTop = rangeTop;
+    *_rangeDown = rangeBottom;
+    
+    return true;
+}
+
+// desireCを光学モデルを用いて範囲を決め，その範囲に丸める
+// outpute / _desireC   : 丸めるdesireC
+// input / _K           : 反射率
+// input / _F           : 環境光
+bool AppearanceEnhancement::roundDesireC(cv::Mat* const _desireC, const cv::Mat& _K, const cv::Mat& _F){
+    // 範囲を計算
+    const int rows = _desireC->rows, cols = _desireC->cols;
+    Mat rangeTop = Mat::zeros(rows, cols, CV_64FC1);
+    Mat rangeDown = Mat::zeros(rows, cols, CV_64FC1);
+    calcRangeOfDesireC(&rangeTop, &rangeDown, _K, _F);
+
+    // 丸め込み
+    roundXtoYForMat(_desireC, rangeDown, rangeTop);
+    
+    return true;
+}
+
+// 反射率を丸め込む
+bool AppearanceEnhancement::roundReflectance(cv::Mat* const _K){
+    // error processing
+    Mat l_K = Mat::zeros(3, 3, CV_64FC1);
+    if ( isDifferentSize(*_K, l_K) ) {
+        cerr << "Mat size is different" << endl;
+        ERROR_PRINT2(*_K, l_K);
+        return false;
+    }
+    l_K.release();
+    
+    // 丸め込み
+    round0to1ForMat(_K);
+    
+    return true;
+}
+
+// 環境光を丸め込む
+bool AppearanceEnhancement::roundAmbient(cv::Mat* const _F){
+    // error processing
+    Mat l_F = Mat::zeros(3, 1, CV_64FC1);
+    if ( isDifferentSize(*_F, l_F) ) {
+        cerr << "Mat size is different" << endl;
+        ERROR_PRINT2(*_F, l_F);
+        return false;
+    }
+    l_F.release();
+    
+    // 範囲の計算
+    Mat Cfull;
+    getCfull(&Cfull);
+    Mat one = Mat::ones(3, 1, CV_64FC1);
+    Mat rangeBottom = Mat::zeros(3, 1, CV_64FC1);
+    Mat rangeTop = one - Cfull;
+    
+    // 丸め込み
+    roundXtoYForMat(_F, rangeBottom, rangeTop);
+    
+    return true;
+}
+
 

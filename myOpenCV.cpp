@@ -113,9 +113,6 @@ void initPoint(cv::Point* const p, const int size){
 // return   : 大きさが同じならtrue，違うならfalse
 bool checkMatSize(const cv::Mat& m1, const cv::Mat& m2){
     if (m1.size() != m2.size()) {
-        //        Size m1size = m1.size(), m2size = m2.size();
-        //        ERROR_PRINT2(m1size, m2size);
-        //        ERROR_PRINT2(m1, m2);
         return false;
     } else {
         return true;
@@ -149,6 +146,11 @@ bool checkMatSize(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const
         return false;
     }
 }
+bool isDifferentSize(const cv::Mat& m1, const cv::Mat& m2) { return !checkMatSize(m1, m2); }
+bool isDifferentSize(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3) { return !checkMatSize(m1, m2, m3); }
+bool isDifferentSize(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4) { return !checkMatSize(m1, m2, m3, m4); }
+bool isDifferentSize(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4, const cv::Mat& m5) { return !checkMatSize(m1, m2, m3, m4, m5); }
+bool isDifferentSize(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4, const cv::Mat& m5, const cv::Mat& m6) { return !checkMatSize(m1, m2, m3, m4, m5, m6); }
 
 
 // 複数のMatの連続性の確認
@@ -590,5 +592,69 @@ bool divElmByElm(cv::Mat* const dst, const cv::Mat& src1, const cv::Mat& src2){
     }
     
     return true;
+}
+
+// この関数はいずれmyMath.hppに移動させる！！！！！！！
+bool roundXtoY(double* const _num, const double& X, const double& Y){
+    *_num = std::max(*_num, X);
+    *_num = std::min(*_num, Y);
+    return true;
+}
+// 引数の値を０から１に丸める
+// ex) round0to1(5) = 1, round0to1(0.1) = 0.1, round0to1(-0.2) = 0
+bool round0to1(double* const _num) {
+    return roundXtoY(_num, 0.0, 1.0);
+}
+
+// Matの値をXからYに丸める
+bool roundXtoYForMat(cv::Mat* const _mat, const cv::Mat& _X, const cv::Mat& _Y) {
+    // error processing
+    if ( !checkMatSize(*_mat, _X, _Y) ) {
+        std::cout << "mat size is different" << std::endl;
+        ERROR_PRINT3(*_mat, _X, _Y);
+        return false;
+    }
+    
+    // 連続性の確認
+    int cols = _mat->cols, rows = _mat->rows;
+    if ( checkContinuous(*_mat, _X, _Y) ) {
+        // 連続ならばループを二重から一重に変更
+        cols *= rows;
+        rows = 1;
+    }
+    
+    // 行列へアクセスし個々に変換
+    for (int y = 0; y < rows; ++ y) {
+        // init pointer
+        double *p_dst = _mat->ptr<double>(y);
+        const double *p_X = _X.ptr<double>(y);
+        const double *p_Y = _Y.ptr<double>(y);
+        
+        for (int x = 0; x < cols; ++ x) {
+            roundXtoY(&p_dst[x], *p_X, *p_Y);
+        }
+    }
+    
+    return true;
+}
+
+// 上の範囲が行列でなく値である場合
+bool roundXtoYForMat(cv::Mat* const _mat, const double& _X, const double& _Y){
+    const int cols = _mat->cols, rows = _mat->rows;
+    Mat l_matX = Mat::ones(rows, cols, CV_64FC1) * _X;
+    Mat l_matY = Mat::ones(rows, cols, CV_64FC1) * _Y;
+    return roundXtoYForMat(_mat, l_matX, l_matY);
+}
+
+// Matの値を０から１に丸める
+bool round0to1ForMat(cv::Mat* const _mat){
+    return roundXtoYForMat(_mat, 0, 1);
+}
+//
+void test_round0to1ForMat(void){
+    Mat test = (Mat_<double>(3, 3) << -0.5, -0.1, 0, 0.1, 0.4, 0.99, 1, 1.9, 100);
+    _print(test);
+    round0to1ForMat(&test);
+    _print(test);
 }
 

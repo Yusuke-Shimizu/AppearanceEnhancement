@@ -35,6 +35,13 @@ bool checkMatSize(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3);
 bool checkMatSize(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4);
 bool checkMatSize(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4, const cv::Mat& m5);
 bool checkMatSize(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4, const cv::Mat& m5, const cv::Mat& m6);
+
+bool isDifferentSize(const cv::Mat& m1, const cv::Mat& m2);
+bool isDifferentSize(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3);
+bool isDifferentSize(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4);
+bool isDifferentSize(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4, const cv::Mat& m5);
+bool isDifferentSize(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4, const cv::Mat& m5, const cv::Mat& m6);
+
 bool checkContinuous(const cv::Mat& m1, const cv::Mat& m2);
 bool checkContinuous(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3);
 bool checkContinuous(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4);
@@ -63,5 +70,11 @@ void doAnyMethodForAllPixelOfMat(cv::Mat* const m1);
 bool showData(const cv::Mat& data);
 bool mulElmByElm(cv::Mat* const dst, const cv::Mat& src1, const cv::Mat& src2);
 bool divElmByElm(cv::Mat* const dst, const cv::Mat& src1, const cv::Mat& src2);
+bool roundXtoY(double* const _num, const double& X, const double& Y);
+bool round0to1(double* const _num);
+bool roundXtoYForMat(cv::Mat* const _mat, const cv::Mat& _X, const cv::Mat& _Y);
+bool roundXtoYForMat(cv::Mat* const _mat, const double& _X, const double& _Y);
+bool round0to1ForMat(cv::Mat* const _mat);
+void test_round0to1ForMat(void);
 
 #endif

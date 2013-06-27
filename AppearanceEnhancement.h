@@ -53,6 +53,7 @@ public:
     bool printStandardDeviationOfRadiometricModel(void);
     bool printSwitchIteratorError(void);
     bool printSimultaneousIteratorError(void);
+    bool printAmanoMethod(void);
     // other method
     bool test_RadiometricModel(void);
     bool calcReflectAndAmbient(cv::Mat* const _K, cv::Mat* const _F, const cv::Mat& _P1, const cv::Mat& _C1, const cv::Mat& _P2, const cv::Mat& _C2);
@@ -62,7 +63,10 @@ public:
     bool calcCameraAddedNoise(cv::Mat* const _C, const cv::Mat& _K, const cv::Mat& _F, const cv::Mat& _P, const double& noiseRange);
     bool calcCameraAddedFixNoise(cv::Mat* const _C, const cv::Mat& _K, const cv::Mat& _F, const cv::Mat& _P, const double& noise);
     bool calcNextProjection(cv::Mat* const _P, const cv::Mat& _C, const cv::Mat& _K, const cv::Mat& _F);
-//    bool outputMat();
+    bool calcRangeOfDesireC(cv::Mat* const _rangeTop, cv::Mat* const _rangeDown, const cv::Mat& _K, const cv::Mat& _F);
+    bool roundDesireC(cv::Mat* const _desireC, const cv::Mat& _K, const cv::Mat& _F);
+    bool roundReflectance(cv::Mat* const _K);
+    bool roundAmbient(cv::Mat* const _F);
 };
 
 #endif /* defined(__cameraBase03__AppearanceEnhancement__) */

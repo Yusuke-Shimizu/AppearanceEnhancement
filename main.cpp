@@ -10,6 +10,7 @@
 #include "ProCam.h"
 #include "GeometricCalibration.h"
 #include "myOpenCV.h"
+#include "myMath.hpp"
 #include "common.h"
 #include "AppearanceEnhancement.h"
 
@@ -18,6 +19,8 @@ using namespace cv;
 // main method
 int main(int argc, const char * argv[])
 {
+//    test_round0to1ForMat();
+    
     // 見えの強調クラスの設定
     AppearanceEnhancement ae = AppearanceEnhancement();
     ae.test_RadiometricModel();
