@@ -16,6 +16,10 @@
 
 // 幾何キャリブレーションで得たルックアップテーブルのファイル名
 #define LOOK_UP_TABLE_FILE_NAME "caliblationData/lookUpTableCameraToProjector.dat"
+#define WINDOW_NAME "projection image"
+
+// スリープ時間(ms)
+#define SLEEP_TIME 50
 
 class LinearizerOfProjector;
 
@@ -31,15 +35,21 @@ private:
     int m_cameraResponseSize;           // カメラ応答特性の大きさ
     int m_projectorResponseSize;        // プロジェクタ応答特性の大きさ
     
-    LinearizerOfProjector* linearPrj;   // プロジェクタ線形化を行うインスタンス
+//    LinearizerOfProjector* linearPrj;   // プロジェクタ線形化を行うインスタンス
     
 public:
     // constructor
-    ProCam(const cv::Size* const projectorSize);
+    ProCam(void);
+    ProCam(const cv::Size& projectorSize);
+    ProCam(const int _width, const int _height);
+    ProCam(const int _size);
     // destractor
     ~ProCam(void);
     // init method
-    bool init(const cv::Size* const projectorSize);
+    bool init(const cv::Size& projectorSize);
+    bool init(const int _width, const int _height);
+    bool init(const int _size);
+    bool init(void);
     bool initCameraSize(void);
     bool initVideoCapture(void);
     bool initAccessMapCam2Pro(void);
@@ -49,7 +59,7 @@ public:
     bool initProjectorResponse(const int prjResSize);
     // set method
     bool setCameraSize(const cv::Size* const cameraSize);
-    bool setProjectorSize(const cv::Size* const projectorSize);
+    bool setProjectorSize(const cv::Size& projectorSize);
     bool setAccessMapCam2Pro(const cv::Point* const accessMapCam2Pro, const cv::Size& mapSize);
     bool setAccessMapCam2Pro(const cv::Point* const accessMapCam2Pro);
     bool setCameraResponseSize(const int camResSize);
@@ -58,9 +68,13 @@ public:
     bool setProjectorResponse(const double* const prjRes, const int prjResSize);
     // get method
     bool getCameraSize(cv::Size* const cameraSize);
+    cv::Size* getCameraSize(void);
     int getPixelsOfCamera(void);
     bool getProjectorSize(cv::Size* const projectorSize);
+    cv::Size* getProjectorSize(void);
     bool getCaptureImage(cv::Mat* const image);
+    bool getVideoCapture(cv::VideoCapture* _video);
+    cv::VideoCapture* getVideoCapture(void);
     bool getAccessMapCam2Pro(cv::Point* const accessMapCam2Pro, const cv::Size& mapSize);
     bool getAccessMapCam2Pro(cv::Point* const accessMapCam2Pro);
     int getCameraResponseSize(void);
@@ -75,7 +89,7 @@ public:
     bool colorCalibration(void);
     bool linearlizeOfProjector(void);
     // other method
-    bool captureFromLight(cv::Mat* const captureImage, const cv::Mat* const projectionImage);
+    bool captureFromLight(cv::Mat* const captureImage, const cv::Mat& projectionImage);
 };
 
 #endif /* defined(__cameraBase03__ProCam__) */

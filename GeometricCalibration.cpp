@@ -528,6 +528,7 @@ int GeometricCalibration::getPositionFromGrayCode(const bool* const grayCode, co
     
     // バイナリコードから数字を生成
     int binaryNum = binary2decimal(binaryCode, depth);
+    free(binaryCode);
     
     return binaryNum;
 }
@@ -709,6 +710,7 @@ void GeometricCalibration::test_geometricCalibration(Point* const accessMapC2P, 
 	}
 }
 
+// 多分ミスってる
 void GeometricCalibration::test_accessMap(const Point* const accessMapCam2Pro, const Size& cameraSize, const Size& projectorSize, const char* _fileName){
     Mat accessImage = Mat::zeros(cameraSize, CV_8UC3); // アクセスマップ画像
     accessMap2image(&accessImage, accessMapCam2Pro, cameraSize, projectorSize);
@@ -716,18 +718,12 @@ void GeometricCalibration::test_accessMap(const Point* const accessMapCam2Pro, c
 }
 
 // 幾何キャリブレーション
-bool GeometricCalibration::doCalibration(cv::Point* const _accessMapCam2Pro){
+bool GeometricCalibration::doCalibration(cv::Point* const _accessMapCam2Pro, cv::VideoCapture* video){
     // init camera
-    VideoCapture camera(0);
-    if( !camera.isOpened() ){
-        std::cerr << "ERROR : camera is not opened !!" << std::endl;
-        return false;
-    }
-    
     Mat frame;                                  // カメラ画像
-    camera >> frame;
+    *video >> frame;
     Size cameraSize(frame.cols, frame.rows);    // カメラの大きさ
-    
+
     // init projection image
     Size projectionSize(PRJ_SIZE_WIDTH, PRJ_SIZE_HEIGHT);       // 投影サイズ
     Mat projectionImage = cv::Mat::zeros(projectionSize, CV_8UC3);
@@ -746,10 +742,10 @@ bool GeometricCalibration::doCalibration(cv::Point* const _accessMapCam2Pro){
     // 縦横の縞模様を投影しグレイコードをプロジェクタ，カメラ双方に付与する
     int offset = 0; // 初期ビットの位置
     for (int timeStep = 1; timeStep <= layerSize.width; ++ timeStep, ++ offset) {
-        addSpatialCodeOfProCam(grayCodeMapProjector, grayCodeMapCamera, &projectionSize, &cameraSize, timeStep, offset, Vertical, &camera);
+        addSpatialCodeOfProCam(grayCodeMapProjector, grayCodeMapCamera, &projectionSize, &cameraSize, timeStep, offset, Vertical, video);
     }
     for (int timeStep = 1; timeStep <= layerSize.height; ++ timeStep, ++ offset) {
-        addSpatialCodeOfProCam(grayCodeMapProjector, grayCodeMapCamera, &projectionSize, &cameraSize, timeStep, offset, Horizon, &camera);
+        addSpatialCodeOfProCam(grayCodeMapProjector, grayCodeMapCamera, &projectionSize, &cameraSize, timeStep, offset, Horizon, video);
     }
     
 	// 使用したウィンドウの削除

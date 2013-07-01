@@ -11,6 +11,7 @@
 
 #include <iostream>
 #include "myOpenCV.h"
+#include "ProCam.h"
 
 // 型による色の定義
 #define BOOL_BLACK 0
@@ -19,7 +20,6 @@
 #define CHAR_WHITE UCHAR_MAX
 
 // その他
-#define SLEEP_TIME 50    // スリープ時間(ms)
 #define MAX_WINDOW_SIZE 10000   // ウィンドウの最大値
 #define BINARY_THRESH 0     // ネガポジの二値化を行うときの閾値
 #define CAPTURE_NUM 10
@@ -27,6 +27,9 @@
 // window name
 #define W_NAME_GEO_CAMERA "geometric calibration camera"
 #define W_NAME_GEO_PROJECTOR "geometric calibration projector"
+
+// 先攻宣言
+class ProCam;
 
 class GeometricCalibration{
 private:
@@ -37,7 +40,6 @@ public:
 
     GeometricCalibration(void);
     GeometricCalibration(const cv::Size* const _size);
-    bool doCalibration(cv::Point* const _accessMapCam2Pro);
     void printCurrentPattern(const bool* const pattern, const int patternSize);
     void printPatternMap(const bool* const map, const cv::Size* const mapSize);
     void printAccessMap(const bool* const accessMap, const cv::Size* const mapSize, const int mapDepth);
@@ -69,6 +71,7 @@ public:
     void getProjectorPoint(cv::Point* const projector, const cv::Point* const camera, const cv::Point* const accessMapC2P, const int cameraWidth);
     void test_accessMap(const cv::Point* const accessMapCam2Pro, const cv::Size& cameraSize, const cv::Size& projectorSize, const char* _fileName);
     void test_geometricCalibration(cv::Point* const accessMapC2P, cv::VideoCapture *video, const cv::Size* const cameraSize, const cv::Size* const projectorSize);
+    bool doCalibration(cv::Point* const _accessMapCam2Pro, cv::VideoCapture* video);
 };
 
 #endif /* defined(__cameraBase03__GeometricCalibration__) */

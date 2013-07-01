@@ -25,7 +25,8 @@ int main(int argc, const char * argv[])
 
     // プロカムの設定
     Size prjSize(PRJ_SIZE_WIDTH, PRJ_SIZE_HEIGHT);
-    ProCam procam = ProCam(&prjSize);
+    ProCam procam = ProCam(prjSize);
+    _print_name(procam);
     procam.allCalibration();
 //    procam.loadAccessMapCam2Pro();
     

@@ -65,6 +65,28 @@ bool getPoint(int* const _x, int* const _y, const cv::Point& _p){
     return true;
 }
 
+// 画像のある座標の値を取得する
+// input / _image   : 参照画像
+// input / _point   : 参照座標
+// return           : 画素の値
+uchar getPixelNumuc(const cv::Mat& _image, const cv::Point& _point, const ColorName _cName){
+    uchar pixNum = 0;
+    const int ch = _image.channels();
+    const uchar *pImage = _image.ptr<uchar>(_point.y);
+    pixNum = pImage[_point.x * ch + _cName];
+    
+    return pixNum;
+}
+double getPixelNumd(const cv::Mat& _image, const cv::Point& _point, const ColorName _cName){
+    double pixNum = 0;
+    const int ch = _image.channels();
+    const double *pImage = _image.ptr<double>(_point.y);
+    pixNum = pImage[_point.x * ch + _cName];
+    
+    return pixNum;
+}
+
+
 ///////////////////////////////  print method ///////////////////////////////
 // Matの様々な要素を表示
 void printMatPropaty(const Mat& m1){
@@ -332,11 +354,6 @@ void imshow16s(const char* const windowName, const Mat* const mat16s){
     
     // ８ビット画像を表示
     imshow(windowName, diffPosiNega8u);
-}
-
-// imwriteのテスト
-void test_imwrite(void){
-    
 }
 
 // VideoCaptureのテスト
@@ -677,5 +694,46 @@ void test_round0to1ForMat(void){
     _print(test);
     round0to1ForMat(&test);
     _print(test);
+}
+
+// 要素全体を各々の赤の要素で割る
+// output / image   : 操作する画像
+bool divMatByRedElm(cv::Mat* const image, const ColorName _cName){
+    //
+    int rows = image->rows, cols = image->cols, ch = image->channels();
+    if ( image->isContinuous() ) {
+        // 連続ならばループを二重から一重に変更
+        cols *= rows;
+        rows = 1;
+    }
+    
+    // 行列へアクセスし個々に変換
+    for (int y = 0; y < rows; ++ y) {
+        // init pointer
+        double *p_dst = image->ptr<double>(y);
+        
+        for (int x = 0; x < cols; ++ x) {
+            // 分母の値をセット
+            double divNum = p_dst[x * ch + _cName];
+            
+            // 分母が０の場合の処理
+            if (divNum == 0) {
+                // set black
+                for (int c = 0; c < 3; ++ c) {
+                    p_dst[x * ch + c] = 0;
+                }
+            } else {
+                p_dst[x * ch + 0] /= divNum;
+                p_dst[x * ch + 1] /= divNum;
+                p_dst[x * ch + 2] /= divNum;
+//                p_dst[x * ch + 0] = 0;
+//                p_dst[x * ch + 1] = 0;
+//                p_dst[x * ch + 2] = 0;
+//                p_dst[x * ch + _cName] = 255;
+            }
+        }
+    }
+    
+    return true;
 }
 
