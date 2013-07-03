@@ -12,6 +12,7 @@
 #include <fstream>
 #include "ProCam.h"
 #include "myOpenCV.h"
+
 class ProCam;
 
 class AppearanceEnhancement{

@@ -85,7 +85,11 @@ double getPixelNumd(const cv::Mat& _image, const cv::Point& _point, const ColorN
     
     return pixNum;
 }
-
+const cv::Vec3d* getPixelNumd(const cv::Mat& _image, const cv::Point& _point){
+    const cv::Vec3d *pImage = _image.ptr<cv::Vec3d>(_point.y);
+    
+    return &pImage[_point.x];
+}
 
 ///////////////////////////////  print method ///////////////////////////////
 // Matの様々な要素を表示
@@ -137,6 +141,15 @@ void initPoint(cv::Point* const p, const int size){
     for (int i = 0; i < size; ++ i) {
         (p + i)->x = 0;
         (p + i)->y = 0;
+    }
+}
+
+// Matの初期化
+// output / _aMat : 初期化する行列の配列
+// input / _size : Matの大きさ
+void initMat(cv::Mat* const _aMat, const int _size){
+    for (int i = 0; i < _size; ++ i) {
+//        *(_aMat + i) = Mat::zeros(3, 3, CV_64FC1);
     }
 }
 
@@ -432,13 +445,13 @@ bool compareMat(const cv::Mat& m1, const cv::Mat& m2, const double& thresh){
         ERROR_PRINT2(m1size, m2size);
         return false;
     }
-
+    
     // calc
     double diff = 0;
     getDiffNumOfMat(&diff, m1, m2);
-//    _print(diff);
-
-//    if (sum < thresh * thresh) {
+    //    _print(diff);
+    
+    //    if (sum < thresh * thresh) {
     if (diff < thresh) {
         return true;
     } else {
@@ -479,7 +492,7 @@ bool getDiffNumOfMat(double* const diff, const cv::Mat& m1, const cv::Mat& m2){
 bool getAvgOfDiffMat(double* const diff, const cv::Mat& m1, const cv::Mat& m2){
     // error processing
     if ( !checkMatSize(m1, m2) ) return false;
-
+    
     // init
     Mat diffMat = Mat::zeros(m1.size(), CV_64FC1);
     
@@ -515,7 +528,7 @@ void test_getAvgOfDiffMat(void){
 bool getRateOfDiffMat(double* const diff, const cv::Mat& m1, const cv::Mat& m2){
     if ( !getAvgOfDiffMat(diff, m1, m2) ) return false;
     *diff = *diff / m1.at<double>(0, 0);
-
+    
     return true;
 }
 
@@ -726,10 +739,10 @@ bool divMatByRedElm(cv::Mat* const image, const ColorName _cName){
                 p_dst[x * ch + 0] /= divNum;
                 p_dst[x * ch + 1] /= divNum;
                 p_dst[x * ch + 2] /= divNum;
-//                p_dst[x * ch + 0] = 0;
-//                p_dst[x * ch + 1] = 0;
-//                p_dst[x * ch + 2] = 0;
-//                p_dst[x * ch + _cName] = 255;
+                //                p_dst[x * ch + 0] = 0;
+                //                p_dst[x * ch + 1] = 0;
+                //                p_dst[x * ch + 2] = 0;
+                //                p_dst[x * ch + _cName] = 255;
             }
         }
     }

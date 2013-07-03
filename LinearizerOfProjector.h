@@ -12,6 +12,7 @@
 #include <iostream>
 #include "myOpenCV.h"
 #include "ProCam.h"
+#include <vector>
 
 // 先攻宣言
 class ProCam;
@@ -19,20 +20,23 @@ class ProCam;
 class LinearizerOfProjector{
 private:
     ProCam* m_procam;
-    cv::Mat m_ColorMixingMatrix;  // C=VPのV, プロジェクタからカメラへの色変換行列
+    cv::Mat** m_aColorMixingMatrix;  // 全カメラ画素分のC=VPのV, プロジェクタからカメラへの色変換行列
+//    std::vector<cv::Mat> m_aColorMixingMatrix;  // 全カメラ画素分のC=VPのV, プロジェクタからカメラへの色変換行列
 public:
     // constructor
     LinearizerOfProjector(void);
     LinearizerOfProjector(ProCam* procam);
+    // destructor
+    ~LinearizerOfProjector(void);
     // set method
-    bool setColorMixingMatrix(const cv::Mat* const colMix);
+    bool setColorMixingMatrix(cv::Mat** colMix);
     bool setProCam(ProCam* procam);
     // get method
-    bool getColorMixingMatrix(cv::Mat* const colMix);
+    bool getColorMixingMatrix(cv::Mat** colMix);
     bool getProCam(ProCam* const procam);
     ProCam* getProCam(void);
     // init method
-    bool initColorMixingMatrix(void);
+    bool initColorMixingMatrix(const cv::Size& _mixMatSize);
     // other method
     bool linearlize(double* const responseOfProjector);
     bool calcColorMixingMatrix(void);
