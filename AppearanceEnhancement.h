@@ -20,6 +20,8 @@ private:
     ProCam* m_procam;
     // C=K{(C_full-C_0)P + C_0 + F}に必要な行列
     cv::Mat m_C, m_P, m_K, m_F, m_Cfull, m_C0;
+    
+    AppearanceEnhancement(const AppearanceEnhancement& ae); // コピーコンストラクタ隠し（プログラムで１つしか存在しない為）
 public:
     // constructor
     AppearanceEnhancement(void);

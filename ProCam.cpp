@@ -20,19 +20,40 @@ using namespace cv;
 
 ///////////////////////////////  constructor ///////////////////////////////
 // コンストラクタ
-ProCam::ProCam(void) { init(); }
-ProCam::ProCam(const cv::Size& projectorSize) { init(projectorSize); }
-ProCam::ProCam(const int _width, const int _height) { init(_width, _height); }
-ProCam::ProCam(const int _size) { init(_size); }
+ProCam::ProCam(void)
+    : m_accessMapCam2Pro(NULL), m_cameraResponse(NULL), m_projectorResponse(NULL)
+{
+    init();
+}
+
+ProCam::ProCam(const cv::Size& projectorSize)
+    : m_accessMapCam2Pro(NULL), m_cameraResponse(NULL), m_projectorResponse(NULL)
+{
+    init(projectorSize);
+}
+
+ProCam::ProCam(const int _width, const int _height)
+    : m_accessMapCam2Pro(NULL), m_cameraResponse(NULL), m_projectorResponse(NULL)
+{
+    init(_width, _height);
+}
+
+ProCam::ProCam(const int _size)
+    : m_accessMapCam2Pro(NULL), m_cameraResponse(NULL), m_projectorResponse(NULL)
+{
+    init(_size);
+}
 
 ///////////////////////////////  destructor ///////////////////////////////
-// デストラクタr
+// デストラクタ
 ProCam::~ProCam(void){
-    free(m_accessMapCam2Pro);
-    free(m_cameraResponse);
-    free(m_projectorResponse);
-    m_video.release();
+    cout << "deleting ProCam (" << this <<")" << endl;
+    delete [] m_accessMapCam2Pro;
+    delete [] m_cameraResponse;
+    delete [] m_projectorResponse;
+//    m_video.release();
     destroyWindow(WINDOW_NAME);     // 投影に使用したウィンドウを削除
+    cout << "ProCam is deleted (" << this <<")" << endl;
 }
 
 ///////////////////////////////  init method ///////////////////////////////
@@ -47,7 +68,8 @@ bool ProCam::init(const cv::Size& projectorSize){
     
     // プロジェクタの初期化
     if ( !setProjectorSize(projectorSize) ) return false;
-    if ( !initProjectorResponseSize() ) return false;
+    cv::Size* cameraSize = getCameraSize();
+    if ( !initProjectorResponseSize(*cameraSize) ) return false;
     if ( !initProjectorResponse(getProjectorResponseSize()) ) return false;
 //    if ( !linearlizeOfProjector() ) return false;
     
@@ -94,7 +116,8 @@ bool ProCam::initAccessMapCam2Pro(void){
     getCameraSize(&cameraSize);
     
     // init
-    m_accessMapCam2Pro = (cv::Point*)malloc(sizeof(cv::Point) * cameraSize.area());
+//    m_accessMapCam2Pro = (cv::Point*)malloc(sizeof(cv::Point) * cameraSize.area());
+    m_accessMapCam2Pro = new cv::Point[cameraSize.area()];
     for (int y = 0; y < cameraSize.height; ++ y) {
         for (int x = 0; x < cameraSize.width; ++ x) {
             int ptr = y * cameraSize.width + x;
@@ -108,24 +131,26 @@ bool ProCam::initAccessMapCam2Pro(void){
 // カメラ応答特性サイズ（m_cameraResponseSize）の初期化
 // return   : 成功したかどうか
 bool ProCam::initCameraResponseSize(void){
-    if ( !setCameraResponseSize(RESPONSE_SIZE) ) return false;
-    return true;
+    return setCameraResponseSize(RESPONSE_SIZE);
 }
 
 // プロジェクタ応答特性サイズ（m_projectorResponseSize）の初期化
 // return   : 成功したかどうか
-bool ProCam::initProjectorResponseSize(void){
-    if ( !setProjectorResponseSize(RESPONSE_SIZE) ) return false;
-    return true;
+bool ProCam::initProjectorResponseSize(const cv::Size& cameraSize){
+    return setProjectorResponseSize(RESPONSE_SIZE * cameraSize.area());
 }
 
 // カメラ応答特性の初期化
 // input / camResSize   : 生成する応答特性の大きさ
 // return               : 成功したかどうか
 bool ProCam::initCameraResponse(const int camResSize){
+    // error processing
     if (camResSize <= 0) return false;
-    m_cameraResponse = (double*)malloc(sizeof(double) * camResSize);
-    memset(m_cameraResponse, 0, sizeof(double) * camResSize);
+    
+    m_cameraResponse = new double[camResSize];
+    for (int i = 0; i < camResSize; ++ i) {
+        m_cameraResponse[i] = i;
+    }
     return true;
 }
 
@@ -133,9 +158,18 @@ bool ProCam::initCameraResponse(const int camResSize){
 // input / prjResSize   : 生成する応答特性の大きさ
 // return               : 成功したかどうか
 bool ProCam::initProjectorResponse(const int prjResSize){
+    // error processing
     if (prjResSize <= 0) return false;
-    m_projectorResponse = (double*)malloc(sizeof(double) * prjResSize);
-    memset(m_projectorResponse, 0, sizeof(double) * prjResSize);
+//    m_projectorResponse = (double*)malloc(sizeof(double) * prjResSize);
+//    memset(m_projectorResponse, 0, sizeof(double) * prjResSize);
+    
+    // init response function
+    m_projectorResponse = new double[prjResSize];
+    cout << "test" << endl;
+    for (int i = 0; i < prjResSize; ++ i) {
+        m_projectorResponse[i] = 0;
+    }
+    cout << "end" << endl;
     return true;
 }
 
@@ -408,7 +442,7 @@ bool ProCam::allCalibration(void){
         cerr << "linearized error of projector" << endl;
         return false;
     }
-    
+
     // color caliration
     if ( !colorCalibration() ) {
         cerr << "color caliration error" << endl;
@@ -429,7 +463,7 @@ bool ProCam::geometricCalibration(void){
     VideoCapture* video = getVideoCapture();
 //    getVideoCapture(&video);
     _print_name(*video);
-    GeometricCalibration gc = GeometricCalibration();
+    GeometricCalibration gc;
     if (!gc.doCalibration(accessMapCam2Pro, video)) {
         cerr << "error of geometric calibration" << endl;
         return false;
@@ -459,15 +493,17 @@ bool ProCam::colorCalibration(void){
 bool ProCam::linearlizeOfProjector(void){
     // 線形化配列を一旦ローカルに落とす
     int prjResSize = getProjectorResponseSize();
-    double* responsePrj = (double*)malloc(sizeof(double) * prjResSize);
-    LinearizerOfProjector linearPrj = LinearizerOfProjector(this);
+//    double* responsePrj = (double*)malloc(sizeof(double) * prjResSize);
+    double* responsePrj = new double[prjResSize];
+    LinearizerOfProjector linearPrj(this);
     if ( !linearPrj.linearlize(responsePrj) ) return false;
     
     // 落とした配列をメンバ配列に代入する
     if ( !setProjectorResponse(responsePrj, prjResSize) ) {ERROR_PRINT(prjResSize); return false;}
     
     // 後処理
-    free(responsePrj);
+//    free(responsePrj);
+    delete [] responsePrj;
     return true;
 }
 

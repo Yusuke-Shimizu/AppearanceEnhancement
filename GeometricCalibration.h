@@ -33,8 +33,7 @@ class ProCam;
 
 class GeometricCalibration{
 private:
-    //cv::Point* accessMap;
-
+    GeometricCalibration(const GeometricCalibration& gc);   // コピーコンストラクタ隠し（プログラムで１つしか存在しない為）
 public:
     enum stripeDirection {Vertical, Horizon};   // {縦，横}
 

@@ -199,36 +199,36 @@ bool isDifferentSize(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, co
 
 
 // 複数のMatの連続性の確認
-bool checkContinuous(const cv::Mat& m1, const cv::Mat& m2){
+bool isContinuous(const cv::Mat& m1, const cv::Mat& m2){
     if (m1.isContinuous() && m2.isContinuous()) {
         return true;
     } else {
         return false;
     }
 }
-bool checkContinuous(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3){
-    if (checkContinuous(m1, m2) && m3.isContinuous()) {
+bool isContinuous(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3){
+    if (isContinuous(m1, m2) && m3.isContinuous()) {
         return true;
     } else{
         return false;
     }
 }
-bool checkContinuous(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4){
-    if (checkContinuous(m1, m2, m3) && m4.isContinuous()) {
+bool isContinuous(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4){
+    if (isContinuous(m1, m2, m3) && m4.isContinuous()) {
         return true;
     } else{
         return false;
     }
 }
-bool checkContinuous(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4, const cv::Mat& m5){
-    if (checkContinuous(m1, m2, m3, m4) && m5.isContinuous()) {
+bool isContinuous(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4, const cv::Mat& m5){
+    if (isContinuous(m1, m2, m3, m4) && m5.isContinuous()) {
         return true;
     } else{
         return false;
     }
 }
-bool checkContinuous(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4, const cv::Mat& m5, const cv::Mat& m6){
-    if (checkContinuous(m1, m2, m3, m4, m5) && m6.isContinuous()) {
+bool isContinuous(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4, const cv::Mat& m5, const cv::Mat& m6){
+    if (isContinuous(m1, m2, m3, m4, m5) && m6.isContinuous()) {
         return true;
     } else{
         return false;
@@ -310,7 +310,7 @@ void convertMatDepth16sTo8u(cv::Mat* const dst8u, const cv::Mat* const src16s){
     int rows = src16s->rows, cols = src16s->cols;   // 行と列の大きさ
     
     // 連続性の確認
-    if ( checkContinuous(*src16s, *dst8u) ) {
+    if ( isContinuous(*src16s, *dst8u) ) {
         // 連続ならばループを二重から一重に変更
         cols *= rows;
         rows = 1;
@@ -592,7 +592,7 @@ bool mulElmByElm(cv::Mat* const dst, const cv::Mat& src1, const cv::Mat& src2){
     
     // 連続性の確認
     int cols = dst->cols, rows = dst->rows;
-    if ( checkContinuous(*dst, src1, src2) ) {
+    if ( isContinuous(*dst, src1, src2) ) {
         // 連続ならばループを二重から一重に変更
         cols *= rows;
         rows = 1;
@@ -624,7 +624,7 @@ bool divElmByElm(cv::Mat* const dst, const cv::Mat& src1, const cv::Mat& src2){
     
     // 連続性の確認
     int cols = dst->cols, rows = dst->rows;
-    if ( checkContinuous(*dst, src1, src2) ) {
+    if ( isContinuous(*dst, src1, src2) ) {
         // 連続ならばループを二重から一重に変更
         cols *= rows;
         rows = 1;
@@ -668,7 +668,7 @@ bool roundXtoYForMat(cv::Mat* const _mat, const cv::Mat& _X, const cv::Mat& _Y) 
     
     // 連続性の確認
     int cols = _mat->cols, rows = _mat->rows;
-    if ( checkContinuous(*_mat, _X, _Y) ) {
+    if ( isContinuous(*_mat, _X, _Y) ) {
         // 連続ならばループを二重から一重に変更
         cols *= rows;
         rows = 1;
@@ -709,9 +709,9 @@ void test_round0to1ForMat(void){
     _print(test);
 }
 
-// 要素全体を各々の赤の要素で割る
+// 要素全体を引数で与えた色で正規化する
 // output / image   : 操作する画像
-bool divMatByRedElm(cv::Mat* const image, const ColorName _cName){
+bool normalizeByAnyColorChannel(cv::Mat* const image, const ColorName _cName){
     //
     int rows = image->rows, cols = image->cols, ch = image->channels();
     if ( image->isContinuous() ) {
@@ -733,8 +733,9 @@ bool divMatByRedElm(cv::Mat* const image, const ColorName _cName){
             if (divNum == 0) {
                 // set black
                 for (int c = 0; c < 3; ++ c) {
-                    p_dst[x * ch + c] = 0;
+                    p_dst[x * ch + c] = 255;
                 }
+                p_dst[x * ch + _cName] = 1;
             } else {
                 p_dst[x * ch + 0] /= divNum;
                 p_dst[x * ch + 1] /= divNum;

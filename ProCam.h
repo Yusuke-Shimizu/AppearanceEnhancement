@@ -35,8 +35,7 @@ private:
     int m_cameraResponseSize;           // カメラ応答特性の大きさ
     int m_projectorResponseSize;        // プロジェクタ応答特性の大きさ
     
-//    LinearizerOfProjector* linearPrj;   // プロジェクタ線形化を行うインスタンス
-    
+    ProCam(const ProCam& _procam);      // コピーコンストラクタ隠し（プログラムで１つしか存在しない為）
 public:
     // constructor
     ProCam(void);
@@ -54,7 +53,7 @@ public:
     bool initVideoCapture(void);
     bool initAccessMapCam2Pro(void);
     bool initCameraResponseSize(void);
-    bool initProjectorResponseSize(void);
+    bool initProjectorResponseSize(const cv::Size& cameraSize);
     bool initCameraResponse(const int camResSize);
     bool initProjectorResponse(const int prjResSize);
     // set method

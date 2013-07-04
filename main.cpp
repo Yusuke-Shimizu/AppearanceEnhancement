@@ -25,7 +25,7 @@ int main(int argc, const char * argv[])
 
     // プロカムの設定
     Size prjSize(PRJ_SIZE_WIDTH, PRJ_SIZE_HEIGHT);
-    ProCam procam = ProCam(prjSize);
+    ProCam procam(prjSize);
     _print_name(procam);
     procam.allCalibration();
 //    procam.loadAccessMapCam2Pro();
@@ -35,6 +35,25 @@ int main(int argc, const char * argv[])
 //    if (!gc.doCalibration()) {
 //        return -1;
 //    }
+//    double *dtest = new double();
+//    *dtest = 3.01;
+//    _print(*dtest);
+//    delete dtest;
+//    
+//    cv::Mat* m = new Mat();
+//    *m = Mat::eye(3, 3, CV_64FC1);
+//    _print(*m);
+//    delete m;
+//    
+//    Mat* m2 = new Mat[3];
+//    for (int i = 0; i < 3; ++ i) {
+//        m2[i] = Mat::ones(3, 3, CV_64FC1) * i;
+//    }
+//    for (int i = 0; i < 3; ++ i) {
+//        _print2(i, m2[i]);
+//    }
+//    _print(*(m2 + 1));
+//    delete [] m2;
     
     return 0;
 }

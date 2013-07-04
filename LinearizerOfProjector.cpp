@@ -35,30 +35,22 @@ LinearizerOfProjector::LinearizerOfProjector(void){
 }
 
 LinearizerOfProjector::LinearizerOfProjector(ProCam* procam){
-    _print_name(*procam);
+//    cout << "setting LinearizerOfProjector..." << endl;
+//    _print_name(*procam);
     setProCam(procam);
-    _print_name(*m_procam);
+//    _print_name(*m_procam);
     const cv::Size* cameraSize = m_procam->getCameraSize();
-    initColorMixingMatrix(*cameraSize);
+    initColorMixingMatrix(cameraSize->area());
+//    cout << "finish LinearizerOfProjector" << endl;
 }
 
 ///////////////////////////////  destructor ///////////////////////////////
 LinearizerOfProjector::~LinearizerOfProjector(void){
-//    free(m_procam);
-    m_procam->~ProCam();
-    free(m_aColorMixingMatrix);
+//    m_procam->~ProCam();
     cout << "LinearizerOfProjector is deleted (" << this << ")" << endl;
 }
 
 ///////////////////////////////  set method ///////////////////////////////
-// m_ColorMixingMatrix（色変換行列）の設定
-// input / colMix   : 設定する行列
-// return           : 成功したかどうか
-bool LinearizerOfProjector::setColorMixingMatrix(cv::Mat** colMix){
-    m_aColorMixingMatrix = colMix;
-    return true;
-}
-
 // プロカムのセッティング
 bool LinearizerOfProjector::setProCam(ProCam* procam){
     m_procam = procam;
@@ -66,14 +58,60 @@ bool LinearizerOfProjector::setProCam(ProCam* procam){
     return true;
 }
 
+// m_ColorMixingMatrix（色変換行列）の設定
+// input / colMix   : 設定する行列
+// input / index    : 設定する場所
+// return           : 成功したかどうか
+bool LinearizerOfProjector::setColorMixMat(const cv::Mat& mat, const int index){
+    // error processing
+    if (m_aColorMixingMatrix.size() <= index || index < 0) {
+        std::cerr << "size is strange number" << std::endl;
+        ERROR_PRINT(index);
+        return false;
+    } else if ( isDifferentSize(mat, m_aColorMixingMatrix.at(index)) ) {
+        std::cerr << "mat size is different" << std::endl;
+        ERROR_PRINT(mat);
+        return false;
+    }
+
+    // 代入
+    m_aColorMixingMatrix.at(index) = mat;
+    
+    return true;
+}
+
+// m_ColorMixingMatrixの全設定
+// input / _aMat    : 設定する配列
+// return           : 成功したかどうか
+bool LinearizerOfProjector::setColorMixMat(const std::vector<cv::Mat>* _aMat){
+    // error processing
+    const unsigned long size = m_aColorMixingMatrix.size();
+    if (_aMat->size() != size) {
+        std::cerr << "vector size is different" << std::endl;
+        ERROR_PRINT(size);
+        return false;
+    }
+    
+    // assign
+    std::vector<cv::Mat>::iterator itrMem = m_aColorMixingMatrix.begin();
+    std::vector<cv::Mat>::const_iterator itrArg = _aMat->begin();
+    for (; itrMem != m_aColorMixingMatrix.end(); ++ itrMem, ++ itrArg) {
+        *itrMem = *itrArg;
+    }
+    
+    return true;
+}
+
+
+
 ///////////////////////////////  get method ///////////////////////////////
 // m_ColorMixingMatrix（色変換行列）の取得
 // output / colMix  : 色変換行列を入れる行列
 // return           : 成功したかどうか
-bool LinearizerOfProjector::getColorMixingMatrix(cv::Mat** colMix){
-    colMix = m_aColorMixingMatrix;
-    return true;
-}
+//bool LinearizerOfProjector::getColorMixingMatrix(cv::Mat** colMix){
+//    colMix = m_aColorMixingMatrix;
+//    return true;
+//}
 
 //
 bool LinearizerOfProjector::getProCam(ProCam* const procam){
@@ -85,55 +123,36 @@ ProCam* LinearizerOfProjector::getProCam(void){
     return m_procam;
 }
 
+// m_ColorMixingMatrix（色変換行列）の取得
+// input / index    : 取得したい行列の番号
+// return           : 取得した行列
+cv::Mat* LinearizerOfProjector::getColorMixMat(const int index){
+    // error processing
+    if (m_aColorMixingMatrix.size() <= index || index < 0) {
+        std::cerr << "size is strange number" << std::endl;
+        ERROR_PRINT(index);
+        return false;
+    }
+    
+    // return
+    return &(m_aColorMixingMatrix.at(index));
+}
+
+const std::vector<cv::Mat>* LinearizerOfProjector::getColorMixMat(void){
+    return &m_aColorMixingMatrix;
+}
+
 ///////////////////////////////  init method ///////////////////////////////
 // init method
-bool LinearizerOfProjector::initColorMixingMatrix(const cv::Size& _mixMatSize){
-    // 3x3で対角成分が１、残りが０の行列を生成
-    m_aColorMixingMatrix = (cv::Mat**)malloc(sizeof(cv::Mat*) * _mixMatSize.area());
-    
-    
-    for (int i = 0; i < _mixMatSize.area(); ++ i) {
-//        m_aColorMixingMatrix[i]->create(3, 3, CV_64FC1);
+bool LinearizerOfProjector::initColorMixingMatrix(const int _mixMatLength){
+    cv::Mat initMat = cv::Mat::zeros(3, 3, CV_64FC1);
+    for (int i = 0; i < _mixMatLength; ++ i) {
+        m_aColorMixingMatrix.push_back(initMat);
     }
-    _print(m_aColorMixingMatrix[0]);
-    
-    Mat test = Mat::zeros(3, 3, CV_64FC1);
-    test.create(3, 3, CV_64FC1);
-    _print(test);
-    
-    Mat* p_test = (cv::Mat*)malloc(sizeof(cv::Mat) * _mixMatSize.area());
-    if (p_test == NULL) {
-        _print_name(p_test);
-        cout << "Malloc Error of Mat*" << endl;
-        exit(-1);
-    }
-    _print_name(*p_test);
-    for (int i = 0; i < _mixMatSize.area(); ++ i) {
-//        _print(i);
-//        _print_name(p_test[i]);
-//        p_test[i] = Mat::zeros(3, 3, CV_64FC1);
-//        p_test[i].create(3, 3, CV_64FC1);
-    }
-    Vector<Mat_<double>> a_test;
-    for (int i = 0; i < 3; ++ i) {
-        Mat mat = Mat::zeros(3, 3, CV_64FC1);
-        a_test.push_back(mat);
-    }
-    for (int i = 0; i < 3; ++ i) {
-        _print(a_test[i]);
-    }
-    
-//    p_test
-//    p_test->create(3, 3, CV_64FC1);
-//    *p_test = Mat::zeros(3, 3, CV_64FC1);
-//    p_test = Mat::zeros(3, 3, CV_64FC1);
-//    p_test = Mat::create(3, 3, CV_64FC1);
-//    *p_test = Mat::create(3, 3, CV_64FC1);
-    
-    
-    _print_name(p_test);
-
-    
+//    vector<cv::Mat>::iterator itr;
+//    for (itr = m_aColorMixingMatrix.begin(); itr != m_aColorMixingMatrix.end(); ++ itr) {
+//        _print(*itr);
+//    }
     return true;
 }
 
@@ -145,6 +164,10 @@ bool LinearizerOfProjector::linearlize(double* const responseOfProjector){
     // 色変換行列の生成
     if( !calcColorMixingMatrix() ) return false;
     
+    // プロジェクタの応答特性を計算
+    if ( !calcResponseFunction(responseOfProjector)) return false;
+    
+    cout << "all finish" << endl;
     return true;
 }
 
@@ -176,10 +199,10 @@ bool LinearizerOfProjector::calcColorMixingMatrix(void){
     }
     
     // show image
-    imshow("black_cap", black_cap);
-    imshow("red_cap", red_cap);
-    imshow("green_cap", green_cap);
-    imshow("blue_cap", blue_cap);
+//    imshow("black_cap", black_cap);
+//    imshow("red_cap", red_cap);
+//    imshow("green_cap", green_cap);
+//    imshow("blue_cap", blue_cap);
     
     // translate bit depth (uchar[0-255] -> double[0-1])
     uchar depth64x3 = CV_64FC3;
@@ -198,24 +221,86 @@ bool LinearizerOfProjector::calcColorMixingMatrix(void){
     blue_cap.release();
     
     // show difference image
-    imshow("diffRedAndBlack", diffRedAndBlack);
-    imshow("diffGreenAndBlack", diffGreenAndBlack);
-    imshow("diffBlueAndBlack", diffBlueAndBlack);
+//    imshow("diffRedAndBlack", diffRedAndBlack);
+//    imshow("diffGreenAndBlack", diffGreenAndBlack);
+//    imshow("diffBlueAndBlack", diffBlueAndBlack);
     
     // image divided by any color element
     Point point(0, 0);
     const Vec3d* redV = getPixelNumd(diffRedAndBlack, point);
     _print_vector(*redV);
-    divMatByRedElm(&diffRedAndBlack, RED);
-    divMatByRedElm(&diffGreenAndBlack, GREEN);
-    divMatByRedElm(&diffBlueAndBlack, BLUE);
-    imshow("diffRedAndBlack2", diffRedAndBlack);
-    imshow("diffGreenAndBlack2", diffGreenAndBlack);
-    imshow("diffBlueAndBlack2", diffBlueAndBlack);
-    const Vec3d* redV2 = getPixelNumd(diffRedAndBlack, point);
-    _print_vector(*redV2);
+    normalizeByAnyColorChannel(&diffRedAndBlack, CV_RED);
+    normalizeByAnyColorChannel(&diffGreenAndBlack, CV_GREEN);
+    normalizeByAnyColorChannel(&diffBlueAndBlack, CV_BLUE);
+//    imshow("diffRedAndBlack2", diffRedAndBlack);
+//    imshow("diffGreenAndBlack2", diffGreenAndBlack);
+//    imshow("diffBlueAndBlack2", diffBlueAndBlack);
+//    const Vec3d* redV2 = getPixelNumd(diffRedAndBlack, point);
+//    _print_vector(*redV2);
     
-    waitKey(-1);
+    // create V map
+    createVMap(diffRedAndBlack, diffGreenAndBlack, diffBlueAndBlack);
+    
+//    waitKey(-1);
     
     return true;
 }
+
+// Vマップを画像を用いて生成
+// input / _diffR2BL    : 計算に用いる赤ー黒の差分
+// input / _diffG2BL    : 計算に用いる緑ー黒の差分
+// input / _diffB2BL    : 計算に用いる青ー黒の差分
+// return               : 成功したかどうか
+bool LinearizerOfProjector::createVMap(const cv::Mat& _normalR2BL, const cv::Mat& _normalG2BL, const cv::Mat& _normalB2BL){
+    // init
+    std::vector<cv::Mat> l_VMap;
+    Mat V = Mat::zeros(3, 3, CV_64FC1);
+    const int ch = _normalR2BL.channels();
+    int rows = _normalR2BL.rows, cols = _normalR2BL.cols;
+    if (isContinuous(_normalR2BL, _normalG2BL, _normalB2BL)) {
+        cols *= rows;
+        rows = 1;
+    }
+    
+    // scan all pixel of camera
+    for (int y = 0; y < rows; ++ y) {
+        const double* pNormalR = _normalR2BL.ptr<double>(y);
+        const double* pNormalG = _normalG2BL.ptr<double>(y);
+        const double* pNormalB = _normalB2BL.ptr<double>(y);
+
+        for (int x = 0; x < cols; ++ x) {
+            // assigne V
+            V.at<double>(0, 0) = pNormalR[x * ch + CV_RED];
+            V.at<double>(0, 1) = pNormalR[x * ch + CV_GREEN];
+            V.at<double>(0, 2) = pNormalR[x * ch + CV_BLUE];
+            
+            V.at<double>(1, 0) = pNormalG[x * ch + CV_RED];
+            V.at<double>(1, 1) = pNormalG[x * ch + CV_GREEN];
+            V.at<double>(1, 2) = pNormalG[x * ch + CV_BLUE];
+            
+            V.at<double>(2, 0) = pNormalB[x * ch + CV_RED];
+            V.at<double>(2, 1) = pNormalB[x * ch + CV_GREEN];
+            V.at<double>(2, 2) = pNormalB[x * ch + CV_BLUE];
+//            _print(V);
+            
+            // push V
+            l_VMap.push_back(V);
+        }
+    }
+    
+    // setting
+    setColorMixMat(&l_VMap);
+    return true;
+}
+
+// 応答特性を計算する
+// output / _responseOfProjector    : 計算した応答特性を入れる変数
+// return                           : 成功したかどうか
+bool LinearizerOfProjector::calcResponseFunction(double* const _responseOfProjector){
+    //
+    const std::vector<cv::Mat>* l_VMap = getColorMixMat();
+    
+    
+    return true;
+}
+

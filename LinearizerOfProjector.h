@@ -20,8 +20,10 @@ class ProCam;
 class LinearizerOfProjector{
 private:
     ProCam* m_procam;
-    cv::Mat** m_aColorMixingMatrix;  // 全カメラ画素分のC=VPのV, プロジェクタからカメラへの色変換行列
-//    std::vector<cv::Mat> m_aColorMixingMatrix;  // 全カメラ画素分のC=VPのV, プロジェクタからカメラへの色変換行列
+//    cv::Mat** m_aColorMixingMatrix;  // 全カメラ画素分のC=VPのV, プロジェクタからカメラへの色変換行列
+    std::vector<cv::Mat> m_aColorMixingMatrix;  // 全カメラ画素分のC=VPのV, プロジェクタからカメラへの色変換行列
+    
+    LinearizerOfProjector(const LinearizerOfProjector& _lop);   // コピーコンストラクタ隠し（プログラムで１つしか存在しない為）
 public:
     // constructor
     LinearizerOfProjector(void);
@@ -29,17 +31,24 @@ public:
     // destructor
     ~LinearizerOfProjector(void);
     // set method
-    bool setColorMixingMatrix(cv::Mat** colMix);
+//    bool setColorMixingMatrix(cv::Mat** colMix);
     bool setProCam(ProCam* procam);
+    bool setColorMixMat(const cv::Mat& mat, const int index);
+    bool setColorMixMat(const std::vector<cv::Mat>* _aMat);
     // get method
-    bool getColorMixingMatrix(cv::Mat** colMix);
+//    bool getColorMixingMatrix(cv::Mat** colMix);
     bool getProCam(ProCam* const procam);
     ProCam* getProCam(void);
+    cv::Mat* getColorMixMat(const int index);
+    const std::vector<cv::Mat>* getColorMixMat(void);
     // init method
-    bool initColorMixingMatrix(const cv::Size& _mixMatSize);
+//    bool initColorMixingMatrix(const cv::Size& _mixMatSize);
+    bool initColorMixingMatrix(const int _mixMatLength);
     // other method
     bool linearlize(double* const responseOfProjector);
     bool calcColorMixingMatrix(void);
+    bool createVMap(const cv::Mat& _normalR2BL, const cv::Mat& _normalG2BL, const cv::Mat& _normalB2BL);
+    bool calcResponseFunction(double* const _responseOfProjector);
 };
 
 #endif /* defined(__cameraBase03__LinearizerOfProjector__) */
