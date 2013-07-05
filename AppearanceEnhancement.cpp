@@ -563,11 +563,11 @@ bool AppearanceEnhancement::calcCameraAddedFixNoise(cv::Mat* const _C, const cv:
     // error processing
     Mat mat3x1 = Mat::zeros(3, 1, CV_8SC1);
     Mat mat3x3 = Mat::zeros(3, 3, CV_8SC1);
-    if ( !checkMatSize(mat3x1, *_C, _P, _F) ) {
+    if ( !isEqualSize(mat3x1, *_C, _P, _F) ) {
         std::cerr << "mat size is different" << endl;
         ERROR_PRINT3(*_C, _P, _F);
         return false;
-    } else if ( !checkMatSize(mat3x3, _K) ) {
+    } else if ( !isEqualSize(mat3x3, _K) ) {
         std::cerr << "mat size is different" << endl;
         ERROR_PRINT(_K);
         return false;
@@ -600,11 +600,11 @@ bool AppearanceEnhancement::calcNextProjection(cv::Mat* const _P, const cv::Mat&
     // error processing
     Mat color = Mat::zeros(3, 1, CV_8SC1);
     Mat ref = Mat::zeros(3, 3, CV_8SC1);
-    if ( !checkMatSize(color, *_P, _C, _F) ) {
+    if ( !isEqualSize(color, *_P, _C, _F) ) {
         std::cerr << "size is different" << std::endl;
         ERROR_PRINT3(*_P, _C, _F);
         return false;
-    } else if ( !checkMatSize(ref, _K) ) {
+    } else if ( !isEqualSize(ref, _K) ) {
         std::cerr << "size is different" << std::endl;
         ERROR_PRINT(_K);
         ERROR_PRINT(ref);

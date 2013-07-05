@@ -34,7 +34,7 @@ void setColor(cv::Mat* const _mat, const double& _luminance){
 bool setColor(cv::Mat* const _dst, const cv::Mat& _src){
     // check size
     Mat color = Mat::zeros(3, 1, CV_8SC1);
-    if ( !checkMatSize(*_dst, _src, color) ){
+    if ( !isEqualSize(*_dst, _src, color) ){
         std::cerr << "mat size is different" << std::endl;
         ERROR_PRINT3(*_dst, _src, color);
         return false;
@@ -46,6 +46,13 @@ bool setColor(cv::Mat* const _dst, const cv::Mat& _src){
     
     return true;
 }
+
+bool setVecColor(cv::Vec3b* const _color, const char _luminance, const ColorName _cName){
+    initVec3b(_color);
+    (*_color)[_cName] = _luminance;
+    return true;
+}
+
 
 
 // Pointのセッティング
@@ -153,87 +160,112 @@ void initMat(cv::Mat* const _aMat, const int _size){
     }
 }
 
+// cv::Vec3bの初期化
+void initVec3b(cv::Vec3b* const _vector){
+    for (int i = 0; i < 3; ++ i) {
+        (*_vector)[i] = 0;
+    }
+}
+
 ///////////////////////////////  check method ///////////////////////////////
 // Matの大きさのチェック
 // return   : 大きさが同じならtrue，違うならfalse
-bool checkMatSize(const cv::Mat& m1, const cv::Mat& m2){
-    if (m1.size() != m2.size()) {
-        return false;
-    } else {
-        return true;
-    }
-}
-bool checkMatSize(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3){
-    if ( checkMatSize(m1, m2) && checkMatSize(m2, m3)) {
+bool isEqualSize(const cv::Mat& m1, const cv::Mat& m2){
+    if (m1.size() == m2.size()) {
         return true;
     } else {
         return false;
     }
 }
-bool checkMatSize(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4){
-    if ( checkMatSize(m1, m2, m3) && checkMatSize(m3, m4)) {
-        return true;
-    } else {
-        return false;
-    }
+bool isEqualSize(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3){
+    return isEqualSize(m1, m2) & isEqualSize(m2, m3);
 }
-bool checkMatSize(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4, const cv::Mat& m5){
-    if ( checkMatSize(m1, m2, m3, m4) && checkMatSize(m4, m5)) {
-        return true;
-    } else {
-        return false;
-    }
+bool isEqualSize(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4){
+    return isEqualSize(m1, m2, m3) & isEqualSize(m3, m4);
 }
-bool checkMatSize(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4, const cv::Mat& m5, const cv::Mat& m6){
-    if ( checkMatSize(m1, m2, m3, m4, m5) && checkMatSize(m5, m6)) {
-        return true;
-    } else {
-        return false;
-    }
+bool isEqualSize(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4, const cv::Mat& m5){
+    return isEqualSize(m1, m2, m3, m4) & isEqualSize(m4, m5);
 }
-bool isDifferentSize(const cv::Mat& m1, const cv::Mat& m2) { return !checkMatSize(m1, m2); }
-bool isDifferentSize(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3) { return !checkMatSize(m1, m2, m3); }
-bool isDifferentSize(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4) { return !checkMatSize(m1, m2, m3, m4); }
-bool isDifferentSize(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4, const cv::Mat& m5) { return !checkMatSize(m1, m2, m3, m4, m5); }
-bool isDifferentSize(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4, const cv::Mat& m5, const cv::Mat& m6) { return !checkMatSize(m1, m2, m3, m4, m5, m6); }
+bool isEqualSize(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4, const cv::Mat& m5, const cv::Mat& m6){
+    return isEqualSize(m1, m2, m3, m4, m5) & isEqualSize(m5, m6);
+}
+bool isDifferentSize(const cv::Mat& m1, const cv::Mat& m2) { return !isEqualSize(m1, m2); }
+bool isDifferentSize(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3) { return !isEqualSize(m1, m2, m3); }
+bool isDifferentSize(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4) { return !isEqualSize(m1, m2, m3, m4); }
+bool isDifferentSize(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4, const cv::Mat& m5) { return !isEqualSize(m1, m2, m3, m4, m5); }
+bool isDifferentSize(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4, const cv::Mat& m5, const cv::Mat& m6) { return !isEqualSize(m1, m2, m3, m4, m5, m6); }
 
 
 // 複数のMatの連続性の確認
 bool isContinuous(const cv::Mat& m1, const cv::Mat& m2){
-    if (m1.isContinuous() && m2.isContinuous()) {
+    return m1.isContinuous() & m2.isContinuous();
+}
+bool isContinuous(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3){
+    return isContinuous(m1, m2) & m3.isContinuous();
+}
+bool isContinuous(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4){
+    return isContinuous(m1, m2, m3) & m4.isContinuous();
+}
+bool isContinuous(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4, const cv::Mat& m5){
+    return isContinuous(m1, m2, m3, m4) & m5.isContinuous();
+}
+bool isContinuous(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4, const cv::Mat& m5, const cv::Mat& m6){
+    return isContinuous(m1, m2, m3, m4, m5) & m6.isContinuous();
+}
+
+
+// ビット深度が等しいかどうか
+bool isEqualDepth(const cv::Mat& m1, const cv::Mat& m2){
+    if (m1.depth() == m2.depth()) {
         return true;
     } else {
         return false;
     }
 }
-bool isContinuous(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3){
-    if (isContinuous(m1, m2) && m3.isContinuous()) {
+
+// チャンネル数が等しいかどうか
+bool isEqualChannel(const cv::Mat& m1, const cv::Mat& m2){
+    if (m1.channels() == m2.channels()) {
         return true;
-    } else{
+    } else {
         return false;
     }
 }
-bool isContinuous(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4){
-    if (isContinuous(m1, m2, m3) && m4.isContinuous()) {
-        return true;
-    } else{
-        return false;
-    }
+
+// タイプ(ex.CV_64FC1)が同じかどうかの判定
+bool isEqualType(const cv::Mat& m1, const cv::Mat& m2){
+    return isEqualChannel(m1, m2) & isEqualChannel(m1, m2);
 }
-bool isContinuous(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4, const cv::Mat& m5){
-    if (isContinuous(m1, m2, m3, m4) && m5.isContinuous()) {
-        return true;
-    } else{
-        return false;
-    }
+bool isEqualType(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3){
+    return isEqualType(m1, m2) & isEqualType(m2, m3);
 }
-bool isContinuous(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4, const cv::Mat& m5, const cv::Mat& m6){
-    if (isContinuous(m1, m2, m3, m4, m5) && m6.isContinuous()) {
-        return true;
-    } else{
-        return false;
-    }
+bool isEqualType(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4){
+    return isEqualType(m1, m2, m3) & isEqualType(m3, m4);
 }
+bool isEqualType(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4, const cv::Mat& m5){
+    return isEqualType(m1, m2, m3, m4) & isEqualType(m4, m5);
+}
+bool isEqualType(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4, const cv::Mat& m5, const cv::Mat& m6){
+    return isEqualType(m1, m2, m3, m4, m5) & isEqualType(m5, m6);
+}
+
+// サイズとタイプが等しいかどうか
+bool isEqualSizeAndType(const cv::Mat& m1, const cv::Mat& m2){
+    return isEqualSize(m1, m2) & isEqualType(m1, m2);
+}
+bool isEqualSizeAndType(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3){
+    return isEqualSizeAndType(m1, m2) & isEqualSizeAndType(m2, m3);
+}
+bool isEqualSizeAndType(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4){
+    return isEqualSizeAndType(m1, m2, m3) & isEqualSizeAndType(m3, m4);
+}
+bool isEqualSizeAndType(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4, const cv::Mat& m5){
+    return isEqualSizeAndType(m1, m2, m3, m4) & isEqualSizeAndType(m4, m5);
+}
+bool isEqualSizeAndType(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4, const cv::Mat& m5, const cv::Mat& m6){
+    return isEqualSizeAndType(m1, m2, m3, m4, m5) & isEqualSizeAndType(m5, m6);
+}
+
 
 // Point配列が全て正しいかどうか判定
 bool isEqualPoint(const cv::Point* const p1, const cv::Point* const p2, const int length){
@@ -491,7 +523,7 @@ bool getDiffNumOfMat(double* const diff, const cv::Mat& m1, const cv::Mat& m2){
 // 行列の差の絶対値の平均を求める
 bool getAvgOfDiffMat(double* const diff, const cv::Mat& m1, const cv::Mat& m2){
     // error processing
-    if ( !checkMatSize(m1, m2) ) return false;
+    if ( !isEqualSize(m1, m2) ) return false;
     
     // init
     Mat diffMat = Mat::zeros(m1.size(), CV_64FC1);
@@ -584,7 +616,7 @@ bool showData(const cv::Mat& data){
 // 要素ごとのかけ算
 bool mulElmByElm(cv::Mat* const dst, const cv::Mat& src1, const cv::Mat& src2){
     // error processing
-    if ( !checkMatSize(*dst, src1, src2) ){
+    if ( !isEqualSize(*dst, src1, src2) ){
         std::cerr << "Mat size is diffarent" << std::endl;
         ERROR_PRINT3(*dst, src1, src2);
         return false;
@@ -616,7 +648,7 @@ bool mulElmByElm(cv::Mat* const dst, const cv::Mat& src1, const cv::Mat& src2){
 // 要素ごとの割り算
 bool divElmByElm(cv::Mat* const dst, const cv::Mat& src1, const cv::Mat& src2){
     // error processing
-    if ( !checkMatSize(*dst, src1, src2) ){
+    if ( !isEqualSize(*dst, src1, src2) ){
         std::cerr << "Mat size is diffarent" << std::endl;
         ERROR_PRINT3(*dst, src1, src2);
         return false;
@@ -660,7 +692,7 @@ bool round0to1(double* const _num) {
 // Matの値をXからYに丸める
 bool roundXtoYForMat(cv::Mat* const _mat, const cv::Mat& _X, const cv::Mat& _Y) {
     // error processing
-    if ( !checkMatSize(*_mat, _X, _Y) ) {
+    if ( !isEqualSize(*_mat, _X, _Y) ) {
         std::cout << "mat size is different" << std::endl;
         ERROR_PRINT3(*_mat, _X, _Y);
         return false;
@@ -747,6 +779,31 @@ bool normalizeByAnyColorChannel(cv::Mat* const image, const ColorName _cName){
             }
         }
     }
+    
+    return true;
+}
+
+// 画像の平均色を取得
+bool calcAverageOfImage(cv::Vec3b* const _aveColor, const cv::Mat& image){
+    // setting
+    
+    int rows = image.rows, cols = image.cols;
+    if (image.isContinuous()) {
+        cols *= rows;
+        rows = 1;
+    }
+    
+    // scanning all pixel
+    cv::Vec3d sum(0, 0, 0);
+    for (int y = 0; y < rows; ++ y) {
+        const cv::Vec3b* pixVal = image.ptr<cv::Vec3b>(y);
+        for (int x = 0; x < cols; ++ x) {
+            sum += *(pixVal + x);
+        }
+    }
+    sum /= rows * cols;
+    _print(sum);
+    *_aveColor = (cv::Vec3b)sum;
     
     return true;
 }

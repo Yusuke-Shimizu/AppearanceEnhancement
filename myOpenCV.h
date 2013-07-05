@@ -28,21 +28,39 @@
 enum ColorName{CV_RED = 2, CV_GREEN = 1, CV_BLUE = 0};
 
 ///////////////////////////////  check method ///////////////////////////////
-bool checkMatSize(const cv::Mat& m1, const cv::Mat& m2);
-bool checkMatSize(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3);
-bool checkMatSize(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4);
-bool checkMatSize(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4, const cv::Mat& m5);
-bool checkMatSize(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4, const cv::Mat& m5, const cv::Mat& m6);
+bool isEqualSize(const cv::Mat& m1, const cv::Mat& m2);
+bool isEqualSize(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3);
+bool isEqualSize(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4);
+bool isEqualSize(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4, const cv::Mat& m5);
+bool isEqualSize(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4, const cv::Mat& m5, const cv::Mat& m6);
 bool isDifferentSize(const cv::Mat& m1, const cv::Mat& m2);
 bool isDifferentSize(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3);
 bool isDifferentSize(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4);
 bool isDifferentSize(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4, const cv::Mat& m5);
 bool isDifferentSize(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4, const cv::Mat& m5, const cv::Mat& m6);
+
 bool isContinuous(const cv::Mat& m1, const cv::Mat& m2);
 bool isContinuous(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3);
 bool isContinuous(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4);
 bool isContinuous(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4, const cv::Mat& m5);
 bool isContinuous(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4, const cv::Mat& m5, const cv::Mat& m6);
+
+bool isEqualDepth(const cv::Mat& m1, const cv::Mat& m2);
+
+bool isEqualChannel(const cv::Mat& m1, const cv::Mat& m2);
+
+bool isEqualType(const cv::Mat& m1, const cv::Mat& m2);
+bool isEqualType(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3);
+bool isEqualType(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4);
+bool isEqualType(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4, const cv::Mat& m5);
+bool isEqualType(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4, const cv::Mat& m5, const cv::Mat& m6);
+
+bool isEqualSizeAndType(const cv::Mat& m1, const cv::Mat& m2);
+bool isEqualSizeAndType(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3);
+bool isEqualSizeAndType(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4);
+bool isEqualSizeAndType(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4, const cv::Mat& m5);
+bool isEqualSizeAndType(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4, const cv::Mat& m5, const cv::Mat& m6);
+
 bool isEqualPoint(const cv::Point* const p1, const cv::Point* const p2, const int length);
 ///////////////////////////////  set method ///////////////////////////////
 void setColor(const cv::MatIterator_<cv::Vec3b> it, const uchar red, const uchar green, const uchar blue);
@@ -50,6 +68,8 @@ void setColor(const cv::MatIterator_<cv::Vec3b> it, const uchar luminance);
 void setColor(cv::Mat* const _mat, const double& _red, const double& _green, const double& _blue);
 void setColor(cv::Mat* const _mat, const double& _luminance);
 bool setColor(cv::Mat* const _dst, const cv::Mat& _src);
+bool setVecColor(cv::Vec3b* const _color, const char _luminance, const ColorName _cName);
+//bool setFlatImage(cv::Mat* const _image, );
 void setPoint(cv::Point* const _p, const int _x, const int _y);
 ///////////////////////////////  get method ///////////////////////////////
 bool getPoint(int* const _x, int* const _y, const cv::Point& _p);
@@ -63,6 +83,7 @@ void printOpenCVVersion(void);
 ///////////////////////////////  init method ///////////////////////////////
 void initPoint(cv::Point* const p, const int size);
 void initMat(cv::Mat* const _aMat, const int _size);
+void initVec3b(cv::Vec3b* const _vector);
 ///////////////////////////////  other method ///////////////////////////////
 void mat2char(unsigned char c[], const cv::Mat *m);
 uchar convertNumber16sTo8u(const short src, const cv::Size* charRange, const cv::Size* intRange);
@@ -92,5 +113,6 @@ bool roundXtoYForMat(cv::Mat* const _mat, const double& _X, const double& _Y);
 bool round0to1ForMat(cv::Mat* const _mat);
 void test_round0to1ForMat(void);
 bool normalizeByAnyColorChannel(cv::Mat* const image, const ColorName _cName);
+bool calcAverageOfImage(cv::Vec3b* const _aveColor, const cv::Mat& image);
 
 #endif

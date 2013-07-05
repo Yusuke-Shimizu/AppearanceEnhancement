@@ -22,7 +22,6 @@
 // その他
 #define MAX_WINDOW_SIZE 10000   // ウィンドウの最大値
 #define BINARY_THRESH 0     // ネガポジの二値化を行うときの閾値
-#define CAPTURE_NUM 10
 
 // window name
 #define W_NAME_GEO_CAMERA "geometric calibration camera"

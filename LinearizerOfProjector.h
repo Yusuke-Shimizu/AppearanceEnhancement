@@ -45,10 +45,12 @@ public:
 //    bool initColorMixingMatrix(const cv::Size& _mixMatSize);
     bool initColorMixingMatrix(const int _mixMatLength);
     // other method
-    bool linearlize(double* const responseOfProjector);
+    bool linearlize(char* const responseOfProjector);
     bool calcColorMixingMatrix(void);
     bool createVMap(const cv::Mat& _normalR2BL, const cv::Mat& _normalG2BL, const cv::Mat& _normalB2BL);
-    bool calcResponseFunction(double* const _responseOfProjector);
+    bool calcResponseFunction(char* const _responseOfProjector);
+    bool getResponse(cv::Vec3b* const _response, const cv::Vec3b& _I, const cv::Vec3b& _C, const cv::Mat& _V);
+    bool getResponseOfAllPixel(cv::Mat_<cv::Vec3b>* const _response, const cv::Vec3b& _I, const cv::Mat_<cv::Vec3b>& _CImage);
 };
 
 #endif /* defined(__cameraBase03__LinearizerOfProjector__) */

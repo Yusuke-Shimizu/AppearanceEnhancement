@@ -68,8 +68,9 @@ bool ProCam::init(const cv::Size& projectorSize){
     
     // プロジェクタの初期化
     if ( !setProjectorSize(projectorSize) ) return false;
-    cv::Size* cameraSize = getCameraSize();
-    if ( !initProjectorResponseSize(*cameraSize) ) return false;
+//    cv::Size* cameraSize = getCameraSize();
+//    if ( !initProjectorResponseSize(*cameraSize) ) return false;
+    if ( !initProjectorResponseSize() ) return false;
     if ( !initProjectorResponse(getProjectorResponseSize()) ) return false;
 //    if ( !linearlizeOfProjector() ) return false;
     
@@ -90,7 +91,7 @@ bool ProCam::init(void) { return init(100); }
 bool ProCam::initCameraSize(void){
     // videoCaptureからサイズを取得する
     cv::Size videoSize(m_video.get(CV_CAP_PROP_FRAME_WIDTH), m_video.get(CV_CAP_PROP_FRAME_HEIGHT));
-//    _print(videoSize);
+    _print(videoSize);
     // setting
     if( !setCameraSize(&videoSize) ) return false;
     
@@ -136,8 +137,11 @@ bool ProCam::initCameraResponseSize(void){
 
 // プロジェクタ応答特性サイズ（m_projectorResponseSize）の初期化
 // return   : 成功したかどうか
-bool ProCam::initProjectorResponseSize(const cv::Size& cameraSize){
-    return setProjectorResponseSize(RESPONSE_SIZE * cameraSize.area());
+bool ProCam::initProjectorResponseSize(void){
+    return setProjectorResponseSize(RESPONSE_SIZE);
+}
+bool ProCam::initProjectorResponseSize(const cv::Size& _size){
+    return setProjectorResponseSize(RESPONSE_SIZE * _size.area());
 }
 
 // カメラ応答特性の初期化
@@ -160,16 +164,13 @@ bool ProCam::initCameraResponse(const int camResSize){
 bool ProCam::initProjectorResponse(const int prjResSize){
     // error processing
     if (prjResSize <= 0) return false;
-//    m_projectorResponse = (double*)malloc(sizeof(double) * prjResSize);
-//    memset(m_projectorResponse, 0, sizeof(double) * prjResSize);
     
     // init response function
-    m_projectorResponse = new double[prjResSize];
-    cout << "test" << endl;
+//    m_projectorResponse = new double[prjResSize];
+    m_projectorResponse = new char[prjResSize];
     for (int i = 0; i < prjResSize; ++ i) {
         m_projectorResponse[i] = 0;
     }
-    cout << "end" << endl;
     return true;
 }
 
@@ -245,7 +246,8 @@ bool ProCam::setCameraResponse(const double* const camRes, const int camResSize)
 
     return true;
 }
-bool ProCam::setProjectorResponse(const double* const prjRes, const int prjResSize){
+//bool ProCam::setProjectorResponse(const double* const prjRes, const int prjResSize){
+bool ProCam::setProjectorResponse(const char* const prjRes, const int prjResSize){
     // error processing
     if (prjResSize <= 0) return false;
     
@@ -493,8 +495,8 @@ bool ProCam::colorCalibration(void){
 bool ProCam::linearlizeOfProjector(void){
     // 線形化配列を一旦ローカルに落とす
     int prjResSize = getProjectorResponseSize();
-//    double* responsePrj = (double*)malloc(sizeof(double) * prjResSize);
-    double* responsePrj = new double[prjResSize];
+//    double* responsePrj = new double[prjResSize];
+    char* responsePrj = new char[prjResSize];
     LinearizerOfProjector linearPrj(this);
     if ( !linearPrj.linearlize(responsePrj) ) return false;
     
@@ -502,7 +504,6 @@ bool ProCam::linearlizeOfProjector(void){
     if ( !setProjectorResponse(responsePrj, prjResSize) ) {ERROR_PRINT(prjResSize); return false;}
     
     // 後処理
-//    free(responsePrj);
     delete [] responsePrj;
     return true;
 }

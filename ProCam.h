@@ -12,14 +12,15 @@
 #include "LinearizerOfProjector.h"
 #include "myOpenCV.h"
 
-#define RESPONSE_SIZE 256
+#define RESPONSE_SIZE 256*3
 
 // 幾何キャリブレーションで得たルックアップテーブルのファイル名
 #define LOOK_UP_TABLE_FILE_NAME "caliblationData/lookUpTableCameraToProjector.dat"
 #define WINDOW_NAME "projection image"
 
 // スリープ時間(ms)
-#define SLEEP_TIME 50
+#define SLEEP_TIME 10
+#define CAPTURE_NUM 10
 
 class LinearizerOfProjector;
 
@@ -31,20 +32,21 @@ private:
     cv::Point* m_accessMapCam2Pro;      // カメラからプロジェクタへの位置マップ ポインタのポインタの方がいいのかな？
     cv::Mat m_ColorTransMatCam2Pro;     // カメラ色空間からプロジェクタ色空間への変換行列
     double* m_cameraResponse;           // カメラの応答特性[0-1]->[0-1]
-    double* m_projectorResponse;        // プロジェクタの応答特性[0-1]->[0-1]
+//    double* m_projectorResponse;        // プロジェクタの応答特性[0-1]->[0-1]
+    char* m_projectorResponse;        // プロジェクタの応答特性[0-1]->[0-1]
     int m_cameraResponseSize;           // カメラ応答特性の大きさ
     int m_projectorResponseSize;        // プロジェクタ応答特性の大きさ
     
     ProCam(const ProCam& _procam);      // コピーコンストラクタ隠し（プログラムで１つしか存在しない為）
 public:
-    // constructor
+    ///////////////////////////////  constructor ///////////////////////////////
     ProCam(void);
     ProCam(const cv::Size& projectorSize);
     ProCam(const int _width, const int _height);
     ProCam(const int _size);
-    // destractor
+    ///////////////////////////////  destructor ///////////////////////////////
     ~ProCam(void);
-    // init method
+    ///////////////////////////////  init method ///////////////////////////////
     bool init(const cv::Size& projectorSize);
     bool init(const int _width, const int _height);
     bool init(const int _size);
@@ -53,10 +55,11 @@ public:
     bool initVideoCapture(void);
     bool initAccessMapCam2Pro(void);
     bool initCameraResponseSize(void);
+    bool initProjectorResponseSize(void);
     bool initProjectorResponseSize(const cv::Size& cameraSize);
     bool initCameraResponse(const int camResSize);
     bool initProjectorResponse(const int prjResSize);
-    // set method
+    ///////////////////////////////  set method ///////////////////////////////
     bool setCameraSize(const cv::Size* const cameraSize);
     bool setProjectorSize(const cv::Size& projectorSize);
     bool setAccessMapCam2Pro(const cv::Point* const accessMapCam2Pro, const cv::Size& mapSize);
@@ -64,8 +67,9 @@ public:
     bool setCameraResponseSize(const int camResSize);
     bool setProjectorResponseSize(const int prjResSize);
     bool setCameraResponse(const double* const camRes, const int camResSize);
-    bool setProjectorResponse(const double* const prjRes, const int prjResSize);
-    // get method
+//    bool setProjectorResponse(const double* const prjRes, const int prjResSize);
+    bool setProjectorResponse(const char* const prjRes, const int prjResSize);
+    ///////////////////////////////  get method ///////////////////////////////
     bool getCameraSize(cv::Size* const cameraSize);
     cv::Size* getCameraSize(void);
     int getPixelsOfCamera(void);
@@ -78,16 +82,16 @@ public:
     bool getAccessMapCam2Pro(cv::Point* const accessMapCam2Pro);
     int getCameraResponseSize(void);
     int getProjectorResponseSize(void);
-    // save method
+    ///////////////////////////////  save method ///////////////////////////////
     bool saveAccessMapCam2Pro(void);
-    // load method
+    ///////////////////////////////  load method ///////////////////////////////
     bool loadAccessMapCam2Pro(void);
-    // calibration method
+    ///////////////////////////////  calibration method ///////////////////////////////
     bool allCalibration(void);
     bool geometricCalibration(void);
     bool colorCalibration(void);
     bool linearlizeOfProjector(void);
-    // other method
+    ///////////////////////////////  other method ///////////////////////////////
     bool captureFromLight(cv::Mat* const captureImage, const cv::Mat& projectionImage);
 };
 
