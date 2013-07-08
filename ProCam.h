@@ -16,6 +16,8 @@
 
 // 幾何キャリブレーションで得たルックアップテーブルのファイル名
 #define LOOK_UP_TABLE_FILE_NAME "caliblationData/lookUpTableCameraToProjector.dat"
+#define PROJECTOR_RESPONSE_FILE_NAME "caliblationData/projectorResponse.dat"
+#define PROJECTOR_RESPONSE_FILE_NAME_02 "caliblationData/projectorResponse02.dat"
 #define WINDOW_NAME "projection image"
 
 // スリープ時間(ms)
@@ -33,9 +35,10 @@ private:
     cv::Mat m_ColorTransMatCam2Pro;     // カメラ色空間からプロジェクタ色空間への変換行列
     double* m_cameraResponse;           // カメラの応答特性[0-1]->[0-1]
 //    double* m_projectorResponse;        // プロジェクタの応答特性[0-1]->[0-1]
-    char* m_projectorResponse;        // プロジェクタの応答特性[0-1]->[0-1]
-    int m_cameraResponseSize;           // カメラ応答特性の大きさ
-    int m_projectorResponseSize;        // プロジェクタ応答特性の大きさ
+//    char* m_projectorResponse;        // プロジェクタの応答特性[0-1]->[0-1]
+    cv::Mat_<cv::Vec3b> m_projectorResponse;    // プロジェクタの応答特性[0-255]
+//    int m_cameraResponseSize;           // カメラ応答特性の大きさ
+//    int m_projectorResponseSize;        // プロジェクタ応答特性の大きさ
     
     ProCam(const ProCam& _procam);      // コピーコンストラクタ隠し（プログラムで１つしか存在しない為）
 public:
@@ -54,21 +57,17 @@ public:
     bool initCameraSize(void);
     bool initVideoCapture(void);
     bool initAccessMapCam2Pro(void);
-    bool initCameraResponseSize(void);
-    bool initProjectorResponseSize(void);
-    bool initProjectorResponseSize(const cv::Size& cameraSize);
     bool initCameraResponse(const int camResSize);
-    bool initProjectorResponse(const int prjResSize);
+    bool initProjectorResponse(void);
     ///////////////////////////////  set method ///////////////////////////////
     bool setCameraSize(const cv::Size* const cameraSize);
     bool setProjectorSize(const cv::Size& projectorSize);
     bool setAccessMapCam2Pro(const cv::Point* const accessMapCam2Pro, const cv::Size& mapSize);
     bool setAccessMapCam2Pro(const cv::Point* const accessMapCam2Pro);
-    bool setCameraResponseSize(const int camResSize);
-    bool setProjectorResponseSize(const int prjResSize);
+//    bool setCameraResponseSize(const int camResSize);
+//    bool setProjectorResponseSize(const int prjResSize);
     bool setCameraResponse(const double* const camRes, const int camResSize);
-//    bool setProjectorResponse(const double* const prjRes, const int prjResSize);
-    bool setProjectorResponse(const char* const prjRes, const int prjResSize);
+    bool setProjectorResponse(const cv::Mat_<cv::Vec3b>* const _response);
     ///////////////////////////////  get method ///////////////////////////////
     bool getCameraSize(cv::Size* const cameraSize);
     cv::Size* getCameraSize(void);
@@ -80,10 +79,12 @@ public:
     cv::VideoCapture* getVideoCapture(void);
     bool getAccessMapCam2Pro(cv::Point* const accessMapCam2Pro, const cv::Size& mapSize);
     bool getAccessMapCam2Pro(cv::Point* const accessMapCam2Pro);
-    int getCameraResponseSize(void);
-    int getProjectorResponseSize(void);
+//    int getCameraResponseSize(void);
+//    int getProjectorResponseSize(void);
     ///////////////////////////////  save method ///////////////////////////////
     bool saveAccessMapCam2Pro(void);
+    bool saveProjectorResponse(const char* fileName);
+    bool saveProjectorResponse(const char* fileName, const uchar index, const uchar color);
     ///////////////////////////////  load method ///////////////////////////////
     bool loadAccessMapCam2Pro(void);
     ///////////////////////////////  calibration method ///////////////////////////////

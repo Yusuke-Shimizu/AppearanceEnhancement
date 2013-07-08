@@ -102,6 +102,30 @@ bool LinearizerOfProjector::setColorMixMat(const std::vector<cv::Mat>* _aMat){
     return true;
 }
 
+// 応答特性マップに一つの深さの応答特性を設定
+// output / _responseMap    : 応答特性マップ
+// input / _response        : 深さ_depthの応答特性
+// input / _depth           : 深さ
+// input / _maxDepth        : 深さの最大値（=256）
+// return                   : 成功したかどうか
+bool LinearizerOfProjector::setResponseMap(cv::Mat_<cv::Vec3b>* const _responseMap, const cv::Mat_<cv::Vec3b>& _response, const int _depth, const int _maxDepth){
+    // init
+    int rows = _response.rows, cols = _response.cols;
+    if ( isContinuous(*_responseMap, _response) ) {
+        cols *= rows;
+        rows = 1;
+    }
+    
+    for (int y = 0; y < rows; ++ y) {
+        cv::Vec3b* p_responseMap = _responseMap->ptr<cv::Vec3b>(y);
+        const cv::Vec3b* p_response = _response.ptr<cv::Vec3b>(y);
+        
+        for (int x = 0; x < cols; ++ x) {
+            p_responseMap[x * _maxDepth + _depth] = p_response[x];
+        }
+    }
+    return true;
+}
 
 
 ///////////////////////////////  get method ///////////////////////////////
@@ -160,12 +184,19 @@ bool LinearizerOfProjector::initColorMixingMatrix(const int _mixMatLength){
 // プロジェクタの線形化を行うメソッド
 // input / responseOfProjector  : 線形化のルックアップテーブルを入れる配列
 // return   : 成功したかどうか
-bool LinearizerOfProjector::linearlize(char* const responseOfProjector){
+bool LinearizerOfProjector::linearlize(cv::Mat_<cv::Vec3b>* const _responseOfProjector){
     // 色変換行列の生成
+    cout << "creating Color Mixing Matrix..." << endl;
     if( !calcColorMixingMatrix() ) return false;
+    cout << "created Color Mixing Matrix" << endl;
     
+    cout << "push any key" << endl;
+    waitKey(-1);
+
     // プロジェクタの応答特性を計算
-    if ( !calcResponseFunction(responseOfProjector)) return false;
+    cout << "creating response function..." << endl;
+    if ( !calcResponseFunction(_responseOfProjector)) return false;
+    cout << "created response function" << endl;
     
     cout << "linealize is finish" << endl;
     return true;
@@ -199,18 +230,10 @@ bool LinearizerOfProjector::calcColorMixingMatrix(void){
     }
     
     // show image
-//    imshow("black_cap", black_cap);
-//    imshow("red_cap", red_cap);
-//    imshow("green_cap", green_cap);
-//    imshow("blue_cap", blue_cap);
-    Vec3b* rptr = red_cap.ptr<Vec3b>(0);
-    _print(*(rptr));
-    Vec3b* gptr = green_cap.ptr<Vec3b>(0);
-    _print(*(gptr));
-    Vec3b* bptr = blue_cap.ptr<Vec3b>(0);
-    _print(*(bptr));
-    Vec3b* blptr = black_cap.ptr<Vec3b>(0);
-    _print(*(blptr));
+    imshow("black_cap", black_cap);
+    imshow("red_cap", red_cap);
+    imshow("green_cap", green_cap);
+    imshow("blue_cap", blue_cap);
     
     // translate bit depth (uchar[0-255] -> double[0-1])
     uchar depth64x3 = CV_64FC3;
@@ -229,9 +252,9 @@ bool LinearizerOfProjector::calcColorMixingMatrix(void){
     blue_cap.release();
     
     // show difference image
-//    imshow("diffRedAndBlack", diffRedAndBlack);
-//    imshow("diffGreenAndBlack", diffGreenAndBlack);
-//    imshow("diffBlueAndBlack", diffBlueAndBlack);
+    imshow("diffRedAndBlack", diffRedAndBlack);
+    imshow("diffGreenAndBlack", diffGreenAndBlack);
+    imshow("diffBlueAndBlack", diffBlueAndBlack);
     
     // image divided by any color element
     Point point(0, 0);
@@ -240,18 +263,15 @@ bool LinearizerOfProjector::calcColorMixingMatrix(void){
     normalizeByAnyColorChannel(&diffRedAndBlack, CV_RED);
     normalizeByAnyColorChannel(&diffGreenAndBlack, CV_GREEN);
     normalizeByAnyColorChannel(&diffBlueAndBlack, CV_BLUE);
-//    imshow("diffRedAndBlack2", diffRedAndBlack);
-//    imshow("diffGreenAndBlack2", diffGreenAndBlack);
-//    imshow("diffBlueAndBlack2", diffBlueAndBlack);
+    imshow("diffRedAndBlack2", diffRedAndBlack);
+    imshow("diffGreenAndBlack2", diffGreenAndBlack);
+    imshow("diffBlueAndBlack2", diffBlueAndBlack);
 //    const Vec3d* redV2 = getPixelNumd(diffRedAndBlack, point);
 //    _print_vector(*redV2);
     
     // create V map
     createVMap(diffRedAndBlack, diffGreenAndBlack, diffBlueAndBlack);
-    
-//    cout << "push any key" << endl;
-//    waitKey(-1);
-    
+        
     return true;
 }
 
@@ -298,6 +318,7 @@ bool LinearizerOfProjector::createVMap(const cv::Mat& _normalR2BL, const cv::Mat
     }
     
     // setting
+    _print(l_VMap[0]);
     setColorMixMat(&l_VMap);
     return true;
 }
@@ -305,7 +326,7 @@ bool LinearizerOfProjector::createVMap(const cv::Mat& _normalR2BL, const cv::Mat
 // 応答特性を計算する
 // output / _responseOfProjector    : 計算した応答特性を入れる変数
 // return                           : 成功したかどうか
-bool LinearizerOfProjector::calcResponseFunction(char* const _responseOfProjector){
+bool LinearizerOfProjector::calcResponseFunction(cv::Mat_<cv::Vec3b>* const _responseMap){
     // init
 //    const std::vector<cv::Mat>* l_VMap = getColorMixMat();
     ProCam* l_procam = getProCam();     // ProCamへのポインタ
@@ -313,34 +334,31 @@ bool LinearizerOfProjector::calcResponseFunction(char* const _responseOfProjecto
     const Size* const l_projectorSize = l_procam->getProjectorSize();   // プロジェクタサイズ
     Mat camColor = Mat::zeros(3, 1, CV_64FC1);
     Mat camImage = Mat::zeros(*l_cameraSize, CV_8UC3), prjImage = Mat::zeros(*l_projectorSize, CV_8UC3);
-    ColorName cName[3] = {CV_RED, CV_GREEN, CV_BLUE};
     Mat_<cv::Vec3b> l_responseImage(*l_cameraSize);
-    
+    const Size l_responseMapSize(l_cameraSize->width * 256, l_cameraSize->height);
+    Mat_<cv::Vec3b> l_responseMap(l_responseMapSize);
+
     // projection RGB * luminance
     // scanning all luminance[0-255] of projector
     for (int prjLuminance = 100; prjLuminance < 256; prjLuminance+=10) {
-        // scanning color channel of projector
-        for (int rgb = 0; rgb < 3; ++ rgb) {
-            // create flat color image
-            cv::Vec3b prjColor(0, 0, 0);
-            setVecColor(&prjColor, prjLuminance, cName[rgb]);
-            prjImage = cv::Scalar(prjColor);
-            _print3(prjLuminance, rgb, prjColor);
+        // create flat color image
+        cv::Vec3b prjColor(prjLuminance, prjLuminance, prjLuminance);
+        prjImage = cv::Scalar(prjColor);
+        _print2(prjLuminance, prjColor);
 
-            // capture from projection image
-            l_procam->captureFromLight(&camImage, prjImage);
-//            imshow("camImage", camImage);
-//            cv::Vec3b avg(0, 0, 0);
-//            calcAverageOfImage(&avg, camImage);
-            
-            getResponseOfAllPixel(&l_responseImage, prjColor, camImage);
-            imshow("l_responseImage", l_responseImage);
-        }
+        // capture from projection image
+        l_procam->captureFromLight(&camImage, prjImage);
 
-        // calc
-        cv::Mat I = Mat::ones(3, 1, CV_64FC1) * prjLuminance;
+        // calc response function
+        getResponseOfAllPixel(&l_responseImage, prjColor, camImage);
+        imshow("l_responseImage", l_responseImage);
+        
+        // set response map
+        setResponseMap(&l_responseMap, l_responseImage, prjLuminance, 256);
     }
     
+    // 代入
+    *_responseMap = l_responseMap.clone();
     return true;
 }
 
@@ -371,13 +389,11 @@ bool LinearizerOfProjector::getResponse(cv::Vec3b* const _response, const cv::Ve
 
     // compute response function
     Mat P = invV * l_CMat;      // V^{-1} * C
-    divElmByElm(&l_responseMat, P, l_IMat); // V^{-1} * C ./ I
+    _print4(P, _C, _I, _V);
     
     // return _response
-    l_responseMat.convertTo(l_responseMat, CV_8UC1);
-    Vec3b l_response(l_responseMat);
-    *_response = l_response;
-    
+    Vec3b l_vecP(P);
+    *_response = l_vecP;
     return true;
 }
 
@@ -387,6 +403,7 @@ bool LinearizerOfProjector::getResponse(cv::Vec3b* const _response, const cv::Ve
 // input / _CImage      : 取得画像
 // return               : 成功したかどうか
 bool LinearizerOfProjector::getResponseOfAllPixel(cv::Mat_<cv::Vec3b>* const _response, const cv::Vec3b& _I, const cv::Mat_<cv::Vec3b>& _CImage){
+    // init
     int rows = _CImage.rows, cols = _CImage.cols;
     if (_CImage.isContinuous()) {
         cols *= rows;
@@ -395,7 +412,7 @@ bool LinearizerOfProjector::getResponseOfAllPixel(cv::Mat_<cv::Vec3b>* const _re
     const std::vector<cv::Mat>* l_aMixMat = getColorMixMat();
     std::vector<cv::Mat>::const_iterator l_itrMixMat = l_aMixMat->begin();
     
-    //
+    // scanning all pixel
     for (int y = 0; y < rows; ++ y) {
         // init pointer
         Vec3b* p_response = _response->ptr<Vec3b>(y);
@@ -403,6 +420,7 @@ bool LinearizerOfProjector::getResponseOfAllPixel(cv::Mat_<cv::Vec3b>* const _re
         
         for (int x = 0; x < cols; ++ x, ++ l_itrMixMat) {
             getResponse(&p_response[x], _I, p_CImage[x], *l_itrMixMat);
+//            _print(p_response[x]);
         }
     }
     

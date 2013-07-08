@@ -35,6 +35,7 @@ public:
     bool setProCam(ProCam* procam);
     bool setColorMixMat(const cv::Mat& mat, const int index);
     bool setColorMixMat(const std::vector<cv::Mat>* _aMat);
+    bool setResponseMap(cv::Mat_<cv::Vec3b>* const _responseMap, const cv::Mat_<cv::Vec3b>& _response, const int _depth, const int _maxDepth);
     // get method
 //    bool getColorMixingMatrix(cv::Mat** colMix);
     bool getProCam(ProCam* const procam);
@@ -45,10 +46,10 @@ public:
 //    bool initColorMixingMatrix(const cv::Size& _mixMatSize);
     bool initColorMixingMatrix(const int _mixMatLength);
     // other method
-    bool linearlize(char* const responseOfProjector);
+    bool linearlize(cv::Mat_<cv::Vec3b>* const _responseMap);
     bool calcColorMixingMatrix(void);
     bool createVMap(const cv::Mat& _normalR2BL, const cv::Mat& _normalG2BL, const cv::Mat& _normalB2BL);
-    bool calcResponseFunction(char* const _responseOfProjector);
+    bool calcResponseFunction(cv::Mat_<cv::Vec3b>* const _responseMap);
     bool getResponse(cv::Vec3b* const _response, const cv::Vec3b& _I, const cv::Vec3b& _C, const cv::Mat& _V);
     bool getResponseOfAllPixel(cv::Mat_<cv::Vec3b>* const _response, const cv::Vec3b& _I, const cv::Mat_<cv::Vec3b>& _CImage);
 };

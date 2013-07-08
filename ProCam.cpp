@@ -21,25 +21,25 @@ using namespace cv;
 ///////////////////////////////  constructor ///////////////////////////////
 // コンストラクタ
 ProCam::ProCam(void)
-    : m_accessMapCam2Pro(NULL), m_cameraResponse(NULL), m_projectorResponse(NULL)
+    : m_accessMapCam2Pro(NULL), m_cameraResponse(NULL)
 {
     init();
 }
 
 ProCam::ProCam(const cv::Size& projectorSize)
-    : m_accessMapCam2Pro(NULL), m_cameraResponse(NULL), m_projectorResponse(NULL)
+    : m_accessMapCam2Pro(NULL), m_cameraResponse(NULL)
 {
     init(projectorSize);
 }
 
 ProCam::ProCam(const int _width, const int _height)
-    : m_accessMapCam2Pro(NULL), m_cameraResponse(NULL), m_projectorResponse(NULL)
+    : m_accessMapCam2Pro(NULL), m_cameraResponse(NULL)
 {
     init(_width, _height);
 }
 
 ProCam::ProCam(const int _size)
-    : m_accessMapCam2Pro(NULL), m_cameraResponse(NULL), m_projectorResponse(NULL)
+    : m_accessMapCam2Pro(NULL), m_cameraResponse(NULL)
 {
     init(_size);
 }
@@ -50,7 +50,6 @@ ProCam::~ProCam(void){
     cout << "deleting ProCam (" << this <<")" << endl;
     delete [] m_accessMapCam2Pro;
     delete [] m_cameraResponse;
-    delete [] m_projectorResponse;
 //    m_video.release();
     destroyWindow(WINDOW_NAME);     // 投影に使用したウィンドウを削除
     cout << "ProCam is deleted (" << this <<")" << endl;
@@ -63,15 +62,15 @@ bool ProCam::init(const cv::Size& projectorSize){
     // カメラの初期化
     if ( !initVideoCapture() ) return false;
     if ( !initCameraSize() ) return false;
-    if ( !initCameraResponseSize() ) return false;
-    if ( !initCameraResponse(getCameraResponseSize()) ) return false;
+//    if ( !initCameraResponseSize() ) return false;
+//    if ( !initCameraResponse(getCameraResponseSize()) ) return false;
     
     // プロジェクタの初期化
     if ( !setProjectorSize(projectorSize) ) return false;
 //    cv::Size* cameraSize = getCameraSize();
 //    if ( !initProjectorResponseSize(*cameraSize) ) return false;
-    if ( !initProjectorResponseSize() ) return false;
-    if ( !initProjectorResponse(getProjectorResponseSize()) ) return false;
+//    if ( !initProjectorResponseSize() ) return false;
+    if ( !initProjectorResponse() ) return false;
 //    if ( !linearlizeOfProjector() ) return false;
     
     // アクセスマップの初期化
@@ -129,21 +128,6 @@ bool ProCam::initAccessMapCam2Pro(void){
     return true;
 }
 
-// カメラ応答特性サイズ（m_cameraResponseSize）の初期化
-// return   : 成功したかどうか
-bool ProCam::initCameraResponseSize(void){
-    return setCameraResponseSize(RESPONSE_SIZE);
-}
-
-// プロジェクタ応答特性サイズ（m_projectorResponseSize）の初期化
-// return   : 成功したかどうか
-bool ProCam::initProjectorResponseSize(void){
-    return setProjectorResponseSize(RESPONSE_SIZE);
-}
-bool ProCam::initProjectorResponseSize(const cv::Size& _size){
-    return setProjectorResponseSize(RESPONSE_SIZE * _size.area());
-}
-
 // カメラ応答特性の初期化
 // input / camResSize   : 生成する応答特性の大きさ
 // return               : 成功したかどうか
@@ -159,17 +143,24 @@ bool ProCam::initCameraResponse(const int camResSize){
 }
 
 // プロジェクタ応答特性の初期化
-// input / prjResSize   : 生成する応答特性の大きさ
-// return               : 成功したかどうか
-bool ProCam::initProjectorResponse(const int prjResSize){
-    // error processing
-    if (prjResSize <= 0) return false;
+// return   : 成功したかどうか
+bool ProCam::initProjectorResponse(void){
+    // init
+    const cv::Size* prjSize = getProjectorSize();
+    const cv::Size prjResSize(prjSize->width * 256, prjSize->height);
     
-    // init response function
-//    m_projectorResponse = new double[prjResSize];
-    m_projectorResponse = new char[prjResSize];
-    for (int i = 0; i < prjResSize; ++ i) {
-        m_projectorResponse[i] = 0;
+    // set projector response
+    m_projectorResponse = cv::Mat_<cv::Vec3b>(prjResSize);
+    int rows = m_projectorResponse.rows, cols = m_projectorResponse.cols;
+    for (int y = 0; y < rows; ++ y) {
+        Vec3b* p_projectorResponse = m_projectorResponse.ptr<Vec3b>(y);
+        for (int x = 0; x < cols; ++ x) {
+            // [0-255]の値を生成し代入
+            int val = x % 256;
+            Vec3b color(val, val, val);
+            p_projectorResponse[x] = color;
+//            _print2(x, color);
+        }
     }
     return true;
 }
@@ -220,41 +211,54 @@ bool ProCam::setAccessMapCam2Pro(const cv::Point* const accessMapCam2Pro){
 // カメラ応答特性サイズ（m_cameraResponseSize）の設定
 // input / camResSize   : 設定したい大きさ
 // return               : 成功したかどうか
-bool ProCam::setCameraResponseSize(const int camResSize){
-    if (camResSize <= 0) return false;
-    m_cameraResponseSize = camResSize;
-    return true;
-}
+//bool ProCam::setCameraResponseSize(const int camResSize){
+//    if (camResSize <= 0) return false;
+//    m_cameraResponseSize = camResSize;
+//    return true;
+//}
 
 // プロジェクタ応答特性サイズ（m_projectorResponseSize）の設定
 // input / prjResSize   : 設定したい大きさ
 // return               : 成功したかどうか
-bool ProCam::setProjectorResponseSize(const int prjResSize){
-    if (prjResSize <= 0) return false;
-    m_projectorResponseSize = prjResSize;
-    return true;
-}
-
-bool ProCam::setCameraResponse(const double* const camRes, const int camResSize){
-    // error processing
-    if (camResSize <= 0) return false;
-    
-    // setting
-    for (int i = 0; i < camResSize; ++ i) {
-        *(m_cameraResponse + i) = *(camRes + i);
-    }
-
-    return true;
-}
+//bool ProCam::setProjectorResponseSize(const int prjResSize){
+//    if (prjResSize <= 0) return false;
+//    m_projectorResponseSize = prjResSize;
+//    return true;
+//}
+//
+//bool ProCam::setCameraResponse(const double* const camRes, const int camResSize){
+//    // error processing
+//    if (camResSize <= 0) return false;
+//    
+//    // setting
+//    for (int i = 0; i < camResSize; ++ i) {
+//        *(m_cameraResponse + i) = *(camRes + i);
+//    }
+//
+//    return true;
+//}
 //bool ProCam::setProjectorResponse(const double* const prjRes, const int prjResSize){
-bool ProCam::setProjectorResponse(const char* const prjRes, const int prjResSize){
+//bool ProCam::setProjectorResponse(const char* const prjRes, const int prjResSize){
+//    // error processing
+//    if (prjResSize <= 0) return false;
+//    
+//    // setting
+//    for (int i = 0; i < prjResSize; ++ i) {
+//        *(m_projectorResponse + i) = *(prjRes + i);
+//    }
+//    return true;    bool setProjectorResponse(const char* const prjRes, const int prjResSize);
+//}
+bool ProCam::setProjectorResponse(const cv::Mat_<cv::Vec3b>* const _response){
     // error processing
-    if (prjResSize <= 0) return false;
-    
-    // setting
-    for (int i = 0; i < prjResSize; ++ i) {
-        *(m_projectorResponse + i) = *(prjRes + i);
+    Size srcSize(_response->rows, _response->cols);
+    Size dstSize(m_projectorResponse.rows, m_projectorResponse.cols);
+    if (srcSize != dstSize) {
+        ERROR_PRINT3("_response Size is different from m_projectorResponse", srcSize, dstSize);
+        return false;
     }
+    
+    // deep copy
+    m_projectorResponse = _response->clone();
     return true;
 }
 
@@ -328,18 +332,6 @@ bool ProCam::getAccessMapCam2Pro(cv::Point* const accessMapCam2Pro){
     return true;
 }
 
-// カメラ応答特性サイズの取得
-// return   : 応答特性の大きさ
-int ProCam::getCameraResponseSize(void){
-    return m_cameraResponseSize;
-}
-
-// カメラ応答特性サイズの取得
-// return   : 応答特性の大きさ
-int ProCam::getProjectorResponseSize(void){
-    return m_projectorResponseSize;
-}
-
 ///////////////////////////////  save method ///////////////////////////////
 bool ProCam::saveAccessMapCam2Pro(void){
     // init
@@ -371,6 +363,45 @@ bool ProCam::saveAccessMapCam2Pro(void){
 
     free(accessMapCam2Pro);
     cout << "finish saving!" << endl;
+    return true;
+}
+
+// m_projectorResponseを保存
+bool ProCam::saveProjectorResponse(const char* fileName){
+    const Mat_<Vec3b>* const l_proRes = &m_projectorResponse;
+    ofstream ofs;
+//    ofs.open(fileName, ios_base::out | ios_base::trunc | ios_base::binary);
+    ofs.open(fileName, ios_base::out | ios_base::trunc);
+    
+    // write
+    int rows = l_proRes->rows, cols = l_proRes->cols;
+    ofs << rows << ", " << cols << endl;
+    for (int y = 0; y < rows; ++ y) {
+        const Vec3b* p_proRes = l_proRes->ptr<Vec3b>(y);
+        for (int x = 0; x < cols; ++ x) {
+            ofs << p_proRes[x] << ", ";
+        }
+        ofs << endl;
+    }
+    
+    return true;
+}
+
+bool ProCam::saveProjectorResponse(const char* fileName, const uchar index, const uchar color){
+    const Mat_<Vec3b>* const l_proRes = &m_projectorResponse;
+    ofstream ofs;
+    //    ofs.open(fileName, ios_base::out | ios_base::trunc | ios_base::binary);
+    ofs.open(fileName, ios_base::out | ios_base::trunc);
+    
+    // write
+    int rows = l_proRes->rows, cols = l_proRes->cols;
+    ofs << rows << ", " << cols << endl;
+    const Vec3b* p_proRes = l_proRes->ptr<Vec3b>(0);
+    for (int x = 256 * index; x < 256 * (index + 1); ++ x) {
+        ofs << (int)p_proRes[x][color] << ", ";
+    }
+    ofs << endl;
+    
     return true;
 }
 
@@ -494,17 +525,26 @@ bool ProCam::colorCalibration(void){
 // return   : 成功したかどうか
 bool ProCam::linearlizeOfProjector(void){
     // 線形化配列を一旦ローカルに落とす
-    int prjResSize = getProjectorResponseSize();
-//    double* responsePrj = new double[prjResSize];
-    char* responsePrj = new char[prjResSize];
+    int rows = m_projectorResponse.rows, cols = m_projectorResponse.cols;
+    Mat_<Vec3b> prjResponse(rows, cols);
+    for (int y = 0; y < rows; ++ y) {
+        Vec3b* p_prjRes = prjResponse.ptr<Vec3b>(y);
+        for (int x = 0; x < cols; ++ x) {
+            int val = x % 256;
+            Vec3b color(val);
+            p_prjRes[x] = color;
+        }
+    }
+    
+    // get projector response
     LinearizerOfProjector linearPrj(this);
-    if ( !linearPrj.linearlize(responsePrj) ) return false;
+    if ( !linearPrj.linearlize(&prjResponse) ) return false;
     
     // 落とした配列をメンバ配列に代入する
-    if ( !setProjectorResponse(responsePrj, prjResSize) ) {ERROR_PRINT(prjResSize); return false;}
-    
-    // 後処理
-    delete [] responsePrj;
+    if ( !setProjectorResponse(&prjResponse) ) {ERROR_PRINT("error is setProjectorResponse"); return false;}
+    cout << "saving projector response" << endl;
+    saveProjectorResponse(PROJECTOR_RESPONSE_FILE_NAME_02, 0, 0);
+    cout << "saved projector response" << endl;
     return true;
 }
 
