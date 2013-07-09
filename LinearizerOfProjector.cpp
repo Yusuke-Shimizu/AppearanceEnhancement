@@ -185,7 +185,7 @@ bool LinearizerOfProjector::initColorMixingMatrixMap(const cv::Size& _cameraSize
 bool LinearizerOfProjector::saveColorMixingMatrix(const char* fileName){
     // init
     ofstream ofs;
-    ofs.open(fileName, ios_base::out | ios_base::trunc | ios_base::binary);
+    ofs.open(fileName, ios_base::out | ios_base::trunc);
     if (!ofs) {
         ERROR_PRINT2(fileName, "is Not Found");
         return false;
@@ -206,13 +206,67 @@ bool LinearizerOfProjector::saveColorMixingMatrix(const char* fileName){
     return true;
 }
 
+// byte出力
+bool LinearizerOfProjector::saveColorMixingMatrixOfByte(const char* fileName){
+    // init
+    ofstream ofs;
+    ofs.open(fileName, ios_base::out | ios_base::trunc | ios_base::binary);
+    if (!ofs) {
+        ERROR_PRINT2(fileName, "is Not Found");
+        return false;
+    }
+    const Mat_<Vec9d>* l_cmmMap = getColorMixMatMap();
+    
+    //
+    const int rows = l_cmmMap->rows, cols = l_cmmMap->cols;
+    ofs.write((char*)&rows, sizeof(int));
+    ofs.write((char*)&cols, sizeof(int));
+    for (int y = 0; y < rows; ++ y) {
+        const Vec9d* p_cmmMap = l_cmmMap->ptr<Vec9d>(y);
+        for (int x = 0; x < cols; ++ x) {
+            for (int i = 0; i < 9; ++ i) {
+                ofs.write((char*)&p_cmmMap[x][i], sizeof(double));
+            }
+        }
+    }
+
+    return true;
+}
 ///////////////////////////////  load method ///////////////////////////////
 bool LinearizerOfProjector::loadColorMixingMatrix(const char* fileName){
-    // init
-//    initColorMixingMatrix(1);
     return true;
 }
 
+//
+bool LinearizerOfProjector::loadColorMixingMatrixOfByte(const char* fileName){
+    // init
+    ifstream ifs(fileName);
+    if (!ifs) {
+        ERROR_PRINT2(fileName, "is Not Found");
+        exit(-1);
+    }
+    
+    // get size
+    Size mapSize(0, 0);
+    ifs.read((char*)&mapSize.height, sizeof(int));
+    ifs.read((char*)&mapSize.width, sizeof(int));
+    Mat_<Vec9d> l_cmmMap(mapSize);
+    
+    // read
+    const int rows = l_cmmMap.rows, cols = l_cmmMap.cols;
+    for (int y = 0; y < rows; ++ y) {
+        const Vec9d* p_cmmMap = l_cmmMap.ptr<Vec9d>(y);
+        for (int x = 0; x < cols; ++ x) {
+            for (int i = 0; i < 9; ++ i) {
+                ifs.read((char*)&p_cmmMap[x][i], sizeof(double));
+            }
+        }
+    }
+    
+    // setting
+    setColorMixMatMap(l_cmmMap);
+    return true;
+}
 ///////////////////////////////  other method ///////////////////////////////
 // プロジェクタの線形化を行うメソッド
 // input / responseOfProjector  : 線形化のルックアップテーブルを入れる配列
@@ -225,12 +279,25 @@ bool LinearizerOfProjector::linearlize(cv::Mat_<cv::Vec3b>* const _responseOfPro
     
     // save
     cout << "saving Color Mixing Matrix..." << endl;
-    if ( !saveColorMixingMatrix(CMM_MAP_FILE_NAME) ) {
+//    if ( !saveColorMixingMatrix(CMM_MAP_FILE_NAME) ) {
+//        ERROR_PRINT("save dame ppo-i");
+//        exit(-1);
+//    }
+    if ( !saveColorMixingMatrixOfByte(CMM_MAP_FILE_NAME_BYTE) ) {
         ERROR_PRINT("save dame ppo-i");
         exit(-1);
     }
     cout << "saved Color Mixing Matrix" << endl;
-    
+
+    // load
+//    cout << "loading Color Mixing Matrix..." << endl;
+//    if ( !loadColorMixingMatrixOfByte(CMM_MAP_FILE_NAME_BYTE) ) {
+//        ERROR_PRINT("save dame ppo-i");
+//        exit(-1);
+//    }
+//    cout << "loaded Color Mixing Matrix" << endl;
+
+    // キー待機
     cout << "push any key" << endl;
     waitKey(-1);
 

@@ -81,6 +81,7 @@ public:
     bool saveAccessMapCam2Pro(void);
     bool saveProjectorResponse(const char* fileName);
     bool saveProjectorResponse(const char* fileName, const uchar index, const uchar color);
+    bool saveProjectorResponseForByte(const char* fileName);
     ///////////////////////////////  load method ///////////////////////////////
     bool loadAccessMapCam2Pro(void);
     ///////////////////////////////  calibration method ///////////////////////////////

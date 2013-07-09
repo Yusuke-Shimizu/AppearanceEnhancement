@@ -15,6 +15,7 @@
 #include <vector>
 
 #define CMM_MAP_FILE_NAME "caliblationData/cmmMap.dat"
+#define CMM_MAP_FILE_NAME_BYTE "caliblationData/cmmMap_byte.dat"
 
 // 先攻宣言
 class ProCam;
@@ -49,8 +50,10 @@ public:
     bool initColorMixingMatrixMap(const cv::Size& _cameraSize);
     ///////////////////////////////  save method ///////////////////////////////
     bool saveColorMixingMatrix(const char* fileName);
+    bool saveColorMixingMatrixOfByte(const char* fileName);
     ///////////////////////////////  load method ///////////////////////////////
     bool loadColorMixingMatrix(const char* fileName);
+    bool loadColorMixingMatrixOfByte(const char* fileName);
     ///////////////////////////////  other method ///////////////////////////////
     bool linearlize(cv::Mat_<cv::Vec3b>* const _responseMap);
     bool calcColorMixingMatrix(void);
