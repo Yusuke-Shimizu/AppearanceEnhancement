@@ -25,6 +25,8 @@
 
 #define _print_vector(vec) std::cout<<#vec<<"[b, g, r] = "<<(vec)<<" ("<<&(vec)<<") ("<<__FUNCTION__<<")"<<std::endl
 
+typedef cv::Vec<double, 9> Vec9d;
+
 enum ColorName{CV_RED = 2, CV_GREEN = 1, CV_BLUE = 0};
 
 ///////////////////////////////  check method ///////////////////////////////
@@ -84,12 +86,23 @@ void printOpenCVVersion(void);
 void initPoint(cv::Point* const p, const int size);
 void initMat(cv::Mat* const _aMat, const int _size);
 void initVec3b(cv::Vec3b* const _vector);
-///////////////////////////////  other method ///////////////////////////////
+///////////////////////////////  convert method ///////////////////////////////
 void mat2char(unsigned char c[], const cv::Mat *m);
 uchar convertNumber16sTo8u(const short src, const cv::Size* charRange, const cv::Size* intRange);
 void test_convertNumber16sTo8u(void);
 void convertMatDepth16sTo8u(cv::Mat* const dst8u, const cv::Mat* const src16s);
 void test_convertMatDepth16sTo8u(void);
+bool convertBGRtoRGB(cv::Vec3b* const _rgb, const cv::Vec3b& _bgr);
+bool convertVecToMat(cv::Mat_<double>* const _dst, const Vec9d& _src);
+bool convertMatToVec(Vec9d* const _dst, const cv::Mat_<double>& _src);
+///////////////////////////////  round method ///////////////////////////////
+bool roundXtoY(double* const _num, const double& X, const double& Y);
+bool round0to1(double* const _num);
+bool roundXtoYForMat(cv::Mat* const _mat, const cv::Mat& _X, const cv::Mat& _Y);
+bool roundXtoYForMat(cv::Mat* const _mat, const double& _X, const double& _Y);
+bool round0to1ForMat(cv::Mat* const _mat);
+void test_round0to1ForMat(void);
+///////////////////////////////  other method ///////////////////////////////
 void imshow16s(const char* const windowName, const cv::Mat* const mat16s);
 void videoCapture_test(void);
 void test_sizeArea(void);
@@ -106,12 +119,6 @@ void doAnyMethodForAllPixelOfMat(cv::Mat* const m1);
 bool showData(const cv::Mat& data);
 bool mulElmByElm(cv::Mat* const dst, const cv::Mat& src1, const cv::Mat& src2);
 bool divElmByElm(cv::Mat* const dst, const cv::Mat& src1, const cv::Mat& src2);
-bool roundXtoY(double* const _num, const double& X, const double& Y);
-bool round0to1(double* const _num);
-bool roundXtoYForMat(cv::Mat* const _mat, const cv::Mat& _X, const cv::Mat& _Y);
-bool roundXtoYForMat(cv::Mat* const _mat, const double& _X, const double& _Y);
-bool round0to1ForMat(cv::Mat* const _mat);
-void test_round0to1ForMat(void);
 bool normalizeByAnyColorChannel(cv::Mat* const image, const ColorName _cName);
 bool calcAverageOfImage(cv::Vec3b* const _aveColor, const cv::Mat& image);
 

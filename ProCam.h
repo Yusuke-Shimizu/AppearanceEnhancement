@@ -64,8 +64,6 @@ public:
     bool setProjectorSize(const cv::Size& projectorSize);
     bool setAccessMapCam2Pro(const cv::Point* const accessMapCam2Pro, const cv::Size& mapSize);
     bool setAccessMapCam2Pro(const cv::Point* const accessMapCam2Pro);
-//    bool setCameraResponseSize(const int camResSize);
-//    bool setProjectorResponseSize(const int prjResSize);
     bool setCameraResponse(const double* const camRes, const int camResSize);
     bool setProjectorResponse(const cv::Mat_<cv::Vec3b>* const _response);
     ///////////////////////////////  get method ///////////////////////////////
@@ -79,8 +77,6 @@ public:
     cv::VideoCapture* getVideoCapture(void);
     bool getAccessMapCam2Pro(cv::Point* const accessMapCam2Pro, const cv::Size& mapSize);
     bool getAccessMapCam2Pro(cv::Point* const accessMapCam2Pro);
-//    int getCameraResponseSize(void);
-//    int getProjectorResponseSize(void);
     ///////////////////////////////  save method ///////////////////////////////
     bool saveAccessMapCam2Pro(void);
     bool saveProjectorResponse(const char* fileName);

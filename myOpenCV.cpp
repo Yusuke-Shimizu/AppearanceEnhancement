@@ -12,6 +12,117 @@
 
 using namespace cv;
 
+///////////////////////////////  check method ///////////////////////////////
+// Matの大きさのチェック
+// return   : 大きさが同じならtrue，違うならfalse
+bool isEqualSize(const cv::Mat& m1, const cv::Mat& m2){
+    if (m1.size() == m2.size()) {
+        return true;
+    } else {
+        return false;
+    }
+}
+bool isEqualSize(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3){
+    return isEqualSize(m1, m2) & isEqualSize(m2, m3);
+}
+bool isEqualSize(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4){
+    return isEqualSize(m1, m2, m3) & isEqualSize(m3, m4);
+}
+bool isEqualSize(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4, const cv::Mat& m5){
+    return isEqualSize(m1, m2, m3, m4) & isEqualSize(m4, m5);
+}
+bool isEqualSize(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4, const cv::Mat& m5, const cv::Mat& m6){
+    return isEqualSize(m1, m2, m3, m4, m5) & isEqualSize(m5, m6);
+}
+bool isDifferentSize(const cv::Mat& m1, const cv::Mat& m2) { return !isEqualSize(m1, m2); }
+bool isDifferentSize(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3) { return !isEqualSize(m1, m2, m3); }
+bool isDifferentSize(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4) { return !isEqualSize(m1, m2, m3, m4); }
+bool isDifferentSize(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4, const cv::Mat& m5) { return !isEqualSize(m1, m2, m3, m4, m5); }
+bool isDifferentSize(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4, const cv::Mat& m5, const cv::Mat& m6) { return !isEqualSize(m1, m2, m3, m4, m5, m6); }
+
+
+// 複数のMatの連続性の確認
+bool isContinuous(const cv::Mat& m1, const cv::Mat& m2){
+    return m1.isContinuous() & m2.isContinuous();
+}
+bool isContinuous(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3){
+    return isContinuous(m1, m2) & m3.isContinuous();
+}
+bool isContinuous(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4){
+    return isContinuous(m1, m2, m3) & m4.isContinuous();
+}
+bool isContinuous(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4, const cv::Mat& m5){
+    return isContinuous(m1, m2, m3, m4) & m5.isContinuous();
+}
+bool isContinuous(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4, const cv::Mat& m5, const cv::Mat& m6){
+    return isContinuous(m1, m2, m3, m4, m5) & m6.isContinuous();
+}
+
+
+// ビット深度が等しいかどうか
+bool isEqualDepth(const cv::Mat& m1, const cv::Mat& m2){
+    if (m1.depth() == m2.depth()) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+// チャンネル数が等しいかどうか
+bool isEqualChannel(const cv::Mat& m1, const cv::Mat& m2){
+    if (m1.channels() == m2.channels()) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+// タイプ(ex.CV_64FC1)が同じかどうかの判定
+bool isEqualType(const cv::Mat& m1, const cv::Mat& m2){
+    return isEqualChannel(m1, m2) & isEqualChannel(m1, m2);
+}
+bool isEqualType(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3){
+    return isEqualType(m1, m2) & isEqualType(m2, m3);
+}
+bool isEqualType(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4){
+    return isEqualType(m1, m2, m3) & isEqualType(m3, m4);
+}
+bool isEqualType(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4, const cv::Mat& m5){
+    return isEqualType(m1, m2, m3, m4) & isEqualType(m4, m5);
+}
+bool isEqualType(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4, const cv::Mat& m5, const cv::Mat& m6){
+    return isEqualType(m1, m2, m3, m4, m5) & isEqualType(m5, m6);
+}
+
+// サイズとタイプが等しいかどうか
+bool isEqualSizeAndType(const cv::Mat& m1, const cv::Mat& m2){
+    return isEqualSize(m1, m2) & isEqualType(m1, m2);
+}
+bool isEqualSizeAndType(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3){
+    return isEqualSizeAndType(m1, m2) & isEqualSizeAndType(m2, m3);
+}
+bool isEqualSizeAndType(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4){
+    return isEqualSizeAndType(m1, m2, m3) & isEqualSizeAndType(m3, m4);
+}
+bool isEqualSizeAndType(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4, const cv::Mat& m5){
+    return isEqualSizeAndType(m1, m2, m3, m4) & isEqualSizeAndType(m4, m5);
+}
+bool isEqualSizeAndType(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4, const cv::Mat& m5, const cv::Mat& m6){
+    return isEqualSizeAndType(m1, m2, m3, m4, m5) & isEqualSizeAndType(m5, m6);
+}
+
+
+// Point配列が全て正しいかどうか判定
+bool isEqualPoint(const cv::Point* const p1, const cv::Point* const p2, const int length){
+    for (int i = 0; i < length; ++ i) {
+        if (*(p1 + i) != *(p2 + i)) {
+            return false;
+        }
+    }
+    
+    return true;
+}
+
 ///////////////////////////////  set method ///////////////////////////////
 // 色のセッティング
 // it -> (red, green, blue)
@@ -167,118 +278,7 @@ void initVec3b(cv::Vec3b* const _vector){
     }
 }
 
-///////////////////////////////  check method ///////////////////////////////
-// Matの大きさのチェック
-// return   : 大きさが同じならtrue，違うならfalse
-bool isEqualSize(const cv::Mat& m1, const cv::Mat& m2){
-    if (m1.size() == m2.size()) {
-        return true;
-    } else {
-        return false;
-    }
-}
-bool isEqualSize(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3){
-    return isEqualSize(m1, m2) & isEqualSize(m2, m3);
-}
-bool isEqualSize(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4){
-    return isEqualSize(m1, m2, m3) & isEqualSize(m3, m4);
-}
-bool isEqualSize(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4, const cv::Mat& m5){
-    return isEqualSize(m1, m2, m3, m4) & isEqualSize(m4, m5);
-}
-bool isEqualSize(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4, const cv::Mat& m5, const cv::Mat& m6){
-    return isEqualSize(m1, m2, m3, m4, m5) & isEqualSize(m5, m6);
-}
-bool isDifferentSize(const cv::Mat& m1, const cv::Mat& m2) { return !isEqualSize(m1, m2); }
-bool isDifferentSize(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3) { return !isEqualSize(m1, m2, m3); }
-bool isDifferentSize(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4) { return !isEqualSize(m1, m2, m3, m4); }
-bool isDifferentSize(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4, const cv::Mat& m5) { return !isEqualSize(m1, m2, m3, m4, m5); }
-bool isDifferentSize(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4, const cv::Mat& m5, const cv::Mat& m6) { return !isEqualSize(m1, m2, m3, m4, m5, m6); }
-
-
-// 複数のMatの連続性の確認
-bool isContinuous(const cv::Mat& m1, const cv::Mat& m2){
-    return m1.isContinuous() & m2.isContinuous();
-}
-bool isContinuous(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3){
-    return isContinuous(m1, m2) & m3.isContinuous();
-}
-bool isContinuous(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4){
-    return isContinuous(m1, m2, m3) & m4.isContinuous();
-}
-bool isContinuous(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4, const cv::Mat& m5){
-    return isContinuous(m1, m2, m3, m4) & m5.isContinuous();
-}
-bool isContinuous(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4, const cv::Mat& m5, const cv::Mat& m6){
-    return isContinuous(m1, m2, m3, m4, m5) & m6.isContinuous();
-}
-
-
-// ビット深度が等しいかどうか
-bool isEqualDepth(const cv::Mat& m1, const cv::Mat& m2){
-    if (m1.depth() == m2.depth()) {
-        return true;
-    } else {
-        return false;
-    }
-}
-
-// チャンネル数が等しいかどうか
-bool isEqualChannel(const cv::Mat& m1, const cv::Mat& m2){
-    if (m1.channels() == m2.channels()) {
-        return true;
-    } else {
-        return false;
-    }
-}
-
-// タイプ(ex.CV_64FC1)が同じかどうかの判定
-bool isEqualType(const cv::Mat& m1, const cv::Mat& m2){
-    return isEqualChannel(m1, m2) & isEqualChannel(m1, m2);
-}
-bool isEqualType(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3){
-    return isEqualType(m1, m2) & isEqualType(m2, m3);
-}
-bool isEqualType(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4){
-    return isEqualType(m1, m2, m3) & isEqualType(m3, m4);
-}
-bool isEqualType(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4, const cv::Mat& m5){
-    return isEqualType(m1, m2, m3, m4) & isEqualType(m4, m5);
-}
-bool isEqualType(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4, const cv::Mat& m5, const cv::Mat& m6){
-    return isEqualType(m1, m2, m3, m4, m5) & isEqualType(m5, m6);
-}
-
-// サイズとタイプが等しいかどうか
-bool isEqualSizeAndType(const cv::Mat& m1, const cv::Mat& m2){
-    return isEqualSize(m1, m2) & isEqualType(m1, m2);
-}
-bool isEqualSizeAndType(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3){
-    return isEqualSizeAndType(m1, m2) & isEqualSizeAndType(m2, m3);
-}
-bool isEqualSizeAndType(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4){
-    return isEqualSizeAndType(m1, m2, m3) & isEqualSizeAndType(m3, m4);
-}
-bool isEqualSizeAndType(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4, const cv::Mat& m5){
-    return isEqualSizeAndType(m1, m2, m3, m4) & isEqualSizeAndType(m4, m5);
-}
-bool isEqualSizeAndType(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4, const cv::Mat& m5, const cv::Mat& m6){
-    return isEqualSizeAndType(m1, m2, m3, m4, m5) & isEqualSizeAndType(m5, m6);
-}
-
-
-// Point配列が全て正しいかどうか判定
-bool isEqualPoint(const cv::Point* const p1, const cv::Point* const p2, const int length){
-    for (int i = 0; i < length; ++ i) {
-        if (*(p1 + i) != *(p2 + i)) {
-            return false;
-        }
-    }
-    
-    return true;
-}
-
-///////////////////////////////  other method ///////////////////////////////
+///////////////////////////////  convert method ///////////////////////////////
 // matからopenGL型に変換
 void mat2char(unsigned char c[], const Mat *m){
 	_print(m->rows);
@@ -382,6 +382,125 @@ void test_convertMatDepth16sTo8u(void){
     _print(image8u);
 }
 
+// BGR形式からRGB形式に変換する
+// output / _rgb    : 出力するRGB形式のベクタ
+// input / _bgr     : 変換したいBGR形式のベクタ
+bool convertBGRtoRGB(cv::Vec3b* const _rgb, const cv::Vec3b& _bgr){
+    Vec3b tmp(_bgr[CV_RED], _bgr[CV_GREEN], _bgr[CV_BLUE]);
+    *_rgb = tmp;
+    
+    return true;
+}
+
+// Vec9d -> Mat(3x3)
+bool convertVecToMat(cv::Mat_<double>* const _dst, const Vec9d& _src){
+    // error processing
+    Mat m3x3(3, 3, CV_64FC1);
+    if ( !isEqualSizeAndType(*_dst, m3x3) ) {
+        ERROR_PRINT2("this matrix is not 3x3 matrix", *_dst);
+        return false;
+    }
+    
+    // setting
+    int rows = _dst->rows, cols = _dst->cols;
+    for (int y = 0, i = 0; y < rows; ++ y) {
+        double* p_dst = _dst->ptr<double>(y);
+        for (int x = 0; x < cols; ++ x, ++ i) {
+            p_dst[x] = _src[i];
+            _print2(p_dst[x], _src[i]);
+        }
+    }
+    return true;
+}
+
+// Mat(3x3) -> Vec9d
+bool convertMatToVec(Vec9d* const _dst, const cv::Mat_<double>& _src){
+    // error processing
+    Mat m3x3(3, 3, CV_64FC1);
+    if ( !isEqualSizeAndType(_src, m3x3) ) {
+        ERROR_PRINT2("this matrix is not 3x3 matrix", _src);
+        return false;
+    }
+
+    // setting
+    Vec9d tmp(0,0,0,0,0,0,0,0,0);
+    int rows = _src.rows, cols = _src.cols;
+    for (int y = 0, i = 0; y < rows; ++ y) {
+        const double* p_src = _src.ptr<double>(y);
+        for (int x = 0; x < cols; ++ x, ++ i) {
+            tmp[i] = p_src[x];
+        }
+    }
+    *_dst = tmp;
+    return true;
+}
+///////////////////////////////  other method ///////////////////////////////
+
+// この関数はいずれmyMath.hppに移動させる！！！！！！！
+bool roundXtoY(double* const _num, const double& X, const double& Y){
+    *_num = std::max(*_num, X);
+    *_num = std::min(*_num, Y);
+    return true;
+}
+// 引数の値を０から１に丸める
+// ex) round0to1(5) = 1, round0to1(0.1) = 0.1, round0to1(-0.2) = 0
+bool round0to1(double* const _num) {
+    return roundXtoY(_num, 0.0, 1.0);
+}
+
+// Matの値をXからYに丸める
+bool roundXtoYForMat(cv::Mat* const _mat, const cv::Mat& _X, const cv::Mat& _Y) {
+    // error processing
+    if ( !isEqualSize(*_mat, _X, _Y) ) {
+        std::cout << "mat size is different" << std::endl;
+        ERROR_PRINT3(*_mat, _X, _Y);
+        return false;
+    }
+    
+    // 連続性の確認
+    int cols = _mat->cols, rows = _mat->rows;
+    if ( isContinuous(*_mat, _X, _Y) ) {
+        // 連続ならばループを二重から一重に変更
+        cols *= rows;
+        rows = 1;
+    }
+    
+    // 行列へアクセスし個々に変換
+    for (int y = 0; y < rows; ++ y) {
+        // init pointer
+        double *p_dst = _mat->ptr<double>(y);
+        const double *p_X = _X.ptr<double>(y);
+        const double *p_Y = _Y.ptr<double>(y);
+        
+        for (int x = 0; x < cols; ++ x) {
+            roundXtoY(&p_dst[x], *p_X, *p_Y);
+        }
+    }
+    
+    return true;
+}
+
+// 上の範囲が行列でなく値である場合
+bool roundXtoYForMat(cv::Mat* const _mat, const double& _X, const double& _Y){
+    const int cols = _mat->cols, rows = _mat->rows;
+    Mat l_matX = Mat::ones(rows, cols, CV_64FC1) * _X;
+    Mat l_matY = Mat::ones(rows, cols, CV_64FC1) * _Y;
+    return roundXtoYForMat(_mat, l_matX, l_matY);
+}
+
+// Matの値を０から１に丸める
+bool round0to1ForMat(cv::Mat* const _mat){
+    return roundXtoYForMat(_mat, 0, 1);
+}
+//
+void test_round0to1ForMat(void){
+    Mat test = (Mat_<double>(3, 3) << -0.5, -0.1, 0, 0.1, 0.4, 0.99, 1, 1.9, 100);
+    _print(test);
+    round0to1ForMat(&test);
+    _print(test);
+}
+
+///////////////////////////////  other method ///////////////////////////////
 // 符号付き１６ビット行列を表示
 // windowName   : ウィンドウ名
 // mat16s       : 表示する画像（符号付き１６ビット）
@@ -675,70 +794,6 @@ bool divElmByElm(cv::Mat* const dst, const cv::Mat& src1, const cv::Mat& src2){
     }
     
     return true;
-}
-
-// この関数はいずれmyMath.hppに移動させる！！！！！！！
-bool roundXtoY(double* const _num, const double& X, const double& Y){
-    *_num = std::max(*_num, X);
-    *_num = std::min(*_num, Y);
-    return true;
-}
-// 引数の値を０から１に丸める
-// ex) round0to1(5) = 1, round0to1(0.1) = 0.1, round0to1(-0.2) = 0
-bool round0to1(double* const _num) {
-    return roundXtoY(_num, 0.0, 1.0);
-}
-
-// Matの値をXからYに丸める
-bool roundXtoYForMat(cv::Mat* const _mat, const cv::Mat& _X, const cv::Mat& _Y) {
-    // error processing
-    if ( !isEqualSize(*_mat, _X, _Y) ) {
-        std::cout << "mat size is different" << std::endl;
-        ERROR_PRINT3(*_mat, _X, _Y);
-        return false;
-    }
-    
-    // 連続性の確認
-    int cols = _mat->cols, rows = _mat->rows;
-    if ( isContinuous(*_mat, _X, _Y) ) {
-        // 連続ならばループを二重から一重に変更
-        cols *= rows;
-        rows = 1;
-    }
-    
-    // 行列へアクセスし個々に変換
-    for (int y = 0; y < rows; ++ y) {
-        // init pointer
-        double *p_dst = _mat->ptr<double>(y);
-        const double *p_X = _X.ptr<double>(y);
-        const double *p_Y = _Y.ptr<double>(y);
-        
-        for (int x = 0; x < cols; ++ x) {
-            roundXtoY(&p_dst[x], *p_X, *p_Y);
-        }
-    }
-    
-    return true;
-}
-
-// 上の範囲が行列でなく値である場合
-bool roundXtoYForMat(cv::Mat* const _mat, const double& _X, const double& _Y){
-    const int cols = _mat->cols, rows = _mat->rows;
-    Mat l_matX = Mat::ones(rows, cols, CV_64FC1) * _X;
-    Mat l_matY = Mat::ones(rows, cols, CV_64FC1) * _Y;
-    return roundXtoYForMat(_mat, l_matX, l_matY);
-}
-
-// Matの値を０から１に丸める
-bool round0to1ForMat(cv::Mat* const _mat){
-    return roundXtoYForMat(_mat, 0, 1);
-}
-//
-void test_round0to1ForMat(void){
-    Mat test = (Mat_<double>(3, 3) << -0.5, -0.1, 0, 0.1, 0.4, 0.99, 1, 1.9, 100);
-    _print(test);
-    round0to1ForMat(&test);
-    _print(test);
 }
 
 // 要素全体を引数で与えた色で正規化する

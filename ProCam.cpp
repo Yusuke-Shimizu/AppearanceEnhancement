@@ -208,52 +208,13 @@ bool ProCam::setAccessMapCam2Pro(const cv::Point* const accessMapCam2Pro){
     return true;
 }
 
-// カメラ応答特性サイズ（m_cameraResponseSize）の設定
-// input / camResSize   : 設定したい大きさ
-// return               : 成功したかどうか
-//bool ProCam::setCameraResponseSize(const int camResSize){
-//    if (camResSize <= 0) return false;
-//    m_cameraResponseSize = camResSize;
-//    return true;
-//}
-
-// プロジェクタ応答特性サイズ（m_projectorResponseSize）の設定
+// プロジェクタ応答特性（m_projectorResponse）の設定
 // input / prjResSize   : 設定したい大きさ
 // return               : 成功したかどうか
-//bool ProCam::setProjectorResponseSize(const int prjResSize){
-//    if (prjResSize <= 0) return false;
-//    m_projectorResponseSize = prjResSize;
-//    return true;
-//}
-//
-//bool ProCam::setCameraResponse(const double* const camRes, const int camResSize){
-//    // error processing
-//    if (camResSize <= 0) return false;
-//    
-//    // setting
-//    for (int i = 0; i < camResSize; ++ i) {
-//        *(m_cameraResponse + i) = *(camRes + i);
-//    }
-//
-//    return true;
-//}
-//bool ProCam::setProjectorResponse(const double* const prjRes, const int prjResSize){
-//bool ProCam::setProjectorResponse(const char* const prjRes, const int prjResSize){
-//    // error processing
-//    if (prjResSize <= 0) return false;
-//    
-//    // setting
-//    for (int i = 0; i < prjResSize; ++ i) {
-//        *(m_projectorResponse + i) = *(prjRes + i);
-//    }
-//    return true;    bool setProjectorResponse(const char* const prjRes, const int prjResSize);
-//}
 bool ProCam::setProjectorResponse(const cv::Mat_<cv::Vec3b>* const _response){
     // error processing
-    Size srcSize(_response->rows, _response->cols);
-    Size dstSize(m_projectorResponse.rows, m_projectorResponse.cols);
-    if (srcSize != dstSize) {
-        ERROR_PRINT3("_response Size is different from m_projectorResponse", srcSize, dstSize);
+    if ( !isEqualSizeAndType(*_response, m_projectorResponse)) {
+        ERROR_PRINT("_response Type of Size is different from m_projectorResponse");
         return false;
     }
     
@@ -345,6 +306,10 @@ bool ProCam::saveAccessMapCam2Pro(void){
     // バイナリ出力モード（初期化を行う）
     ofstream ofs;
     ofs.open(LOOK_UP_TABLE_FILE_NAME, ios_base::out | ios_base::trunc | ios_base::binary);
+    if (!ofs) {
+        ERROR_PRINT2(LOOK_UP_TABLE_FILE_NAME, "is Not Found");
+        exit(-1);
+    }
     
     // write look up table size
     _print(cameraSize);
@@ -372,6 +337,10 @@ bool ProCam::saveProjectorResponse(const char* fileName){
     ofstream ofs;
 //    ofs.open(fileName, ios_base::out | ios_base::trunc | ios_base::binary);
     ofs.open(fileName, ios_base::out | ios_base::trunc);
+    if (!ofs) {
+        ERROR_PRINT2(fileName, "is Not Found");
+        exit(-1);
+    }
     
     // write
     int rows = l_proRes->rows, cols = l_proRes->cols;
@@ -392,6 +361,10 @@ bool ProCam::saveProjectorResponse(const char* fileName, const uchar index, cons
     ofstream ofs;
     //    ofs.open(fileName, ios_base::out | ios_base::trunc | ios_base::binary);
     ofs.open(fileName, ios_base::out | ios_base::trunc);
+    if (!ofs) {
+        ERROR_PRINT2(fileName, "is Not Found");
+        exit(-1);
+    }
     
     // write
     int rows = l_proRes->rows, cols = l_proRes->cols;
@@ -464,6 +437,10 @@ bool ProCam::loadAccessMapCam2Pro(void){
 ///////////////////////////////  calibration method ///////////////////////////////
 // 全てのキャリブレーションを行う
 bool ProCam::allCalibration(void){
+    Mat projectionImage = Mat::zeros(PRJ_SIZE_HEIGHT, PRJ_SIZE_WIDTH, CV_8UC3);
+    imshow(WINDOW_NAME, projectionImage);
+    cvMoveWindow(WINDOW_NAME, -300, -1 * projectionImage.rows);
+    cv::waitKey(1);
     // geometri calibration
 //    if ( !geometricCalibration() ) {
 //        cerr << "geometric calibration error" << endl;
