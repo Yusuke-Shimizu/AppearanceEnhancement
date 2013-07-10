@@ -18,6 +18,7 @@
 #define LOOK_UP_TABLE_FILE_NAME "caliblationData/lookUpTableCameraToProjector.dat"
 #define PROJECTOR_RESPONSE_FILE_NAME "caliblationData/projectorResponse.dat"
 #define PROJECTOR_RESPONSE_FILE_NAME_02 "caliblationData/projectorResponse02.dat"
+#define PROJECTOR_RESPONSE_FILE_NAME_BYTE "caliblationData/projectorResponseForByte.dat"
 #define WINDOW_NAME "projection image"
 
 // スリープ時間(ms)
@@ -31,7 +32,7 @@ private:
     cv::Size m_cameraSize;              // カメラ画像の大きさ ok
     cv::Size m_projectorSize;           // プロジェクタ画像の大きさ ok
     cv::VideoCapture m_video;           // カメラ映像のストリーム ok
-    cv::Point* m_accessMapCam2Pro;      // カメラからプロジェクタへの位置マップ ポインタのポインタの方がいいのかな？
+    cv::Point* m_accessMapCam2Pro;      // カメラからプロジェクタへの位置マップ (Mat_<Vec2i>に変えたい。。。)
     cv::Mat m_ColorTransMatCam2Pro;     // カメラ色空間からプロジェクタ色空間への変換行列
     double* m_cameraResponse;           // カメラの応答特性[0-1]->[0-1]
 //    double* m_projectorResponse;        // プロジェクタの応答特性[0-1]->[0-1]
@@ -84,6 +85,7 @@ public:
     bool saveProjectorResponseForByte(const char* fileName);
     ///////////////////////////////  load method ///////////////////////////////
     bool loadAccessMapCam2Pro(void);
+    bool loadProjectorResponseForByte(const char* fileName);
     ///////////////////////////////  calibration method ///////////////////////////////
     bool allCalibration(void);
     bool geometricCalibration(void);

@@ -378,6 +378,68 @@ bool ProCam::saveProjectorResponse(const char* fileName, const uchar index, cons
     return true;
 }
 
+bool ProCam::saveProjectorResponseForByte(const char* fileName){
+    // init
+    const Mat_<Vec3b>* const l_proRes = &m_projectorResponse;
+    ofstream ofs;
+    ofs.open(fileName, ios_base::out | ios_base::trunc | ios_base::binary);
+    if (!ofs) {
+        ERROR_PRINT2(fileName, "is Not Found");
+        exit(-1);
+    }
+    
+    // write
+    int rows = l_proRes->rows, cols = l_proRes->cols;
+    ofs.write((char*)&rows, sizeof(int));
+    ofs.write((char*)&cols, sizeof(int));
+    for (int y = 0; y < rows; ++ y) {
+        const Vec3b* p_proRes = l_proRes->ptr<Vec3b>(y);
+        for (int x = 0; x < cols; ++ x) {
+            for (int ch = 0; ch < 3; ++ ch) {
+                ofs.write((char*)&p_proRes[x][ch], sizeof(uchar));
+            }
+        }
+    }
+    
+    return true;
+}
+bool ProCam::loadProjectorResponseForByte(const char* fileName){
+    // init
+    const Mat_<Vec3b>* const l_proRes_answer = &m_projectorResponse;
+    ifstream ifs(fileName);
+    if (!ifs) {
+        ERROR_PRINT2(fileName, "is Not Found");
+        exit(-1);
+    }
+    
+    // get size
+    int rows = 0, cols = 0;
+    ifs.read((char*)&rows, sizeof(int));
+    ifs.read((char*)&cols, sizeof(int));
+    if (l_proRes_answer->rows != rows || l_proRes_answer->cols != cols) {
+        ERROR_PRINT3("different size", rows, cols);
+        exit(-1);
+    }
+    Mat_<Vec3b> l_proRes(rows, cols, CV_8UC3);
+    
+    // get number
+    for (int y = 0; y < rows; ++ y) {
+        Vec3b* p_proRes = l_proRes.ptr<Vec3b>(y);
+        const Vec3b* p_proRes_answer = l_proRes_answer->ptr<Vec3b>(y);
+        
+        for (int x = 0; x < cols; ++ x) {
+            for (int ch = 0; ch < 3; ++ ch) {
+                ifs.read((char*)&p_proRes[x][ch], sizeof(uchar));
+                if (p_proRes[x][ch] != p_proRes_answer[x][ch]) {
+                    ERROR_PRINT3("diff number", p_proRes[x][ch], p_proRes_answer[x][ch]);
+                    exit(-1);
+                }
+            }
+        }
+    }
+    
+    return true;
+}
 ///////////////////////////////  load method ///////////////////////////////
 bool ProCam::loadAccessMapCam2Pro(void){
     cout << "loading look up table..." << endl;
@@ -520,8 +582,12 @@ bool ProCam::linearlizeOfProjector(void){
     // 落とした配列をメンバ配列に代入する
     if ( !setProjectorResponse(&prjResponse) ) {ERROR_PRINT("error is setProjectorResponse"); return false;}
     cout << "saving projector response" << endl;
-    saveProjectorResponse(PROJECTOR_RESPONSE_FILE_NAME_02, 0, 0);
+//    saveProjectorResponse(PROJECTOR_RESPONSE_FILE_NAME_02, 0, 0);
+    saveProjectorResponseForByte(PROJECTOR_RESPONSE_FILE_NAME_BYTE);
     cout << "saved projector response" << endl;
+    cout << "loading projector response" << endl;
+    loadProjectorResponseForByte(PROJECTOR_RESPONSE_FILE_NAME_BYTE);
+    cout << "loaded projector response" << endl;
     return true;
 }
 

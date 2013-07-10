@@ -35,7 +35,6 @@ LinearizerOfProjector::LinearizerOfProjector(ProCam* procam){
 //    cout << "setting LinearizerOfProjector..." << endl;
     setProCam(procam);
     const cv::Size* cameraSize = m_procam->getCameraSize();
-    initColorMixingMatrix(cameraSize->area());
     initColorMixingMatrixMap(*cameraSize);
 //    cout << "finish LinearizerOfProjector" << endl;
 }
@@ -56,24 +55,24 @@ bool LinearizerOfProjector::setProCam(ProCam* procam){
 // m_ColorMixingMatrixの全設定
 // input / _aMat    : 設定する配列
 // return           : 成功したかどうか
-bool LinearizerOfProjector::setColorMixMat(const std::vector<cv::Mat>* _aMat){
-    // error processing
-    const unsigned long size = m_aColorMixingMatrix.size();
-    if (_aMat->size() != size) {
-        std::cerr << "vector size is different" << std::endl;
-        ERROR_PRINT(size);
-        return false;
-    }
-    
-    // assign
-//    std::vector<cv::Mat>::iterator itrMem = m_aColorMixingMatrix.begin();
-//    std::vector<cv::Mat>::const_iterator itrArg = _aMat->begin();
-//    for (; itrMem != m_aColorMixingMatrix.end(); ++ itrMem, ++ itrArg) {
-//        *itrMem = *itrArg;
+//bool LinearizerOfProjector::setColorMixMat(const std::vector<cv::Mat>* _aMat){
+//    // error processing
+//    const unsigned long size = m_aColorMixingMatrix.size();
+//    if (_aMat->size() != size) {
+//        std::cerr << "vector size is different" << std::endl;
+//        ERROR_PRINT(size);
+//        return false;
 //    }
-    std::copy(_aMat->begin(), _aMat->end(), m_aColorMixingMatrix.begin());
-    return true;
-}
+//    
+//    // assign
+////    std::vector<cv::Mat>::iterator itrMem = m_aColorMixingMatrix.begin();
+////    std::vector<cv::Mat>::const_iterator itrArg = _aMat->begin();
+////    for (; itrMem != m_aColorMixingMatrix.end(); ++ itrMem, ++ itrArg) {
+////        *itrMem = *itrArg;
+////    }
+//    std::copy(_aMat->begin(), _aMat->end(), m_aColorMixingMatrix.begin());
+//    return true;
+//}
 
 // m_ColorMixingMatrixの全設定
 // input / _aMat    : 設定する配列
@@ -130,40 +129,12 @@ ProCam* LinearizerOfProjector::getProCam(void){
     return m_procam;
 }
 
-// m_ColorMixingMatrix（色変換行列）の取得
-// input / index    : 取得したい行列の番号
-// return           : 取得した行列
-cv::Mat* LinearizerOfProjector::getColorMixMat(const int index){
-    // error processing
-    if (m_aColorMixingMatrix.size() <= index || index < 0) {
-        std::cerr << "size is strange number" << std::endl;
-        ERROR_PRINT(index);
-        return false;
-    }
-    
-    // return
-    return &(m_aColorMixingMatrix.at(index));
-}
-
-const std::vector<cv::Mat>* LinearizerOfProjector::getColorMixMat(void){
-    return &m_aColorMixingMatrix;
-}
-
 // m_colorMixingMatrixMapポインタの取得
 const cv::Mat_<Vec9d>* LinearizerOfProjector::getColorMixMatMap(void){
     return &m_colorMixingMatrixMap;
 }
 
 ///////////////////////////////  init method ///////////////////////////////
-// init method
-bool LinearizerOfProjector::initColorMixingMatrix(const int _mixMatLength){
-    cv::Mat initMat = cv::Mat::zeros(3, 3, CV_64FC1);
-    for (int i = 0; i < _mixMatLength; ++ i) {
-        m_aColorMixingMatrix.push_back(initMat);
-    }
-    return true;
-}
-
 // cmmMapの初期化
 bool LinearizerOfProjector::initColorMixingMatrixMap(const cv::Size& _cameraSize){
     // init
@@ -432,7 +403,6 @@ bool LinearizerOfProjector::createVMap(const cv::Mat& _normalR2BL, const cv::Mat
     }
     
     // setting
-    setColorMixMat(&l_VMap);
     setColorMixMatMap(l_cmmm);
     return true;
 }
@@ -541,6 +511,21 @@ bool LinearizerOfProjector::getResponse(cv::Vec3b* const _response, const cv::Ve
     // return _response
     Vec3b l_vecP(P);    // Mat -> Vec3b
     *_response = l_vecP;
+    return true;
+}
+
+// Vのテスト
+bool LinearizerOfProjector::test_V(void){
+    // init
+//    const Mat_<Vec9d>* l_cmmm = getColorMixMatMap();
+//    ProCam* procam = getProCam();
+//    const Size* prjSize = procam->getProjectorSize();
+//    const Size* camSize = procam->getCameraSize();
+//    Mat prjImg = Mat::zeros(*prjSize, CV_8UC3);
+//    Mat camImg = Mat::zeros(*camSize, CV_8UC3);
+//    
+    
+    
     return true;
 }
 
