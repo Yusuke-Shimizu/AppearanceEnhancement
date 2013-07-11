@@ -24,6 +24,7 @@
 #define DEPTH_S16BIT_MAX 32767
 
 #define _print_vector(vec) std::cout<<#vec<<"[b, g, r] = "<<(vec)<<" ("<<&(vec)<<") ("<<__FUNCTION__<<")"<<std::endl
+#define MY_IMSHOW(img) cv::imshow(#img, img)
 
 typedef cv::Vec<double, 9> Vec9d;
 
@@ -126,5 +127,10 @@ bool mulElmByElm(cv::Mat* const dst, const cv::Mat& src1, const cv::Mat& src2);
 bool divElmByElm(cv::Mat* const dst, const cv::Mat& src1, const cv::Mat& src2);
 bool normalizeByAnyColorChannel(cv::Mat* const image, const ColorName _cName);
 bool calcAverageOfImage(cv::Vec3b* const _aveColor, const cv::Mat& image);
+///////////////////////////////  inline method ///////////////////////////////
+inline void MY_WAIT_KEY(void){
+    std::cout << "push any key" << std::endl;
+    cv::waitKey(-1);
+}
 
 #endif

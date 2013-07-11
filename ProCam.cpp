@@ -501,14 +501,14 @@ bool ProCam::loadAccessMapCam2Pro(void){
 bool ProCam::allCalibration(void){
     Mat projectionImage = Mat::zeros(PRJ_SIZE_HEIGHT, PRJ_SIZE_WIDTH, CV_8UC3);
     imshow(WINDOW_NAME, projectionImage);
-    cvMoveWindow(WINDOW_NAME, 0, -1 * projectionImage.rows);
-//    cvMoveWindow(WINDOW_NAME, -300, -1 * projectionImage.rows);
+    cvMoveWindow(WINDOW_NAME, 0, -1050);    // mac
+//    cvMoveWindow(WINDOW_NAME, 1680, 0);   // linux
     cv::waitKey(1);
     // geometri calibration
-//    if ( !geometricCalibration() ) {
-//        cerr << "geometric calibration error" << endl;
-//        return false;
-//    }
+    if ( !geometricCalibration() ) {
+        cerr << "geometric calibration error" << endl;
+        return false;
+    }
     
     // linearized projector
     if ( !linearlizeOfProjector() ) {
@@ -536,7 +536,7 @@ bool ProCam::geometricCalibration(void){
     VideoCapture* video = getVideoCapture();
 //    getVideoCapture(&video);
     _print_name(*video);
-    GeometricCalibration gc;
+    GeometricCalibration gc(this);
     if (!gc.doCalibration(accessMapCam2Pro, video)) {
         cerr << "error of geometric calibration" << endl;
         return false;
@@ -600,17 +600,29 @@ bool ProCam::linearlizeOfProjector(void){
 bool ProCam::captureFromLight(cv::Mat* const captureImage, const cv::Mat& projectionImage){
     // 投影
     imshow(WINDOW_NAME, projectionImage);
-    cv::waitKey(SLEEP_TIME);
+    cv::waitKey(SLEEP_TIME / 2);
     
     // N回撮影する
     cv::Mat image;
+//    Mat_<Vec3b>* aImage = new Mat_<Vec3b>[CAPTURE_NUM];
+//    Size* camSize = getCameraSize();
+//    Mat_<Vec3d> sumImage = Mat::zeros(*camSize, CV_64FC3), tmp;
     for (int i = 0; i < CAPTURE_NUM; ++ i) {
+//        aImage[i] = Mat::zeros(*camSize, CV_8UC3);
         getCaptureImage(&image);
+//        getCaptureImage(&aImage[i]);
+        
+        // uchar -> double
+//        aImage[i].convertTo(tmp, CV_64FC3);
+
+        // add
+//        sumImage += tmp;
     }
+//    sumImage /= CAPTURE_NUM;
+    
     *captureImage = image.clone();
-    //imshow(W_NAME_GEO_CAMERA, *captureImage);
-	//cvMoveWindow(W_NAME_GEO_CAMERA, projectionImage->rows, 0);
-    cv::waitKey(SLEEP_TIME);
+//    *captureImage = sumImage.clone();
+    cv::waitKey(SLEEP_TIME / 2);
 
     return true;
 }

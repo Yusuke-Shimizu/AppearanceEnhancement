@@ -248,6 +248,9 @@ bool LinearizerOfProjector::linearlize(cv::Mat_<cv::Vec3b>* const _responseOfPro
     if( !calcColorMixingMatrix() ) return false;
     cout << "created Color Mixing Matrix" << endl;
     
+    // show V map
+    showVMap();
+    
     // save
     cout << "saving Color Mixing Matrix..." << endl;
 //    if ( !saveColorMixingMatrix(CMM_MAP_FILE_NAME) ) {
@@ -269,8 +272,7 @@ bool LinearizerOfProjector::linearlize(cv::Mat_<cv::Vec3b>* const _responseOfPro
 //    cout << "loaded Color Mixing Matrix" << endl;
 
     // キー待機
-    cout << "push any key" << endl;
-    waitKey(-1);
+    MY_WAIT_KEY();
 
     // プロジェクタの応答特性を計算
     cout << "creating response function..." << endl;
@@ -332,31 +334,16 @@ bool LinearizerOfProjector::calcColorMixingMatrix(void){
     Mat diffGreenAndBlack = green_cap - black_cap;
     Mat diffBlueAndBlack = blue_cap - black_cap;
     Mat diffWhiteAndBlack = white_cap - black_cap;
-    _print3(black_cap.at<Vec3d>(100, 100), white_cap.at<Vec3d>(100, 100), diffWhiteAndBlack.at<Vec3d>(100, 100));
-    imshow("black_cap2", black_cap);
-    imshow("white_cap2", white_cap);
-    imshow("diffWtoB_cap", diffWhiteAndBlack);
-    waitKey(-1);
+//    _print3(black_cap.at<Vec3d>(100, 100), white_cap.at<Vec3d>(100, 100), diffWhiteAndBlack.at<Vec3d>(100, 100));
+//    imshow("black_cap2", black_cap);
+//    imshow("white_cap2", white_cap);
+//    imshow("diffWtoB_cap", diffWhiteAndBlack);
     black_cap.release();
     red_cap.release();
     green_cap.release();
     blue_cap.release();
-    if (!isPosiNum(diffWhiteAndBlack)) {
-        ERROR_PRINT("diff Mat include Negative Number");
-        printMatPropaty(diffWhiteAndBlack);
-        exit(-1);
-    } else {
-        cout << "diff is positive Mat!!!" << endl;
-    }
-//    if (!isPosiNum(diffRedAndBlack, diffGreenAndBlack, diffBlueAndBlack)) {
-//        ERROR_PRINT("diff Mat include Negative Number");
-//        printMatPropaty(diffRedAndBlack);
-//        printMatPropaty(diffGreenAndBlack);
-//        printMatPropaty(diffBlueAndBlack);
-//        exit(-1);
-//    } else {
-//        cout << "diff is positive Mat!!!" << endl;
-//    }
+    white_cap.release();
+
     // show difference image
 //    imshow("diffRedAndBlack", diffRedAndBlack);
 //    imshow("diffGreenAndBlack", diffGreenAndBlack);
@@ -377,7 +364,7 @@ bool LinearizerOfProjector::calcColorMixingMatrix(void){
     
     // create V map
     createVMap(diffRedAndBlack, diffGreenAndBlack, diffBlueAndBlack);
-        
+    
     return true;
 }
 
@@ -425,9 +412,6 @@ bool LinearizerOfProjector::createVMap(const cv::Mat& _normalR2BL, const cv::Mat
             // push V
             convertMatToVec(&l_VVec, V);    // mat -> vec
             p_cmmm[x] = l_VVec;
-            
-//            _print4(pNormalR[x * ch + CV_RED], pNormalR[x * ch + CV_GREEN], pNormalR[x * ch + CV_BLUE], V);
-//            _print4(l_pNormalR[x], l_pNormalG[x], l_pNormalB[x], V);
         }
     }
     
@@ -546,19 +530,34 @@ bool LinearizerOfProjector::getResponse(cv::Vec3b* const _response, const cv::Ve
     return true;
 }
 
-// Vのテスト
-bool LinearizerOfProjector::test_V(void){
+// V mapの視覚化
+bool LinearizerOfProjector::showVMap(void){
     // init
-//    const Mat_<Vec9d>* l_cmmm = getColorMixMatMap();
-//    ProCam* procam = getProCam();
-//    const Size* prjSize = procam->getProjectorSize();
-//    const Size* camSize = procam->getCameraSize();
-//    Mat prjImg = Mat::zeros(*prjSize, CV_8UC3);
-//    Mat camImg = Mat::zeros(*camSize, CV_8UC3);
-//    
+    const Mat_<Vec9d>* l_cmmm = getColorMixMatMap();
+    int rows = l_cmmm->rows, cols = l_cmmm->cols;
+    Mat_<Vec3d> l_VRed(rows, cols), l_VGreen(rows, cols), l_VBlue(rows, cols);
+    if (isContinuous(*l_cmmm, l_VRed, l_VGreen, l_VBlue)) {
+        cols *= rows;
+        rows = 1;
+    }
     
+    // create V images
+    for (int y = 0; y < rows; ++ y) {
+        const Vec9d* p_cmmm = l_cmmm->ptr<Vec9d>(y);
+        Vec3d* p_VRed = l_VRed.ptr<Vec3d>(y);
+        Vec3d* p_VGreen = l_VGreen.ptr<Vec3d>(y);
+        Vec3d* p_VBlue = l_VBlue.ptr<Vec3d>(y);
+        
+        for (int x = 0; x < cols; ++ x) {
+            p_VRed[x] = Vec3d(p_cmmm[x][0], p_cmmm[x][1], p_cmmm[x][2]);
+            p_VBlue[x] = Vec3d(p_cmmm[x][3], p_cmmm[x][4], p_cmmm[x][5]);
+            p_VGreen[x] = Vec3d(p_cmmm[x][6], p_cmmm[x][7], p_cmmm[x][8]);
+        }
+    }
     
+    // show
+    MY_IMSHOW(l_VRed);
+    MY_IMSHOW(l_VGreen);
+    MY_IMSHOW(l_VBlue);
     return true;
 }
-
-

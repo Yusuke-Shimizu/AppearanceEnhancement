@@ -57,7 +57,7 @@ public:
     bool calcResponseFunction(cv::Mat_<cv::Vec3b>* const _responseMap);
     bool getResponseOfAllPixel(cv::Mat_<cv::Vec3b>* const _response, const cv::Mat_<cv::Vec3b>& _CImage);
     bool getResponse(cv::Vec3b* const _response, const cv::Vec3b& _C, const cv::Mat& _V);
-    bool test_V(void);
+    bool showVMap(void);
 };
 
 #endif /* defined(__cameraBase03__LinearizerOfProjector__) */

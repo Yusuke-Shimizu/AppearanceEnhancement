@@ -52,28 +52,6 @@
 #define _print_gnuplot_mat7(output, index, mat1, mat2, mat3, mat4, mat5, mat6, mat7) _print_gnuplot8(output, index, (mat1).at<double>(0, 0), (mat2).at<double>(0, 0), (mat3).at<double>(0, 0), (mat4).at<double>(0, 0), (mat5).at<double>(0, 0), (mat6).at<double>(0, 0), (mat7).at<double>(0, 0))
 #define _print_gnuplot_mat8(output, index, mat1, mat2, mat3, mat4, mat5, mat6, mat7, mat8) _print_gnuplot9(output, index, (mat1).at<double>(0, 0), (mat2).at<double>(0, 0), (mat3).at<double>(0, 0), (mat4).at<double>(0, 0), (mat5).at<double>(0, 0), (mat6).at<double>(0, 0), (mat7).at<double>(0, 0), (mat8).at<double>(0, 0))
 
-// 定義
-#define VGA_WIDTH 640
-#define VGA_HEIGHT 480
-#define MAC_PRJ_WIDTH 1680
-#define MAC_PRJ_HEIGHT 1050
-
-//#define PRJ_SIZE_WIDTH 10
-//#define PRJ_SIZE_HEIGHT 7
-//#define PRJ_SIZE_WIDTH 512
-//#define PRJ_SIZE_HEIGHT 512
-//#define PRJ_SIZE_WIDTH 800
-//#define PRJ_SIZE_HEIGHT 700
-//#define PRJ_SIZE_WIDTH 768
-//#define PRJ_SIZE_HEIGHT 768
-//#define PRJ_SIZE_WIDTH 1024
-//#define PRJ_SIZE_HEIGHT 768
-//#define PRJ_SIZE_WIDTH 1024
-//#define PRJ_SIZE_HEIGHT 1024
-//#define PRJ_SIZE_WIDTH VGA_WIDTH
-//#define PRJ_SIZE_HEIGHT VGA_HEIGHT
-#define PRJ_SIZE_WIDTH MAC_PRJ_WIDTH
-#define PRJ_SIZE_HEIGHT MAC_PRJ_HEIGHT
 
 #define NOISE_RANGE 0.01
 //#define NOISE_RANGE 0.05

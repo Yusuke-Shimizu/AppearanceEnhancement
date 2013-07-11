@@ -15,9 +15,22 @@ using namespace cv;
 // コンストラクタ
 GeometricCalibration::GeometricCalibration(void) {
 }
-
-GeometricCalibration::GeometricCalibration(const cv::Size* const _size){
+GeometricCalibration::GeometricCalibration(ProCam* _procam){
+    setProCam(_procam);
 }
+
+///////////////////////////////  set method ///////////////////////////////
+bool GeometricCalibration::setProCam(ProCam* procam){
+    m_procam = procam;
+    return true;
+}
+
+///////////////////////////////  get method ///////////////////////////////
+ProCam* GeometricCalibration::getProCam(void){
+    return m_procam;
+}
+
+///////////////////////////////  print method ///////////////////////////////
 
 // 現在のパターンの表示
 void GeometricCalibration::printCurrentPattern(const bool* const pattern, const int patternSize){
@@ -253,11 +266,11 @@ void GeometricCalibration::image2map(bool* const map, Mat* const image, const Si
 // mapSize  : 上二つの大きさ
 void GeometricCalibration::accessMap2image(Mat *image, const Point* const accessMap, const Size& mapSize, const Size& maxSize){
     // error processing
-    Size imageSize(image->rows, image->cols);
+    Size imageSize(image->cols, image->rows);
     if ( mapSize != imageSize) {
         cerr << "map size is different from image size" << endl;
         ERROR_PRINT2(mapSize, imageSize);
-        return;
+        exit(-1);
     }
     
     // パターンマップを参照し画像を生成
@@ -270,7 +283,9 @@ void GeometricCalibration::accessMap2image(Mat *image, const Point* const access
             color = (accessMap + x + y * mapSize.width)->x * UCHAR_MAX / maxSize.width;
             
             // 色を画像に入れる
+//            _print2("before", *imageItr);
             setColor(imageItr, color);
+//            _print2("after", *imageItr);
         }
     }
 }
@@ -345,18 +360,21 @@ void GeometricCalibration::test_insertAccessMap(void){
 // 入力された投影像を投影・撮影を行い，撮影像を出力する
 void GeometricCalibration::captureProjectionImage(Mat* const captureImage, const Mat* const projectionImage, VideoCapture *videoStream){
     // 投影
-    imshow(W_NAME_GEO_PROJECTOR, *projectionImage);  // posi pattern
-    waitKey(SLEEP_TIME);
-    
-    // 撮影
-    Mat image;
-    for (int i = 0; i < CAPTURE_NUM; ++ i) {
-        *videoStream >> image;
-    }
-    *captureImage = image.clone();
-    //imshow(W_NAME_GEO_CAMERA, *captureImage);
-	//cvMoveWindow(W_NAME_GEO_CAMERA, projectionImage->rows, 0);
-	waitKey(SLEEP_TIME);
+//    imshow(W_NAME_GEO_PROJECTOR, *projectionImage);  // posi pattern
+//    waitKey(SLEEP_TIME);
+//    
+//    // 撮影
+//    Mat image;
+//    for (int i = 0; i < CAPTURE_NUM; ++ i) {
+//        *videoStream >> image;
+//    }
+//    *captureImage = image.clone();
+//    //imshow(W_NAME_GEO_CAMERA, *captureImage);
+//	//cvMoveWindow(W_NAME_GEO_CAMERA, projectionImage->rows, 0);
+//	waitKey(SLEEP_TIME);
+//    
+    ProCam* l_procam = getProCam();
+    l_procam->captureFromLight(captureImage, *projectionImage);
 }
 
 int num = 0;
@@ -410,7 +428,7 @@ void GeometricCalibration::addSpatialCodeOfProCam(bool* const spatialCodeProject
     
     // 差分画像の表示 ok
     imshow16s("diff image", &diffPosiNega16s);
-    cvMoveWindow("diff image", projectorSize->width, 0);
+    cvMoveWindow("diff image", 0, 0);
     
     // 差分画像の書き出し
     Mat diffPosiNega8u = Mat::zeros(diffPosiNega16s.rows, diffPosiNega16s.cols, CV_8UC1);

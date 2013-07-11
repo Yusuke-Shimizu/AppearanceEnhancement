@@ -33,14 +33,24 @@ class ProCam;
 class GeometricCalibration{
 private:
     GeometricCalibration(const GeometricCalibration& gc);   // コピーコンストラクタ隠し（プログラムで１つしか存在しない為）
+    ProCam* m_procam;
+
 public:
     enum stripeDirection {Vertical, Horizon};   // {縦，横}
 
+    ///////////////////////////////  constructor ///////////////////////////////
     GeometricCalibration(void);
-    GeometricCalibration(const cv::Size* const _size);
+    GeometricCalibration(ProCam* _procam);
+    ///////////////////////////////  destructor ///////////////////////////////
+    ///////////////////////////////  set method ///////////////////////////////
+    bool setProCam(ProCam* procam);
+    ///////////////////////////////  get method ///////////////////////////////
+    ProCam* getProCam(void);
+    ///////////////////////////////  print method ///////////////////////////////
     void printCurrentPattern(const bool* const pattern, const int patternSize);
     void printPatternMap(const bool* const map, const cv::Size* const mapSize);
     void printAccessMap(const bool* const accessMap, const cv::Size* const mapSize, const int mapDepth);
+    ///////////////////////////////  other method ///////////////////////////////
     int calcBitCodeNumber(const int length);
     void test_calcBitCodeNumber(void);
     void makePureBinaryCode(bool *pattern, const unsigned int patternSize, const unsigned int layerNum);
