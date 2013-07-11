@@ -22,7 +22,7 @@
 #define WINDOW_NAME "projection image"
 
 // スリープ時間(ms)
-#define SLEEP_TIME 10
+#define SLEEP_TIME 100
 #define CAPTURE_NUM 10
 
 class LinearizerOfProjector;

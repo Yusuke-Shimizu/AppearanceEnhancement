@@ -63,6 +63,11 @@ bool isEqualSizeAndType(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3,
 bool isEqualSizeAndType(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4, const cv::Mat& m5);
 bool isEqualSizeAndType(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4, const cv::Mat& m5, const cv::Mat& m6);
 
+bool isPosiNum(const cv::Mat& m1);
+bool isPosiNum(const cv::Mat& m1, const cv::Mat& m2);
+bool isPosiNum(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3);
+bool isPosiNum(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4);
+
 bool isEqualPoint(const cv::Point* const p1, const cv::Point* const p2, const int length);
 ///////////////////////////////  set method ///////////////////////////////
 void setColor(const cv::MatIterator_<cv::Vec3b> it, const uchar red, const uchar green, const uchar blue);

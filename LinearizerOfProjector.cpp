@@ -294,42 +294,69 @@ bool LinearizerOfProjector::calcColorMixingMatrix(void){
     cv::Mat red_cap     (*cameraSize, depth8x3, cv::Scalar(0, 0, 255));
     cv::Mat green_cap   (*cameraSize, depth8x3, cv::Scalar(0, 255, 0));
     cv::Mat blue_cap    (*cameraSize, depth8x3, cv::Scalar(255, 0, 0));
+    cv::Mat white_cap    (*cameraSize, depth8x3, cv::Scalar(255, 255, 255));
     {
         // init projection image
         cv::Mat black_img   (*projectorSize, depth8x3, cv::Scalar(0, 0, 0));
         cv::Mat red_img     (*projectorSize, depth8x3, cv::Scalar(0, 0, 255));
         cv::Mat green_img   (*projectorSize, depth8x3, cv::Scalar(0, 255, 0));
         cv::Mat blue_img    (*projectorSize, depth8x3, cv::Scalar(255, 0, 0));
+        cv::Mat white_img    (*projectorSize, depth8x3, cv::Scalar(255, 255, 255));
 
         // projection and capture image
         procam->captureFromLight(&black_cap, black_img);
         procam->captureFromLight(&red_cap, red_img);
         procam->captureFromLight(&green_cap, green_img);
         procam->captureFromLight(&blue_cap, blue_img);
+        procam->captureFromLight(&white_cap, white_img);
     }
     
     // show image
-//    imshow("black_cap", black_cap);
-//    imshow("red_cap", red_cap);
-//    imshow("green_cap", green_cap);
-//    imshow("blue_cap", blue_cap);
+    imshow("black_cap", black_cap);
+    imshow("red_cap", red_cap);
+    imshow("green_cap", green_cap);
+    imshow("blue_cap", blue_cap);
+    imshow("white_cap", white_cap);
     
     // translate bit depth (uchar[0-255] -> double[0-1])
     uchar depth64x3 = CV_64FC3;
-    black_cap.convertTo(black_cap, depth64x3, 1.0/255.0);
-    red_cap.convertTo(red_cap, depth64x3, 1.0/255.0);
-    green_cap.convertTo(green_cap, depth64x3, 1.0/255.0);
-    blue_cap.convertTo(blue_cap, depth64x3, 1.0/255.0);
-    
+    double rate = 1.0 / 255.0;
+    black_cap.convertTo(black_cap, depth64x3, rate);
+    red_cap.convertTo(red_cap, depth64x3, rate);
+    green_cap.convertTo(green_cap, depth64x3, rate);
+    blue_cap.convertTo(blue_cap, depth64x3, rate);
+    white_cap.convertTo(white_cap, depth64x3, rate);
+
     // calc difference[-1-1]
     Mat diffRedAndBlack = red_cap - black_cap;
     Mat diffGreenAndBlack = green_cap - black_cap;
     Mat diffBlueAndBlack = blue_cap - black_cap;
+    Mat diffWhiteAndBlack = white_cap - black_cap;
+    _print3(black_cap.at<Vec3d>(100, 100), white_cap.at<Vec3d>(100, 100), diffWhiteAndBlack.at<Vec3d>(100, 100));
+    imshow("black_cap2", black_cap);
+    imshow("white_cap2", white_cap);
+    imshow("diffWtoB_cap", diffWhiteAndBlack);
+    waitKey(-1);
     black_cap.release();
     red_cap.release();
     green_cap.release();
     blue_cap.release();
-    
+    if (!isPosiNum(diffWhiteAndBlack)) {
+        ERROR_PRINT("diff Mat include Negative Number");
+        printMatPropaty(diffWhiteAndBlack);
+        exit(-1);
+    } else {
+        cout << "diff is positive Mat!!!" << endl;
+    }
+//    if (!isPosiNum(diffRedAndBlack, diffGreenAndBlack, diffBlueAndBlack)) {
+//        ERROR_PRINT("diff Mat include Negative Number");
+//        printMatPropaty(diffRedAndBlack);
+//        printMatPropaty(diffGreenAndBlack);
+//        printMatPropaty(diffBlueAndBlack);
+//        exit(-1);
+//    } else {
+//        cout << "diff is positive Mat!!!" << endl;
+//    }
     // show difference image
 //    imshow("diffRedAndBlack", diffRedAndBlack);
 //    imshow("diffGreenAndBlack", diffGreenAndBlack);
@@ -345,8 +372,8 @@ bool LinearizerOfProjector::calcColorMixingMatrix(void){
 //    imshow("diffRedAndBlack2", diffRedAndBlack);
 //    imshow("diffGreenAndBlack2", diffGreenAndBlack);
 //    imshow("diffBlueAndBlack2", diffBlueAndBlack);
-//    const Vec3d* redV2 = getPixelNumd(diffRedAndBlack, point);
-//    _print_vector(*redV2);
+    const Vec3d* redV2 = getPixelNumd(diffRedAndBlack, point);
+    _print_vector(*redV2);
     
     // create V map
     createVMap(diffRedAndBlack, diffGreenAndBlack, diffBlueAndBlack);
@@ -361,7 +388,6 @@ bool LinearizerOfProjector::calcColorMixingMatrix(void){
 // return               : 成功したかどうか
 bool LinearizerOfProjector::createVMap(const cv::Mat& _normalR2BL, const cv::Mat& _normalG2BL, const cv::Mat& _normalB2BL){
     // init
-    std::vector<cv::Mat> l_VMap;
     const int ch = _normalR2BL.channels();
     int rows = _normalR2BL.rows, cols = _normalR2BL.cols;
     Mat_<Vec9d> l_cmmm = Mat::zeros(rows, cols, CV_64FC(9));
@@ -377,6 +403,9 @@ bool LinearizerOfProjector::createVMap(const cv::Mat& _normalR2BL, const cv::Mat
         const double* pNormalR = _normalR2BL.ptr<double>(y);
         const double* pNormalG = _normalG2BL.ptr<double>(y);
         const double* pNormalB = _normalB2BL.ptr<double>(y);
+//        const Vec3d* l_pNormalR = _normalR2BL.ptr<Vec3d>(y);
+//        const Vec3d* l_pNormalG = _normalG2BL.ptr<Vec3d>(y);
+//        const Vec3d* l_pNormalB = _normalB2BL.ptr<Vec3d>(y);
         Vec9d* p_cmmm = l_cmmm.ptr<Vec9d>(y);
 
         for (int x = 0; x < cols; ++ x) {
@@ -394,11 +423,11 @@ bool LinearizerOfProjector::createVMap(const cv::Mat& _normalR2BL, const cv::Mat
             V.at<double>(2, 2) = pNormalB[x * ch + CV_BLUE];
             
             // push V
-            l_VMap.push_back(V);
             convertMatToVec(&l_VVec, V);    // mat -> vec
-//            _print2(l_VVec, V);
             p_cmmm[x] = l_VVec;
-//            _print(p_cmmm[x]);
+            
+//            _print4(pNormalR[x * ch + CV_RED], pNormalR[x * ch + CV_GREEN], pNormalR[x * ch + CV_BLUE], V);
+//            _print4(l_pNormalR[x], l_pNormalG[x], l_pNormalB[x], V);
         }
     }
     
@@ -427,7 +456,7 @@ bool LinearizerOfProjector::calcResponseFunction(cv::Mat_<cv::Vec3b>* const _res
         // create flat color image
         cv::Vec3b prjColor(prjLuminance, prjLuminance, prjLuminance);
         prjImage = cv::Scalar(prjColor);
-        _print2(prjLuminance, prjColor);
+//        _print2(prjLuminance, prjColor);
 
         // capture from projection image
         l_procam->captureFromLight(&camImage, prjImage);
@@ -438,6 +467,9 @@ bool LinearizerOfProjector::calcResponseFunction(cv::Mat_<cv::Vec3b>* const _res
         
         // set response map
         setResponseMap(&l_responseMap, l_responseImage, prjLuminance, 256);
+        Vec3b* l_pResMap = l_responseMap.ptr<Vec3b>(0);
+        _print2(prjLuminance, l_pResMap[prjLuminance]);
+        _print2(prjLuminance, l_responseMap.at<Vec3b>(0, prjLuminance));
     }
     
     // 代入

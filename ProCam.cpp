@@ -501,7 +501,8 @@ bool ProCam::loadAccessMapCam2Pro(void){
 bool ProCam::allCalibration(void){
     Mat projectionImage = Mat::zeros(PRJ_SIZE_HEIGHT, PRJ_SIZE_WIDTH, CV_8UC3);
     imshow(WINDOW_NAME, projectionImage);
-    cvMoveWindow(WINDOW_NAME, -300, -1 * projectionImage.rows);
+    cvMoveWindow(WINDOW_NAME, 0, -1 * projectionImage.rows);
+//    cvMoveWindow(WINDOW_NAME, -300, -1 * projectionImage.rows);
     cv::waitKey(1);
     // geometri calibration
 //    if ( !geometricCalibration() ) {
@@ -563,7 +564,7 @@ bool ProCam::colorCalibration(void){
 // プロジェクタの線形化を行う
 // return   : 成功したかどうか
 bool ProCam::linearlizeOfProjector(void){
-    // 線形化配列を一旦ローカルに落とす
+    // init
     int rows = m_projectorResponse.rows, cols = m_projectorResponse.cols;
     Mat_<Vec3b> prjResponse(rows, cols);
     for (int y = 0; y < rows; ++ y) {

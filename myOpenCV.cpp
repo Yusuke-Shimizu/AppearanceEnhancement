@@ -112,6 +112,32 @@ bool isEqualSizeAndType(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3,
 }
 
 
+// 正数かどうか
+bool isPosiNum(const cv::Mat& m1){
+    const int rows = m1.rows, cols = m1.cols;
+    for (int y = 0; y < rows; ++ y) {
+        const Vec3d* p_m1 = m1.ptr<Vec3d>(y);
+        for (int x = 0; x< cols; ++ x) {
+            _print(p_m1[x]);
+            for (int ch = 0; ch < 3; ++ ch) {
+                if (p_m1[x][ch] < 0) {
+                    return false;
+                }
+            }
+        }
+    }
+    return true;
+}
+bool isPosiNum(const cv::Mat& m1, const cv::Mat& m2){
+    return isPosiNum(m1) & isPosiNum(m2);
+}
+bool isPosiNum(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3){
+    return isPosiNum(m1, m2) & isPosiNum(m3);
+}
+bool isPosiNum(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4){
+    return isPosiNum(m1, m2, m3) & isPosiNum(m4);
+}
+
 // Point配列が全て正しいかどうか判定
 bool isEqualPoint(const cv::Point* const p1, const cv::Point* const p2, const int length){
     for (int i = 0; i < length; ++ i) {
@@ -407,7 +433,7 @@ bool convertVecToMat(cv::Mat_<double>* const _dst, const Vec9d& _src){
         double* p_dst = _dst->ptr<double>(y);
         for (int x = 0; x < cols; ++ x, ++ i) {
             p_dst[x] = _src[i];
-            _print2(p_dst[x], _src[i]);
+//            _print2(p_dst[x], _src[i]);
         }
     }
     return true;
