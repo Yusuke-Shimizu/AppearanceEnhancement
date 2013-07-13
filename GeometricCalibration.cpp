@@ -735,12 +735,34 @@ void GeometricCalibration::test_accessMap(const Point* const accessMapCam2Pro, c
     imshow(_fileName, accessImage);
 }
 
+// 
+void GeometricCalibration::convertArrPt2MatVec(cv::Mat_<cv::Vec2i>* const dst, const cv::Point_<int>* src, const cv::Size& _srcSize){
+    //
+    int cols = dst->cols, rows = dst->rows;
+    const Size dstSize(cols, rows);
+    if (dstSize != _srcSize) {
+        _print3("size is different", dstSize, _srcSize);
+        exit(-1);
+    }
+    
+    //
+    if (dst->isContinuous()) {
+        cols *= rows;
+        rows = 1;
+    }
+    for (int y = 0, i = 0; y < rows; ++ y) {
+        Vec2i* p_dst = dst->ptr<Vec2i>(y);
+        for (int x = 0; x < cols; ++ x, ++ i) {
+            p_dst[x] = Vec2i(src[i]);
+        }
+    }
+}
+
 // 幾何キャリブレーション
-bool GeometricCalibration::doCalibration(cv::Point* const _accessMapCam2Pro, cv::VideoCapture* video){
+bool GeometricCalibration::doCalibration(Mat_<Vec2i>* const _accessMapCam2Pro, cv::VideoCapture* video){
     // init camera
-    Mat frame;                                  // カメラ画像
-    *video >> frame;
-    Size cameraSize(frame.cols, frame.rows);    // カメラの大きさ
+    ProCam* l_procam = getProCam();
+    Size* cameraSize = l_procam->getCameraSize();    // カメラの大きさ
 
     // init projection image
     Size projectionSize(PRJ_SIZE_WIDTH, PRJ_SIZE_HEIGHT);       // 投影サイズ
@@ -749,7 +771,7 @@ bool GeometricCalibration::doCalibration(cv::Point* const _accessMapCam2Pro, cv:
     
     const int accessBitNum = layerSize.width + layerSize.height;  // アクセスに必要なビット数
     const int pixelNumProjector = projectionSize.width * projectionSize.height;        // 全画素数
-    const int pixelNumCamera = cameraSize.width * cameraSize.height;        // 全画素数
+    const int pixelNumCamera = cameraSize->width * cameraSize->height;        // 全画素数
     
     // 空間コード画像（大きさ：(縦層+横層)*全画素数）
     bool *grayCodeMapProjector = (bool*)malloc(sizeof(bool) * accessBitNum * pixelNumProjector);// プロジェクタのグレイコードマップ
@@ -760,10 +782,10 @@ bool GeometricCalibration::doCalibration(cv::Point* const _accessMapCam2Pro, cv:
     // 縦横の縞模様を投影しグレイコードをプロジェクタ，カメラ双方に付与する
     int offset = 0; // 初期ビットの位置
     for (int timeStep = 1; timeStep <= layerSize.width; ++ timeStep, ++ offset) {
-        addSpatialCodeOfProCam(grayCodeMapProjector, grayCodeMapCamera, &projectionSize, &cameraSize, timeStep, offset, Vertical, video);
+        addSpatialCodeOfProCam(grayCodeMapProjector, grayCodeMapCamera, &projectionSize, cameraSize, timeStep, offset, Vertical, video);
     }
     for (int timeStep = 1; timeStep <= layerSize.height; ++ timeStep, ++ offset) {
-        addSpatialCodeOfProCam(grayCodeMapProjector, grayCodeMapCamera, &projectionSize, &cameraSize, timeStep, offset, Horizon, video);
+        addSpatialCodeOfProCam(grayCodeMapProjector, grayCodeMapCamera, &projectionSize, cameraSize, timeStep, offset, Horizon, video);
     }
     
 	// 使用したウィンドウの削除
@@ -771,18 +793,24 @@ bool GeometricCalibration::doCalibration(cv::Point* const _accessMapCam2Pro, cv:
 	destroyWindow(W_NAME_GEO_PROJECTOR);
     
     // プロカム間のアクセスマップを作る
-    setAccessMap(_accessMapCam2Pro, grayCodeMapCamera, grayCodeMapProjector, &cameraSize, &projectionSize, &layerSize);
+    Point* l_accessMapCam2Pro = new Point[cameraSize->area()];  // Mat_<Vec2i>へ変換する為の変数
+//    setAccessMap(_accessMapCam2Pro, grayCodeMapCamera, grayCodeMapProjector, cameraSize, &projectionSize, &layerSize);
+    setAccessMap(l_accessMapCam2Pro, grayCodeMapCamera, grayCodeMapProjector, cameraSize, &projectionSize, &layerSize);
     
     // 空間コード画像の解放
 	free(grayCodeMapProjector);
 	free(grayCodeMapCamera);
     
     // アクセスマップのテスト
-    test_accessMap(_accessMapCam2Pro, cameraSize, projectionSize, "access map image");
+    test_accessMap(l_accessMapCam2Pro, *cameraSize, projectionSize, "access map image");
     
 	// 幾何キャリブレーションのテスト
 //	test_geometricCalibration(_accessMapCam2Pro, &camera, &cameraSize, &projectionSize);
     
+    // Point[] -> Mat_<Vec2i>
+    convertArrPt2MatVec(_accessMapCam2Pro, l_accessMapCam2Pro, *cameraSize);
+    
+    delete [] l_accessMapCam2Pro;
     return true;
 }
 

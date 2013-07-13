@@ -74,7 +74,8 @@ bool ProCam::init(const cv::Size& projectorSize){
 //    if ( !linearlizeOfProjector() ) return false;
     
     // アクセスマップの初期化
-    if (!initAccessMapCam2Pro() ) return false;
+    if ( !initAccessMapCam2Pro() ) return false;
+    if ( !initAccessMapCam2Prj() ) return false;
     
     return true;
 }
@@ -125,6 +126,11 @@ bool ProCam::initAccessMapCam2Pro(void){
         }
     }
     
+    return true;
+}
+bool ProCam::initAccessMapCam2Prj(void){
+    cv::Size* camSize = getCameraSize();
+    m_accessMapCam2Prj = Mat::zeros(*camSize, CV_16SC1);
     return true;
 }
 
@@ -207,19 +213,33 @@ bool ProCam::setAccessMapCam2Pro(const cv::Point* const accessMapCam2Pro){
     
     return true;
 }
+bool ProCam::setAccessMapCam2Prj(const cv::Mat_<cv::Vec2i>& _accessMapCam2Prj){
+    // error
+    if (!isEqualSizeAndType(_accessMapCam2Prj, m_accessMapCam2Prj)) {
+        cerr << "size or type is different" << endl;
+        _print_name(_accessMapCam2Prj);
+        printMatPropaty(_accessMapCam2Prj);
+        return false;
+    }
+    
+    // deep copy
+    m_accessMapCam2Prj = _accessMapCam2Prj.clone();
+    
+    return true;
+}
 
 // プロジェクタ応答特性（m_projectorResponse）の設定
 // input / prjResSize   : 設定したい大きさ
 // return               : 成功したかどうか
-bool ProCam::setProjectorResponse(const cv::Mat_<cv::Vec3b>* const _response){
+bool ProCam::setProjectorResponse(const cv::Mat_<cv::Vec3b>& _response){
     // error processing
-    if ( !isEqualSizeAndType(*_response, m_projectorResponse)) {
+    if ( !isEqualSizeAndType(_response, m_projectorResponse)) {
         ERROR_PRINT("_response Type of Size is different from m_projectorResponse");
         return false;
     }
     
     // deep copy
-    m_projectorResponse = _response->clone();
+    m_projectorResponse = _response.clone();
     return true;
 }
 
@@ -292,16 +312,57 @@ bool ProCam::getAccessMapCam2Pro(cv::Point* const accessMapCam2Pro){
     
     return true;
 }
+const cv::Mat_<cv::Vec2i>* ProCam::getAccessMapCam2Prj(void){
+    return &m_accessMapCam2Prj;
+}
+
+const cv::Mat_<cv::Vec3b>* ProCam::getProjectorResponse(void){
+    return &m_projectorResponse;
+}
+
+// プロジェクタ空間の画像を取得
+// output / _psImg  : プロジェクタ座標系に投影した画像
+// input / _csImg   : カメラ座標系の画像
+bool ProCam::getImageOnProjectorSpace(cv::Mat_<cv::Vec3b>* const _psImg, const cv::Mat_<cv::Vec3b>&  _csImg){
+    // error processing
+    const Mat_<Vec2i>* l_accessMapC2P = getAccessMapCam2Prj();              // カメラ空間からプロジェクタ空間への変換テーブル
+    if ( !isEqualSize(*l_accessMapC2P, _csImg) ) {
+        cerr << "size is different" << endl;
+        _print_name(_csImg);
+        _print_name(l_accessMapC2P);
+        exit(-1);
+    }
+    
+    // camera coordinate system -> projector coordinate system
+    Mat_<Vec3b> l_psImg = Mat::zeros(_psImg->rows, _psImg->cols, CV_8UC3);  // プロジェクタ空間上の画像（ローカル）
+    int rows = _csImg.rows, cols = _csImg.cols;
+    if (isContinuous(*l_accessMapC2P, _csImg) ) {
+        cols *= rows;
+        rows = 1;
+    }
+    for (int y = 0; y < rows; ++ y) {
+        const Vec2i* l_pAccessMapC2P = l_accessMapC2P->ptr<Vec2i>(y);
+        const Vec3b* l_pCsImg = _csImg.ptr<Vec3b>(y);
+        
+        for (int x = 0; x < cols; ++ x) {
+            Point prjPoint = Point(l_pAccessMapC2P[x]); // projector coordinate system
+            l_psImg.at<Vec3b>(prjPoint) = l_pCsImg[x];  // set projector image
+            Point camPoint(x, y);
+            _print2(camPoint, prjPoint);
+        }
+    }
+    
+    // deep copy
+    *_psImg = l_psImg.clone();
+    
+    return true;
+}
 
 ///////////////////////////////  save method ///////////////////////////////
-bool ProCam::saveAccessMapCam2Pro(void){
+bool ProCam::saveAccessMapCam2Prj(void){
     // init
     cout << "saving look up table..." << endl;
-    Size cameraSize;
-    getCameraSize(&cameraSize);
-    const int cameraPixels = cameraSize.area();
-    Point *accessMapCam2Pro = (Point*)malloc(sizeof(Point) * cameraPixels);
-    getAccessMapCam2Pro(accessMapCam2Pro);
+    const Mat_<Vec2i>* l_accessMapC2P = getAccessMapCam2Prj();
     
     // バイナリ出力モード（初期化を行う）
     ofstream ofs;
@@ -312,21 +373,26 @@ bool ProCam::saveAccessMapCam2Pro(void){
     }
     
     // write look up table size
-    _print(cameraSize);
-    ofs.write((char*)&cameraSize.width, sizeof(int));
-    ofs.write((char*)&cameraSize.height, sizeof(int));
+    int rows = l_accessMapC2P->rows, cols = l_accessMapC2P->cols;
+    ofs.write((char*)&rows, sizeof(int));
+    ofs.write((char*)&cols, sizeof(int));
     
     // write table
-    for (int y = 0; y < cameraSize.height; ++ y) {
-        for (int x = 0; x < cameraSize.width; ++ x) {
-            int ptr = y * cameraSize.width + x, tmpX = 0, tmpY = 0;
-            getPoint(&tmpX, &tmpY, *(accessMapCam2Pro + ptr));
-            ofs.write((char*)&tmpX, sizeof(int));
-            ofs.write((char*)&tmpY, sizeof(int));
+    if (l_accessMapC2P->isContinuous()) {
+        cols *= rows;
+        rows = 1;
+    }
+    Point tmp(0, 0);
+    for (int y = 0; y < rows; ++ y) {
+        const Vec2i* l_pAccessMapC2P = l_accessMapC2P->ptr<Vec2i>(y);
+        
+        for (int x = 0; x < cols; ++ x) {
+            tmp = Point(l_pAccessMapC2P[x]);
+            ofs.write((char*)&tmp.x, sizeof(int));
+            ofs.write((char*)&tmp.y, sizeof(int));
         }
     }
-
-    free(accessMapCam2Pro);
+    
     cout << "finish saving!" << endl;
     return true;
 }
@@ -441,56 +507,62 @@ bool ProCam::loadProjectorResponseForByte(const char* fileName){
     return true;
 }
 ///////////////////////////////  load method ///////////////////////////////
-bool ProCam::loadAccessMapCam2Pro(void){
+bool ProCam::loadAccessMapCam2Prj(void){
     cout << "loading look up table..." << endl;
     // init
-    Size cameraSize;
-    getCameraSize(&cameraSize);
-    const int cameraPixels = cameraSize.area();
-    Point *accessMapCam2Pro = (Point*)malloc(sizeof(Point) * cameraPixels);
-    initPoint(accessMapCam2Pro, cameraPixels);
     ifstream ifs(LOOK_UP_TABLE_FILE_NAME);
-    
-    // load size
-    Size tableSize;
-    ifs.read((char*)&tableSize.width, sizeof(int));
-    ifs.read((char*)&tableSize.height, sizeof(int));
-    _print(tableSize);
-    if (tableSize != cameraSize) {
-        cerr << "loaded size is different from current camera size" << endl;
-        ERROR_PRINT2(cameraSize, tableSize);
-        return false;
+    if (!ifs) {
+        cerr << LOOK_UP_TABLE_FILE_NAME << "is not found" << endl;
+        exit(-1);
     }
     
-    // load 
-    for (int y = 0; y < cameraSize.height; ++ y) {
-        for (int x = 0; x < cameraSize.width; ++ x) {
-            int ptr = y * cameraSize.width + x, tmpX = 0, tmpY = 0;
-            ifs.read((char*)&tmpX, sizeof(int));
-            ifs.read((char*)&tmpY, sizeof(int));
-            setPoint(accessMapCam2Pro + ptr, tmpX, tmpY);
+    // load size
+    Size mapSize(0, 0);
+    ifs.read((char*)&mapSize.height, sizeof(int));
+    ifs.read((char*)&mapSize.width, sizeof(int));
+//    Size* cameraSize = getCameraSize();
+//    if (mapSize != *cameraSize) {
+//        cerr << "loaded size is different from current camera size" << endl;
+//        ERROR_PRINT2(*cameraSize, mapSize);
+//        return false;
+//    }
+    
+    // init access map
+    Mat_<Vec2i> l_accessMapC2P = Mat::zeros(mapSize, CV_16SC2);
+    
+    // load
+    int rows = l_accessMapC2P.rows, cols = l_accessMapC2P.cols;
+    Point tmp(0, 0);
+    for (int y = 0; y < rows; ++ y) {
+        Vec2i* l_pAccessMapC2P = l_accessMapC2P.ptr<Vec2i>(y);
+        
+        for (int x = 0; x < cols; ++ x) {
+            ifs.read((char*)&tmp.x, sizeof(int));
+            ifs.read((char*)&tmp.y, sizeof(int));
+            l_pAccessMapC2P[x] = Vec2i(tmp);
         }
     }
     
     // check
-    Size projectorSize(0, 0);
-    getProjectorSize(&projectorSize);
-//    GeometricCalibration gs;
-//    gs.test_accessMap(accessMapCam2Pro, cameraSize, projectorSize, "load access map image");
-//    gs.test_geometricCalibration(accessMapCam2Pro, &m_video, &cameraSize, &projectorSize);
-    Point *true_accessMapCam2Pro = (Point*)malloc(sizeof(Point) * cameraPixels);
-    getAccessMapCam2Pro(true_accessMapCam2Pro);
-    if (isEqualPoint(accessMapCam2Pro, true_accessMapCam2Pro, cameraPixels)) {
-        cout << "load is succeed!!!" << endl;
-        free(true_accessMapCam2Pro);
-    } else {
-        free(true_accessMapCam2Pro);
-        return false;
-    }
-
+//    const Mat_<Vec2i>* l_accessMapC2P_correct = getAccessMapCam2Prj();
+//    if (l_accessMapC2P.size != l_accessMapC2P_correct->size) {
+//        _print3("Size of loaded access map is different from correct this", l_accessMapC2P.size, l_accessMapC2P_correct->size);
+//        exit(-1);
+//    }
+//    for (int y = 0; y < rows; ++ y) {
+//        Vec2i* l_pAccessMapC2P = l_accessMapC2P.ptr<Vec2i>(y);
+//        const Vec2i* l_pAccessMapC2P_correct = l_accessMapC2P_correct->ptr<Vec2i>(y);
+//        
+//        for (int x = 0; x < cols; ++ x) {
+//            if (l_pAccessMapC2P[x] != l_pAccessMapC2P_correct[x]) {
+//                _print3("loaded access map is failed", l_pAccessMapC2P[x], l_pAccessMapC2P_correct[x]);
+//                exit(-1);
+//            }
+//        }
+//    }
+    
     // setting look up table
-    setAccessMapCam2Pro(accessMapCam2Pro);
-    free(accessMapCam2Pro);
+    setAccessMapCam2Prj(l_accessMapC2P);
     
     cout << "finish loading!" << endl;
     return true;
@@ -513,13 +585,13 @@ bool ProCam::allCalibration(void){
     // linearized projector
     if ( !linearlizeOfProjector() ) {
         cerr << "linearized error of projector" << endl;
-        return false;
+        exit(-1);
     }
 
     // color caliration
     if ( !colorCalibration() ) {
         cerr << "color caliration error" << endl;
-        return false;
+        exit(-1);
     }
     
     return true;
@@ -528,28 +600,31 @@ bool ProCam::allCalibration(void){
 // 幾何キャリブレーションを行う
 bool ProCam::geometricCalibration(void){
     // init
-    const int cameraPixels = getPixelsOfCamera();
-    Point *accessMapCam2Pro = (Point*)malloc(sizeof(Point) * cameraPixels);
-    initPoint(accessMapCam2Pro, cameraPixels);
+    Size* camSize = getCameraSize();
+    Mat_<Vec2i> l_accessMapCam2Prj(*camSize);
     
     // geometric calibration
     VideoCapture* video = getVideoCapture();
-//    getVideoCapture(&video);
-    _print_name(*video);
     GeometricCalibration gc(this);
-    if (!gc.doCalibration(accessMapCam2Pro, video)) {
+    if (!gc.doCalibration(&l_accessMapCam2Prj, video)) {
         cerr << "error of geometric calibration" << endl;
         return false;
     }
     
     // 上で得たプロカム間のルックアップテーブルをクラス変数に代入
     // set class variable
-    setAccessMapCam2Pro(accessMapCam2Pro);
-    free(accessMapCam2Pro);
+    setAccessMapCam2Prj(l_accessMapCam2Prj);
     
     // save
-    saveAccessMapCam2Pro();
-    loadAccessMapCam2Pro();
+    saveAccessMapCam2Prj();
+//    loadAccessMapCam2Prj();
+    
+    // test geometric caliblation
+    const Size* prjSize = getProjectorSize();
+    Mat_<Vec3b> whiteImg = Mat::ones(*camSize, CV_8UC3), camImg = Mat::zeros(*prjSize, CV_8UC3);
+    getImageOnProjectorSpace(&camImg, whiteImg);
+    MY_IMSHOW(camImg);
+    MY_WAIT_KEY();
 
     return true;
 }
@@ -581,7 +656,7 @@ bool ProCam::linearlizeOfProjector(void){
     if ( !linearPrj.linearlize(&prjResponse) ) return false;
     
     // 落とした配列をメンバ配列に代入する
-    if ( !setProjectorResponse(&prjResponse) ) {ERROR_PRINT("error is setProjectorResponse"); return false;}
+    if ( !setProjectorResponse(prjResponse) ) {ERROR_PRINT("error is setProjectorResponse"); return false;}
     cout << "saving projector response" << endl;
 //    saveProjectorResponse(PROJECTOR_RESPONSE_FILE_NAME_02, 0, 0);
     saveProjectorResponseForByte(PROJECTOR_RESPONSE_FILE_NAME_BYTE);
@@ -626,3 +701,35 @@ bool ProCam::captureFromLight(cv::Mat* const captureImage, const cv::Mat& projec
 
     return true;
 }
+
+// 線形化したプロジェクタを用いて投影・撮影を行う
+bool ProCam::captureFromLinearLight(cv::Mat* const captureImage, const cv::Mat& projectionImage){
+    // get projector response function
+    const Mat_<Vec3b>* l_prjRes = getProjectorResponse();               // プロジェクタ強度の線形化ルックアップテーブル
+    if (projectionImage.rows != l_prjRes->rows || projectionImage.cols != l_prjRes->cols / 256) {
+        ERROR_PRINT3("size is different", projectionImage.size, l_prjRes->size);
+        exit(-1);
+    }
+    
+    // init lineared projection image
+    int prjRows = projectionImage.rows, prjCols = projectionImage.cols, prjCh = projectionImage.channels(); // 投影サイズ
+    Mat_<Vec3b> l_linearProjectionImage = Mat::zeros(prjRows, prjCols, CV_8UC3);    // プロジェクタ強度の線形化を行った後の投影像
+    
+    //
+    for (int y = 0; y < prjRows; ++ y) {
+        // init pointer
+        const Vec3b* l_pPrjRes = l_prjRes->ptr<Vec3b>(y);
+        const Vec3b* l_pPrjImg = projectionImage.ptr<Vec3b>(y);
+        Vec3b* l_pLinearPrjImg = l_linearProjectionImage.ptr<Vec3b>(y);
+        
+        for (int x = 0; x < prjCols; ++ x) {
+            for (int ch = 0; ch < prjCh; ++ ch) {
+                const int prjResIndex = x * 256 + l_pPrjImg[x][ch];
+                l_pLinearPrjImg[x][ch] = l_pPrjRes[prjResIndex][ch];
+            }
+        }
+    }
+    
+    return captureFromLight(captureImage, l_linearProjectionImage);
+}
+

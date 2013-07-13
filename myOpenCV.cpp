@@ -114,12 +114,12 @@ bool isEqualSizeAndType(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3,
 
 // 正数かどうか
 bool isPosiNum(const cv::Mat& m1){
-    const int rows = m1.rows, cols = m1.cols;
+    const int rows = m1.rows, cols = m1.cols, channels = m1.channels();
     for (int y = 0; y < rows; ++ y) {
         const Vec3d* p_m1 = m1.ptr<Vec3d>(y);
         for (int x = 0; x< cols; ++ x) {
-            _print(p_m1[x]);
-            for (int ch = 0; ch < 3; ++ ch) {
+//            _print(p_m1[x]);
+            for (int ch = 0; ch < channels; ++ ch) {
                 if (p_m1[x][ch] < 0) {
                     return false;
                 }

@@ -79,7 +79,8 @@ public:
     void getProjectorPoint(cv::Point* const projector, const cv::Point* const camera, const cv::Point* const accessMapC2P, const int cameraWidth);
     void test_accessMap(const cv::Point* const accessMapCam2Pro, const cv::Size& cameraSize, const cv::Size& projectorSize, const char* _fileName);
     void test_geometricCalibration(cv::Point* const accessMapC2P, cv::VideoCapture *video, const cv::Size* const cameraSize, const cv::Size* const projectorSize);
-    bool doCalibration(cv::Point* const _accessMapCam2Pro, cv::VideoCapture* video);
+    void convertArrPt2MatVec(cv::Mat_<cv::Vec2i>* const dst, const cv::Point_<int>* src, const cv::Size& _srcSize);
+    bool doCalibration(cv::Mat_<cv::Vec2i>* const _accessMapCam2Pro, cv::VideoCapture* video);
 };
 
 #endif /* defined(__cameraBase03__GeometricCalibration__) */
