@@ -323,7 +323,7 @@ const cv::Mat_<cv::Vec3b>* ProCam::getProjectorResponse(void){
 // プロジェクタ空間の画像を取得
 // output / _psImg  : プロジェクタ座標系に投影した画像
 // input / _csImg   : カメラ座標系の画像
-bool ProCam::getImageOnProjectorSpace(cv::Mat_<cv::Vec3b>* const _psImg, const cv::Mat_<cv::Vec3b>&  _csImg){
+bool ProCam::getImageOnProjectorSpace(cv::Mat* const _psImg, const cv::Mat&  _csImg){
     // error processing
     const Mat_<Vec2i>* l_accessMapC2P = getAccessMapCam2Prj();              // カメラ空間からプロジェクタ空間への変換テーブル
     if ( !isEqualSize(*l_accessMapC2P, _csImg) ) {
@@ -347,8 +347,8 @@ bool ProCam::getImageOnProjectorSpace(cv::Mat_<cv::Vec3b>* const _psImg, const c
         for (int x = 0; x < cols; ++ x) {
             Point prjPoint = Point(l_pAccessMapC2P[x]); // projector coordinate system
             l_psImg.at<Vec3b>(prjPoint) = l_pCsImg[x];  // set projector image
-            Point camPoint(x, y);
-            _print2(camPoint, prjPoint);
+//            Point camPoint(x, y);
+//            _print2(camPoint, prjPoint);
         }
     }
     
@@ -577,10 +577,10 @@ bool ProCam::allCalibration(void){
 //    cvMoveWindow(WINDOW_NAME, 1680, 0);   // linux
     cv::waitKey(1);
     // geometri calibration
-    if ( !geometricCalibration() ) {
-        cerr << "geometric calibration error" << endl;
-        return false;
-    }
+//    if ( !geometricCalibration() ) {
+//        cerr << "geometric calibration error" << endl;
+//        return false;
+//    }
     
     // linearized projector
     if ( !linearlizeOfProjector() ) {
@@ -619,13 +619,9 @@ bool ProCam::geometricCalibration(void){
     saveAccessMapCam2Prj();
 //    loadAccessMapCam2Prj();
     
-    // test geometric caliblation
-    const Size* prjSize = getProjectorSize();
-    Mat_<Vec3b> whiteImg = Mat::ones(*camSize, CV_8UC3), camImg = Mat::zeros(*prjSize, CV_8UC3);
-    getImageOnProjectorSpace(&camImg, whiteImg);
-    MY_IMSHOW(camImg);
-    MY_WAIT_KEY();
-
+    // test geometric calibration
+    gc.test_accessMap();
+    
     return true;
 }
 
@@ -667,6 +663,51 @@ bool ProCam::linearlizeOfProjector(void){
     return true;
 }
 
+///////////////////////////////  convert method ///////////////////////////////
+
+// プロジェクタの強度が線形化されていない画像から線形化された画像へ変換
+// output / _linearImg      : 線形化後の画像
+// input / _nonLinearImg    : 線形化前の画像
+bool ProCam::convertNonLinearImageToLinearOne(cv::Mat* const _linearImg, const cv::Mat&  _nonLinearImg){
+    // error processing
+    const Mat_<Vec3b>* l_prjRes = getProjectorResponse();               // プロジェクタ強度の線形化ルックアップテーブル
+    const Mat l_compressedPrjRes(l_prjRes->rows, l_prjRes->cols / 256, CV_8UC3);
+    if (!isEqualSize(*_linearImg, _nonLinearImg, l_compressedPrjRes)) {
+        cerr << "different size" << endl;
+        _print_name(*_linearImg);
+        printMatPropaty(*_linearImg);
+        _print_name(_nonLinearImg);
+        printMatPropaty(_nonLinearImg);
+        _print_name(l_compressedPrjRes);
+        printMatPropaty(l_compressedPrjRes);
+        exit(-1);
+    }
+    
+    // init lineared image
+    int rows = _nonLinearImg.rows, cols = _nonLinearImg.cols, imgCh = _nonLinearImg.channels(); // 投影サイズ
+    Mat l_linearImage(rows, cols, CV_8UC3, Scalar(0, 0, 0));    // プロジェクタ強度の線形化を行った後の投影像
+    
+    // scan all pixel and channel
+    for (int y = 0; y < rows; ++ y) {
+        // init pointer
+        const Vec3b* l_pPrjRes = l_prjRes->ptr<Vec3b>(y);
+        const Vec3b* l_pNonLinearImg = _nonLinearImg.ptr<Vec3b>(y);
+        Vec3b* l_pLinearImg = _linearImg->ptr<Vec3b>(y);
+        
+        for (int x = 0; x < cols; ++ x) {
+            for (int ch = 0; ch < imgCh; ++ ch) {
+                const int prjResIndex = x * 256 + l_pNonLinearImg[x][ch];   // 応答特性マップの座標
+                l_pLinearImg[x][ch] = l_pPrjRes[prjResIndex][ch];
+            }
+        }
+    }
+    
+    // deep copy
+    *_linearImg = l_linearImage.clone();
+    
+    return true;
+}
+
 ///////////////////////////////  other method ///////////////////////////////
 
 // output / captureImage    : 撮影した画像を代入する場所
@@ -704,31 +745,11 @@ bool ProCam::captureFromLight(cv::Mat* const captureImage, const cv::Mat& projec
 
 // 線形化したプロジェクタを用いて投影・撮影を行う
 bool ProCam::captureFromLinearLight(cv::Mat* const captureImage, const cv::Mat& projectionImage){
-    // get projector response function
-    const Mat_<Vec3b>* l_prjRes = getProjectorResponse();               // プロジェクタ強度の線形化ルックアップテーブル
-    if (projectionImage.rows != l_prjRes->rows || projectionImage.cols != l_prjRes->cols / 256) {
-        ERROR_PRINT3("size is different", projectionImage.size, l_prjRes->size);
-        exit(-1);
-    }
-    
     // init lineared projection image
-    int prjRows = projectionImage.rows, prjCols = projectionImage.cols, prjCh = projectionImage.channels(); // 投影サイズ
-    Mat_<Vec3b> l_linearProjectionImage = Mat::zeros(prjRows, prjCols, CV_8UC3);    // プロジェクタ強度の線形化を行った後の投影像
+    Mat l_linearProjectionImage(projectionImage.rows, projectionImage.cols, CV_8UC3, Scalar(0, 0, 0));    // プロジェクタ強度の線形化を行った後の投影像
     
-    //
-    for (int y = 0; y < prjRows; ++ y) {
-        // init pointer
-        const Vec3b* l_pPrjRes = l_prjRes->ptr<Vec3b>(y);
-        const Vec3b* l_pPrjImg = projectionImage.ptr<Vec3b>(y);
-        Vec3b* l_pLinearPrjImg = l_linearProjectionImage.ptr<Vec3b>(y);
-        
-        for (int x = 0; x < prjCols; ++ x) {
-            for (int ch = 0; ch < prjCh; ++ ch) {
-                const int prjResIndex = x * 256 + l_pPrjImg[x][ch];
-                l_pLinearPrjImg[x][ch] = l_pPrjRes[prjResIndex][ch];
-            }
-        }
-    }
+    // non linear image -> linear one
+    convertNonLinearImageToLinearOne(&l_linearProjectionImage, projectionImage);
     
     return captureFromLight(captureImage, l_linearProjectionImage);
 }

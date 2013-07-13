@@ -81,6 +81,7 @@ public:
     void test_geometricCalibration(cv::Point* const accessMapC2P, cv::VideoCapture *video, const cv::Size* const cameraSize, const cv::Size* const projectorSize);
     void convertArrPt2MatVec(cv::Mat_<cv::Vec2i>* const dst, const cv::Point_<int>* src, const cv::Size& _srcSize);
     bool doCalibration(cv::Mat_<cv::Vec2i>* const _accessMapCam2Pro, cv::VideoCapture* video);
+    void test_accessMap(void);
 };
 
 #endif /* defined(__cameraBase03__GeometricCalibration__) */

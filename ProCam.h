@@ -41,10 +41,10 @@
 //#define RESPONSE_SIZE 256*3
 
 // 幾何キャリブレーションで得たルックアップテーブルのファイル名
-#define LOOK_UP_TABLE_FILE_NAME "caliblationData/lookUpTableCameraToProjector.dat"
-#define PROJECTOR_RESPONSE_FILE_NAME "caliblationData/projectorResponse.dat"
-#define PROJECTOR_RESPONSE_FILE_NAME_02 "caliblationData/projectorResponse02.dat"
-#define PROJECTOR_RESPONSE_FILE_NAME_BYTE "caliblationData/projectorResponseForByte.dat"
+#define LOOK_UP_TABLE_FILE_NAME "calibrationData/lookUpTableCameraToProjector.dat"
+#define PROJECTOR_RESPONSE_FILE_NAME "calibrationData/projectorResponse.dat"
+#define PROJECTOR_RESPONSE_FILE_NAME_02 "calibrationData/projectorResponse02.dat"
+#define PROJECTOR_RESPONSE_FILE_NAME_BYTE "calibrationData/projectorResponseForByte.dat"
 #define WINDOW_NAME "projection image"
 
 // スリープ時間(ms)
@@ -107,7 +107,7 @@ public:
     bool getAccessMapCam2Pro(cv::Point* const accessMapCam2Pro);
     const cv::Mat_<cv::Vec2i>* getAccessMapCam2Prj(void);
     const cv::Mat_<cv::Vec3b>* getProjectorResponse(void);
-    bool getImageOnProjectorSpace(cv::Mat_<cv::Vec3b>* const _psImg, const cv::Mat_<cv::Vec3b>&  _csImg);
+    bool getImageOnProjectorSpace(cv::Mat* const _psImg, const cv::Mat&  _csImg);
     ///////////////////////////////  save method ///////////////////////////////
 //    bool saveAccessMapCam2Pro(void);
     bool saveAccessMapCam2Prj(void);
@@ -123,6 +123,8 @@ public:
     bool geometricCalibration(void);
     bool colorCalibration(void);
     bool linearlizeOfProjector(void);
+    ///////////////////////////////  convert method ///////////////////////////////
+    bool convertNonLinearImageToLinearOne(cv::Mat* const _linearImg, const cv::Mat&  _nonLinearImg);
     ///////////////////////////////  other method ///////////////////////////////
     bool captureFromLight(cv::Mat* const captureImage, const cv::Mat& projectionImage);
     bool captureFromLinearLight(cv::Mat* const captureImage, const cv::Mat& projectionImage);

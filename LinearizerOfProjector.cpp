@@ -517,6 +517,7 @@ bool LinearizerOfProjector::getResponse(cv::Vec3b* const _response, const cv::Ve
     Mat invV = _V.inv();    // V^{-1}
     Vec3b l_rgbC(0, 0, 0);
     convertBGRtoRGB(&l_rgbC, _C);   // bgr -> rgb
+    _print2(_C, l_rgbC);
     Mat l_CMat(l_rgbC);         // Vec3b -> Mat
     l_CMat.convertTo(l_CMat, MAT_TYEP_DOUBLE);  // uchar -> double
 

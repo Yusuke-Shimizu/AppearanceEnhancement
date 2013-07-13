@@ -814,3 +814,13 @@ bool GeometricCalibration::doCalibration(Mat_<Vec2i>* const _accessMapCam2Pro, c
     return true;
 }
 
+// アクセスマップを表示して確かめる
+void GeometricCalibration::test_accessMap(void){
+    ProCam* l_procam = getProCam();
+    const Size* prjSize = l_procam->getProjectorSize();
+    const Size* camSize = l_procam->getCameraSize();
+    Mat whiteImg(*camSize, CV_8UC3, Scalar(255, 255, 255)), camImg(*prjSize, CV_8UC3, Scalar(0, 0, 0));
+    l_procam->getImageOnProjectorSpace(&camImg, whiteImg);
+    MY_IMSHOW(camImg);
+    MY_WAIT_KEY();
+}

@@ -14,8 +14,8 @@
 #include "ProCam.h"
 #include <vector>
 
-#define CMM_MAP_FILE_NAME "caliblationData/cmmMap.dat"
-#define CMM_MAP_FILE_NAME_BYTE "caliblationData/cmmMap_byte.dat"
+#define CMM_MAP_FILE_NAME "calibrationData/cmmMap.dat"
+#define CMM_MAP_FILE_NAME_BYTE "calibrationData/cmmMap_byte.dat"
 
 // 先攻宣言
 class ProCam;
