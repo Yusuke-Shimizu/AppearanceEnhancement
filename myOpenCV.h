@@ -99,6 +99,7 @@ void test_convertNumber16sTo8u(void);
 void convertMatDepth16sTo8u(cv::Mat* const dst8u, const cv::Mat* const src16s);
 void test_convertMatDepth16sTo8u(void);
 bool convertBGRtoRGB(cv::Vec3b* const _rgb, const cv::Vec3b& _bgr);
+bool convertRGBtoBGR(cv::Vec3b* const _bgr, const cv::Vec3b& _rgb);
 bool convertVecToMat(cv::Mat_<double>* const _dst, const Vec9d& _src);
 bool convertMatToVec(Vec9d* const _dst, const cv::Mat_<double>& _src);
 ///////////////////////////////  round method ///////////////////////////////

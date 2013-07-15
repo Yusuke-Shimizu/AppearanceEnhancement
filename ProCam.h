@@ -12,6 +12,10 @@
 #include "LinearizerOfProjector.h"
 #include "myOpenCV.h"
 
+// 使用PC
+#define MAC
+//#define LINUX
+
 // 定義
 #define VGA_WIDTH 640
 #define VGA_HEIGHT 480
@@ -20,22 +24,27 @@
 #define LINUX_PRJ_WIDTH 1024
 #define LINUX_PRJ_HEIGHT 768
 
-//#define PRJ_SIZE_WIDTH 10
-//#define PRJ_SIZE_HEIGHT 7
-//#define PRJ_SIZE_WIDTH 512
-//#define PRJ_SIZE_HEIGHT 512
-//#define PRJ_SIZE_WIDTH 800
-//#define PRJ_SIZE_HEIGHT 700
-//#define PRJ_SIZE_WIDTH 768
-//#define PRJ_SIZE_HEIGHT 768
-//#define PRJ_SIZE_WIDTH 1024
-//#define PRJ_SIZE_HEIGHT 768
-//#define PRJ_SIZE_WIDTH 1024
-//#define PRJ_SIZE_HEIGHT 1024
+#define MAC_POS_X 0
+#define MAC_POS_Y -1050
+#define LINUX_POS_X 1680
+#define LINUX_POS_Y 0
+
 //#define PRJ_SIZE_WIDTH VGA_WIDTH
 //#define PRJ_SIZE_HEIGHT VGA_HEIGHT
+
+#ifdef MAC
 #define PRJ_SIZE_WIDTH MAC_PRJ_WIDTH
 #define PRJ_SIZE_HEIGHT MAC_PRJ_HEIGHT
+#define POSITION_PROJECTION_IMAGE_X MAC_POS_X
+#define POSITION_PROJECTION_IMAGE_Y MAC_POS_Y
+
+#else   // Linux
+#define PRJ_SIZE_WIDTH LINUX_PRJ_WIDTH
+#define PRJ_SIZE_HEIGHT LINUX_PRJ_HEIGHT
+#define POSITION_PROJECTION_IMAGE_X LINUX_POS_X
+#define POSITION_PROJECTION_IMAGE_Y LINUX_POS_Y
+
+#endif
 
 // response size
 //#define RESPONSE_SIZE 256*3
@@ -125,6 +134,7 @@ public:
     bool linearlizeOfProjector(void);
     ///////////////////////////////  convert method ///////////////////////////////
     bool convertNonLinearImageToLinearOne(cv::Mat* const _linearImg, const cv::Mat&  _nonLinearImg);
+//    bool convertCameraImageToProjectorOne(cv::Mat* const _prjImg, const cv::Mat&  _camImg);
     ///////////////////////////////  other method ///////////////////////////////
     bool captureFromLight(cv::Mat* const captureImage, const cv::Mat& projectionImage);
     bool captureFromLinearLight(cv::Mat* const captureImage, const cv::Mat& projectionImage);

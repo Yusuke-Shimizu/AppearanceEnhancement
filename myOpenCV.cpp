@@ -418,6 +418,13 @@ bool convertBGRtoRGB(cv::Vec3b* const _rgb, const cv::Vec3b& _bgr){
     return true;
 }
 
+bool convertRGBtoBGR(cv::Vec3b* const _bgr, const cv::Vec3b& _rgb){
+    Vec3b tmp(_rgb[2], _rgb[1], _rgb[0]);
+    *_bgr = tmp;
+    
+    return true;
+}
+
 // Vec9d -> Mat(3x3)
 bool convertVecToMat(cv::Mat_<double>* const _dst, const Vec9d& _src){
     // error processing

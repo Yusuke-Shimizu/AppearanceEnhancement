@@ -517,7 +517,7 @@ bool LinearizerOfProjector::getResponse(cv::Vec3b* const _response, const cv::Ve
     Mat invV = _V.inv();    // V^{-1}
     Vec3b l_rgbC(0, 0, 0);
     convertBGRtoRGB(&l_rgbC, _C);   // bgr -> rgb
-    _print2(_C, l_rgbC);
+//    _print2(_C, l_rgbC);
     Mat l_CMat(l_rgbC);         // Vec3b -> Mat
     l_CMat.convertTo(l_CMat, MAT_TYEP_DOUBLE);  // uchar -> double
 
@@ -562,3 +562,128 @@ bool LinearizerOfProjector::showVMap(void){
     MY_IMSHOW(l_VBlue);
     return true;
 }
+
+// 光学補正を行う
+// input / _desiredImage    : このような見た目にして欲しい画像
+bool LinearizerOfProjector::doRadiometricCompensation(const cv::Mat& _desiredImage){
+    // init
+    ProCam* l_procam = getProCam();
+    
+    // camera coordinate system -> projector coordinate system
+    const Size* l_prjSize = l_procam->getProjectorSize();
+    Mat l_desiredImageOnProjectorSpace(*l_prjSize, CV_8UC3, Scalar(0, 0, 0));
+    l_procam->getImageOnProjectorSpace(&l_desiredImageOnProjectorSpace, _desiredImage);
+    
+    // P = C^{-1}V
+    Mat l_NLProjectionImage(*l_prjSize, CV_8UC3, Scalar(0, 0, 0));
+    convertCameraImageToProjectorOne(&l_NLProjectionImage, l_desiredImageOnProjectorSpace);
+    
+    // non linear -> linear
+    Mat l_LProjectionImage(*l_prjSize, CV_8UC3, Scalar(0, 0, 0));
+    l_procam->convertNonLinearImageToLinearOne(&l_LProjectionImage, l_NLProjectionImage);
+    
+    // projection
+    const Size* l_camSize = l_procam->getCameraSize();
+    Mat l_cameraImage(*l_camSize, CV_8UC3, Scalar(0, 0, 0));
+    l_procam->captureFromLight(&l_cameraImage, l_LProjectionImage);
+    MY_IMSHOW(l_cameraImage);
+    MY_IMSHOW(_desiredImage);
+    MY_WAIT_KEY();
+    
+    return true;
+}
+
+bool LinearizerOfProjector::doRadiometricCompensation(const cv::Vec3b& _desiredColor){
+    ProCam* l_procam = getProCam();
+    const Size* l_prjSize = l_procam->getProjectorSize();
+    const Scalar l_color(_desiredColor);
+    Mat l_image(*l_prjSize, CV_8UC3, l_color);
+    return doRadiometricCompensation(l_image);
+}
+bool LinearizerOfProjector::doRadiometricCompensation(const uchar& _desiredColorNumber){
+    return doRadiometricCompensation(Vec3b(_desiredColorNumber, _desiredColorNumber, _desiredColorNumber));
+}
+
+// P = V^{-1} * C を計算して，CからPを算出する
+// output / _prjImg : P
+// input / _camImg  : C
+// return           : 成功したかどうか
+bool LinearizerOfProjector::convertCameraImageToProjectorOne(cv::Mat* const _prjImg, const cv::Mat&  _camImg){
+    // init
+    const Mat_<Vec9d>* l_VMap = getColorMixMatMap();
+    
+    // error processing
+    if (!isEqualSizeAndType(*_prjImg, _camImg, *l_VMap)) {
+        _print_name(*_prjImg);
+        printMatPropaty(*_prjImg);
+        _print_name(_camImg);
+        printMatPropaty(_camImg);
+        _print_name(*l_VMap);
+        printMatPropaty(*l_VMap);
+        exit(-1);
+    }
+    
+    // scanning all pixel
+    Mat l_prjImg(_prjImg->rows, _prjImg->cols, CV_8UC3, Scalar(0, 0, 0));
+    int rows = _camImg.rows, cols = _camImg.cols;
+    if (isContinuous(*_prjImg, _camImg)) {
+        cols *= rows;
+        rows = 1;
+    }
+    for (int y = 0; y < rows; ++ y) {
+        Vec3b* l_pPrjImg = l_prjImg.ptr<Vec3b>(y);
+        const Vec3b* l_pCamImg = _camImg.ptr<Vec3b>(y);
+        const Vec9d* l_pVMap = l_VMap->ptr<Vec9d>(y);
+        
+        for (int x = 0; x < cols; ++ x) {
+            // bgr -> rgb
+            Vec3b l_rgbC(0, 0, 0);
+            convertBGRtoRGB(&l_rgbC, l_pCamImg[x]);
+            
+            // Vec -> Mat
+            Mat_<double> l_V(3, 3, CV_64FC1);
+            convertVecToMat(&l_V, l_pVMap[x]);
+            Mat l_C(l_rgbC);
+            
+            // uchar -> double
+            _print2("before", l_C);
+            l_C.convertTo(l_C, CV_64FC1, 1.0 / 255.0);
+            _print2("after", l_C);
+            
+            // get inverse V
+            Mat l_invV = l_V.inv();
+
+            // P = V^{-1}C
+            Mat l_P(3, 1, CV_64FC1);
+            l_P = l_invV * l_C;
+            
+            // double -> uchar
+            _print2("before", l_P);
+            l_P.convertTo(l_P, CV_8UC1, 255);
+            _print2("after", l_P);
+            
+            // Mat -> Vec
+            Vec3b l_vecP(l_P);
+            _print(l_vecP);
+            
+            // rgb -> bgr
+            Vec3b l_bgrP(0, 0, 0);
+            convertRGBtoBGR(&l_bgrP, l_vecP);
+            _print(l_bgrP);
+            
+            // copy
+            l_pPrjImg[x] = l_bgrP;
+            _print(l_pPrjImg[x]);
+            
+            // print
+            _print4(l_C, l_P, l_V, l_invV);
+            _print_bar;
+        }
+    }
+    
+    // deep copy
+    *_prjImg = l_prjImg.clone();
+    
+    return true;
+}
+

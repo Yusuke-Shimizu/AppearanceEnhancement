@@ -573,14 +573,14 @@ bool ProCam::loadAccessMapCam2Prj(void){
 bool ProCam::allCalibration(void){
     Mat projectionImage = Mat::zeros(PRJ_SIZE_HEIGHT, PRJ_SIZE_WIDTH, CV_8UC3);
     imshow(WINDOW_NAME, projectionImage);
-    cvMoveWindow(WINDOW_NAME, 0, -1050);    // mac
+    cvMoveWindow(WINDOW_NAME, POSITION_PROJECTION_IMAGE_X, POSITION_PROJECTION_IMAGE_Y);    // mac
 //    cvMoveWindow(WINDOW_NAME, 1680, 0);   // linux
     cv::waitKey(1);
     // geometri calibration
-//    if ( !geometricCalibration() ) {
-//        cerr << "geometric calibration error" << endl;
-//        return false;
-//    }
+    if ( !geometricCalibration() ) {
+        cerr << "geometric calibration error" << endl;
+        return false;
+    }
     
     // linearized projector
     if ( !linearlizeOfProjector() ) {
@@ -660,6 +660,11 @@ bool ProCam::linearlizeOfProjector(void){
     cout << "loading projector response" << endl;
     loadProjectorResponseForByte(PROJECTOR_RESPONSE_FILE_NAME_BYTE);
     cout << "loaded projector response" << endl;
+    
+    // test
+    cout << "do radiometric compensation" << endl;
+    linearPrj.doRadiometricCompensation(100);
+    cout << "did radiometric compensation" << endl;
     return true;
 }
 
