@@ -71,7 +71,6 @@ bool ProCam::init(const cv::Size& projectorSize){
 //    if ( !initProjectorResponseSize(*cameraSize) ) return false;
 //    if ( !initProjectorResponseSize() ) return false;
     if ( !initProjectorResponse() ) return false;
-//    if ( !linearlizeOfProjector() ) return false;
     
     // アクセスマップの初期化
     if ( !initAccessMapCam2Pro() ) return false;
@@ -234,7 +233,9 @@ bool ProCam::setAccessMapCam2Prj(const cv::Mat_<cv::Vec2i>& _accessMapCam2Prj){
 bool ProCam::setProjectorResponse(const cv::Mat_<cv::Vec3b>& _response){
     // error processing
     if ( !isEqualSizeAndType(_response, m_projectorResponse)) {
-        ERROR_PRINT("_response Type of Size is different from m_projectorResponse");
+        ERROR_PRINT("_response Size or Type is different from m_projectorResponse");
+        _print_mat_propaty(_response);
+        _print_mat_propaty(m_projectorResponse);
         return false;
     }
     
@@ -318,44 +319,6 @@ const cv::Mat_<cv::Vec2i>* ProCam::getAccessMapCam2Prj(void){
 
 const cv::Mat_<cv::Vec3b>* ProCam::getProjectorResponse(void){
     return &m_projectorResponse;
-}
-
-// プロジェクタ空間の画像を取得
-// output / _psImg  : プロジェクタ座標系に投影した画像
-// input / _csImg   : カメラ座標系の画像
-bool ProCam::getImageOnProjectorSpace(cv::Mat* const _psImg, const cv::Mat&  _csImg){
-    // error processing
-    const Mat_<Vec2i>* l_accessMapC2P = getAccessMapCam2Prj();              // カメラ空間からプロジェクタ空間への変換テーブル
-    if ( !isEqualSize(*l_accessMapC2P, _csImg) ) {
-        cerr << "size is different" << endl;
-        _print_name(_csImg);
-        _print_name(l_accessMapC2P);
-        exit(-1);
-    }
-    
-    // camera coordinate system -> projector coordinate system
-    Mat_<Vec3b> l_psImg = Mat::zeros(_psImg->rows, _psImg->cols, CV_8UC3);  // プロジェクタ空間上の画像（ローカル）
-    int rows = _csImg.rows, cols = _csImg.cols;
-    if (isContinuous(*l_accessMapC2P, _csImg) ) {
-        cols *= rows;
-        rows = 1;
-    }
-    for (int y = 0; y < rows; ++ y) {
-        const Vec2i* l_pAccessMapC2P = l_accessMapC2P->ptr<Vec2i>(y);
-        const Vec3b* l_pCsImg = _csImg.ptr<Vec3b>(y);
-        
-        for (int x = 0; x < cols; ++ x) {
-            Point prjPoint = Point(l_pAccessMapC2P[x]); // projector coordinate system
-            l_psImg.at<Vec3b>(prjPoint) = l_pCsImg[x];  // set projector image
-//            Point camPoint(x, y);
-//            _print2(camPoint, prjPoint);
-        }
-    }
-    
-    // deep copy
-    *_psImg = l_psImg.clone();
-    
-    return true;
 }
 
 ///////////////////////////////  save method ///////////////////////////////
@@ -577,10 +540,10 @@ bool ProCam::allCalibration(void){
 //    cvMoveWindow(WINDOW_NAME, 1680, 0);   // linux
     cv::waitKey(1);
     // geometri calibration
-    if ( !geometricCalibration() ) {
-        cerr << "geometric calibration error" << endl;
-        return false;
-    }
+//    if ( !geometricCalibration() ) {
+//        cerr << "geometric calibration error" << endl;
+//        return false;
+//    }
     
     // linearized projector
     if ( !linearlizeOfProjector() ) {
@@ -613,6 +576,7 @@ bool ProCam::geometricCalibration(void){
     
     // 上で得たプロカム間のルックアップテーブルをクラス変数に代入
     // set class variable
+    _print_mat_propaty(l_accessMapCam2Prj);
     setAccessMapCam2Prj(l_accessMapCam2Prj);
     
     // save
@@ -649,17 +613,17 @@ bool ProCam::linearlizeOfProjector(void){
     
     // get projector response
     LinearizerOfProjector linearPrj(this);
-    if ( !linearPrj.linearlize(&prjResponse) ) return false;
+//    if ( !linearPrj.linearlize(&prjResponse) ) return false;
     
     // 落とした配列をメンバ配列に代入する
-    if ( !setProjectorResponse(prjResponse) ) {ERROR_PRINT("error is setProjectorResponse"); return false;}
+//    if ( !setProjectorResponse(prjResponse) ) {ERROR_PRINT("error is setProjectorResponse"); return false;}
     cout << "saving projector response" << endl;
 //    saveProjectorResponse(PROJECTOR_RESPONSE_FILE_NAME_02, 0, 0);
-    saveProjectorResponseForByte(PROJECTOR_RESPONSE_FILE_NAME_BYTE);
+//    saveProjectorResponseForByte(PROJECTOR_RESPONSE_FILE_NAME_BYTE);
     cout << "saved projector response" << endl;
-    cout << "loading projector response" << endl;
-    loadProjectorResponseForByte(PROJECTOR_RESPONSE_FILE_NAME_BYTE);
-    cout << "loaded projector response" << endl;
+//    cout << "loading projector response" << endl;
+//    loadProjectorResponseForByte(PROJECTOR_RESPONSE_FILE_NAME_BYTE);
+//    cout << "loaded projector response" << endl;
     
     // test
     cout << "do radiometric compensation" << endl;
@@ -669,6 +633,52 @@ bool ProCam::linearlizeOfProjector(void){
 }
 
 ///////////////////////////////  convert method ///////////////////////////////
+
+// 幾何変換テーブルを用いて，カメラ座標系からプロジェクタ座標系に変換する
+// output / _psImg  : プロジェクタ座標系に投影した画像
+// input / _csImg   : カメラ座標系の画像
+bool ProCam::convertProjectorCoordinateSystemToCameraOne(cv::Mat* const _psImg, const cv::Mat&  _csImg){
+    // error processing
+    const Mat_<Vec2i>* l_accessMapC2P = getAccessMapCam2Prj();              // カメラ空間からプロジェクタ空間への変換テーブル
+    if ( !isEqualSize(*l_accessMapC2P, _csImg) ) {
+        cerr << "size is different" << endl;
+        _print_mat_propaty(_csImg);
+        _print_mat_propaty(*l_accessMapC2P);
+        exit(-1);
+    }
+    const Size* l_prjSize = getProjectorSize();
+    const Size l_psImgSize(_psImg->cols, _psImg->rows);
+    if (*l_prjSize != l_psImgSize) {
+        _print_mat_propaty(*_psImg);
+        ERROR_PRINT2(*l_prjSize, l_psImgSize);
+        exit(-1);
+    }
+    
+    // camera coordinate system -> projector coordinate system
+    Mat_<Vec3b> l_psImg = Mat::zeros(_psImg->rows, _psImg->cols, CV_8UC3);  // プロジェクタ空間上の画像（ローカル）
+    int rows = _csImg.rows, cols = _csImg.cols;
+    if (isContinuous(*l_accessMapC2P, _csImg) ) {
+        cols *= rows;
+        rows = 1;
+    }
+    for (int y = 0; y < rows; ++ y) {
+        const Vec2i* l_pAccessMapC2P = l_accessMapC2P->ptr<Vec2i>(y);
+        const Vec3b* l_pCsImg = _csImg.ptr<Vec3b>(y);
+        
+        for (int x = 0; x < cols; ++ x) {
+            Point prjPoint = Point(l_pAccessMapC2P[x]); // projector coordinate system
+            l_psImg.at<Vec3b>(prjPoint) = l_pCsImg[x];  // set projector image
+            //            Point camPoint(x, y);
+            //            _print2(camPoint, prjPoint);
+        }
+    }
+    
+    // deep copy
+    *_psImg = l_psImg.clone();
+    
+    return true;
+}
+
 
 // プロジェクタの強度が線形化されていない画像から線形化された画像へ変換
 // output / _linearImg      : 線形化後の画像

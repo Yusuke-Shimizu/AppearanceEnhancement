@@ -399,7 +399,7 @@ void GeometricCalibration::addSpatialCodeOfProCam(bool* const spatialCodeProject
     
     // projection and shot posi image
     // posi
-    Mat posiImage, negaImage;
+    Mat posiImage(*cameraSize, CV_8UC3), negaImage(*cameraSize, CV_8UC3);
     waitKey(SLEEP_TIME);
     captureProjectionImage(&posiImage, &projectionPosiImage, videoStream);
     // nega
@@ -436,7 +436,7 @@ void GeometricCalibration::addSpatialCodeOfProCam(bool* const spatialCodeProject
     ostringstream oss;
     oss << "diffImage" << (num++) << ".png";
     imwrite(oss.str().c_str(), diffPosiNega8u);
-    cout << "write diffImage.png" << endl;
+//    cout << "write diffImage.png" << endl;
     
     // プロジェクタとカメラのアクセスマップの生成
     const Size layerSize(calcBitCodeNumber(projectorSize->width), calcBitCodeNumber(projectorSize->height));  // コード層の数
@@ -820,7 +820,8 @@ void GeometricCalibration::test_accessMap(void){
     const Size* prjSize = l_procam->getProjectorSize();
     const Size* camSize = l_procam->getCameraSize();
     Mat whiteImg(*camSize, CV_8UC3, Scalar(255, 255, 255)), prjImg(*prjSize, CV_8UC3, Scalar(0, 0, 0));
-    l_procam->getImageOnProjectorSpace(&prjImg, whiteImg);
+    l_procam->convertProjectorCoordinateSystemToCameraOne(&prjImg, whiteImg);
+    _print_mat_propaty(prjImg);
     MY_IMSHOW(prjImg);
     MY_WAIT_KEY();
 }

@@ -25,7 +25,7 @@ private:
     ProCam* m_procam;
 //    cv::Mat** m_aColorMixingMatrix;  // 全カメラ画素分のC=VPのV, プロジェクタからカメラへの色変換行列
 //    std::vector<cv::Mat> m_aColorMixingMatrix;  // 全カメラ画素分のC=VPのV, プロジェクタからカメラへの色変換行列
-    cv::Mat_<Vec9d> m_colorMixingMatrixMap;    // 全カメラ画素分のC=VPのV, プロジェクタからカメラへの色変換行列
+    cv::Mat_<Vec9d> m_colorMixingMatrixMap;    // 全カメラ画素分のC=VPのV, プロジェクタからカメラへの色変換行列（サイズ：カメラと同じ）
     
     LinearizerOfProjector(const LinearizerOfProjector& _lop);   // コピーコンストラクタ隠し（プログラムで１つしか存在しない為）
 public:

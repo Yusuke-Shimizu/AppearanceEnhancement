@@ -34,7 +34,8 @@ using namespace cv;
 LinearizerOfProjector::LinearizerOfProjector(ProCam* procam){
 //    cout << "setting LinearizerOfProjector..." << endl;
     setProCam(procam);
-    const cv::Size* cameraSize = m_procam->getCameraSize();
+    const cv::Size* cameraSize = procam->getCameraSize();
+//    const Size* prjSize = procam->getProjectorSize();
     initColorMixingMatrixMap(*cameraSize);
 //    cout << "finish LinearizerOfProjector" << endl;
 }
@@ -79,8 +80,11 @@ bool LinearizerOfProjector::setProCam(ProCam* procam){
 // return           : 成功したかどうか
 bool LinearizerOfProjector::setColorMixMatMap(const cv::Mat_<Vec9d>& _aMat){
     // error processing
-    if ( !isEqualSizeAndType(_aMat, m_colorMixingMatrixMap) ) {
+    const Mat_<Vec9d>* l_cmmm = getColorMixMatMap();
+    if ( !isEqualSizeAndType(_aMat, *l_cmmm) ) {
         ERROR_PRINT("size or type is different");
+        _print_name(*l_cmmm);
+        printMatPropaty(*l_cmmm);
         _print_name(_aMat);
         printMatPropaty(_aMat);
         return false;
@@ -431,8 +435,7 @@ bool LinearizerOfProjector::calcResponseFunction(cv::Mat_<cv::Vec3b>* const _res
     Mat camColor = Mat::zeros(3, 1, CV_64FC1);
     Mat camImage = Mat::zeros(*l_cameraSize, CV_8UC3), prjImage = Mat::zeros(*l_projectorSize, CV_8UC3);
     Mat_<cv::Vec3b> l_responseImage(*l_cameraSize);
-    const Size l_responseMapSize(l_cameraSize->width * 256, l_cameraSize->height);
-    Mat_<cv::Vec3b> l_responseMap(l_responseMapSize);
+    Mat_<Vec3b> l_responseMap(_responseMap->rows, _responseMap->cols, CV_8UC3);
 
     // projection RGB * luminance
     // scanning all luminance[0-255] of projector
@@ -445,6 +448,8 @@ bool LinearizerOfProjector::calcResponseFunction(cv::Mat_<cv::Vec3b>* const _res
         // capture from projection image
         l_procam->captureFromLight(&camImage, prjImage);
 
+        // --------- OK -------------
+        
         // calc response function
         getResponseOfAllPixel(&l_responseImage, camImage);
         imshow("l_responseImage", l_responseImage);
@@ -473,8 +478,7 @@ bool LinearizerOfProjector::getResponseOfAllPixel(cv::Mat_<cv::Vec3b>* const _re
         cols *= rows;
         rows = 1;
     }
-//    const std::vector<cv::Mat>* l_aMixMat = getColorMixMat();
-//    std::vector<cv::Mat>::const_iterator l_itrMixMat = l_aMixMat->begin();
+
     const Mat_<Vec9d>* l_cmmMap = getColorMixMatMap();
     Mat_<double> l_V = Mat::zeros(3, 3, CV_64FC1);
     Vec9d l_VVec(0,0,0,0,0,0,0,0,0);
@@ -486,11 +490,9 @@ bool LinearizerOfProjector::getResponseOfAllPixel(cv::Mat_<cv::Vec3b>* const _re
         const cv::Vec3b* p_CImage = _CImage.ptr<cv::Vec3b>(y);
         const Vec9d* p_cmmMap = l_cmmMap->ptr<Vec9d>(y);
         
-        for (int x = 0; x < cols; ++ x/*, ++ l_itrMixMat*/) {
+        for (int x = 0; x < cols; ++ x) {
             convertVecToMat(&l_V, p_cmmMap[x]);
-//            getResponse(&p_response[x], p_CImage[x], *l_itrMixMat);
             getResponse(&p_response[x], p_CImage[x], l_V);
-//            _print(p_response[x]);
         }
     }
     
@@ -499,7 +501,6 @@ bool LinearizerOfProjector::getResponseOfAllPixel(cv::Mat_<cv::Vec3b>* const _re
 
 // 入力と出力の関係から応答特性を取得
 // output / _response   : 計算した応答特性
-// input / _I           : 投影色(非線形)
 // input / _C           : 撮影色(線形化済み)
 // input / _V           : 色変換行列
 // return               : 成功したかどうか
@@ -550,9 +551,9 @@ bool LinearizerOfProjector::showVMap(void){
         Vec3d* p_VBlue = l_VBlue.ptr<Vec3d>(y);
         
         for (int x = 0; x < cols; ++ x) {
-            p_VRed[x] = Vec3d(p_cmmm[x][0], p_cmmm[x][1], p_cmmm[x][2]);
-            p_VBlue[x] = Vec3d(p_cmmm[x][3], p_cmmm[x][4], p_cmmm[x][5]);
-            p_VGreen[x] = Vec3d(p_cmmm[x][6], p_cmmm[x][7], p_cmmm[x][8]);
+            p_VRed[x] = Vec3d(p_cmmm[x][2], p_cmmm[x][1], p_cmmm[x][0]);
+            p_VGreen[x] = Vec3d(p_cmmm[x][5], p_cmmm[x][4], p_cmmm[x][3]);
+            p_VBlue[x] = Vec3d(p_cmmm[x][8], p_cmmm[x][7], p_cmmm[x][6]);
         }
     }
     
@@ -569,21 +570,21 @@ bool LinearizerOfProjector::doRadiometricCompensation(const cv::Mat& _desiredIma
     // init
     ProCam* l_procam = getProCam();
     
+    // P = V^{-1}C
+    const Size* l_camSize = l_procam->getCameraSize();
+    Mat l_projectionImageOnCameraSpace(*l_camSize, CV_8UC3, Scalar(0, 0, 0));
+    convertCameraImageToProjectorOne(&l_projectionImageOnCameraSpace, _desiredImage);
+    
     // camera coordinate system -> projector coordinate system
     const Size* l_prjSize = l_procam->getProjectorSize();
-    Mat l_desiredImageOnProjectorSpace(*l_prjSize, CV_8UC3, Scalar(0, 0, 0));
-    l_procam->getImageOnProjectorSpace(&l_desiredImageOnProjectorSpace, _desiredImage);
-    
-    // P = C^{-1}V
-    Mat l_NLProjectionImage(*l_prjSize, CV_8UC3, Scalar(0, 0, 0));
-    convertCameraImageToProjectorOne(&l_NLProjectionImage, l_desiredImageOnProjectorSpace);
-    
+    Mat l_projectionImageOnProjectorSpace(*l_prjSize, CV_8UC3, Scalar(0, 0, 0));
+    l_procam->convertProjectorCoordinateSystemToCameraOne(&l_projectionImageOnProjectorSpace, l_projectionImageOnCameraSpace);
+
     // non linear -> linear
     Mat l_LProjectionImage(*l_prjSize, CV_8UC3, Scalar(0, 0, 0));
-    l_procam->convertNonLinearImageToLinearOne(&l_LProjectionImage, l_NLProjectionImage);
+    l_procam->convertNonLinearImageToLinearOne(&l_LProjectionImage, l_projectionImageOnProjectorSpace);
     
     // projection
-    const Size* l_camSize = l_procam->getCameraSize();
     Mat l_cameraImage(*l_camSize, CV_8UC3, Scalar(0, 0, 0));
     l_procam->captureFromLight(&l_cameraImage, l_LProjectionImage);
     MY_IMSHOW(l_cameraImage);
@@ -595,9 +596,9 @@ bool LinearizerOfProjector::doRadiometricCompensation(const cv::Mat& _desiredIma
 
 bool LinearizerOfProjector::doRadiometricCompensation(const cv::Vec3b& _desiredColor){
     ProCam* l_procam = getProCam();
-    const Size* l_prjSize = l_procam->getProjectorSize();
+    const Size* l_camSize = l_procam->getCameraSize();
     const Scalar l_color(_desiredColor);
-    Mat l_image(*l_prjSize, CV_8UC3, l_color);
+    Mat l_image(*l_camSize, CV_8UC3, l_color);
     return doRadiometricCompensation(l_image);
 }
 bool LinearizerOfProjector::doRadiometricCompensation(const uchar& _desiredColorNumber){
@@ -613,7 +614,8 @@ bool LinearizerOfProjector::convertCameraImageToProjectorOne(cv::Mat* const _prj
     const Mat_<Vec9d>* l_VMap = getColorMixMatMap();
     
     // error processing
-    if (!isEqualSizeAndType(*_prjImg, _camImg, *l_VMap)) {
+    if (!isEqualSize(*_prjImg, _camImg, *l_VMap)) {
+        cerr << "different size or type" << endl;
         _print_name(*_prjImg);
         printMatPropaty(*_prjImg);
         _print_name(_camImg);
@@ -646,9 +648,9 @@ bool LinearizerOfProjector::convertCameraImageToProjectorOne(cv::Mat* const _prj
             Mat l_C(l_rgbC);
             
             // uchar -> double
-            _print2("before", l_C);
+//            _print2("before", l_C);
             l_C.convertTo(l_C, CV_64FC1, 1.0 / 255.0);
-            _print2("after", l_C);
+//            _print2("after", l_C);
             
             // get inverse V
             Mat l_invV = l_V.inv();
@@ -658,26 +660,26 @@ bool LinearizerOfProjector::convertCameraImageToProjectorOne(cv::Mat* const _prj
             l_P = l_invV * l_C;
             
             // double -> uchar
-            _print2("before", l_P);
+//            _print2("before", l_P);
             l_P.convertTo(l_P, CV_8UC1, 255);
-            _print2("after", l_P);
+//            _print2("after", l_P);
             
             // Mat -> Vec
             Vec3b l_vecP(l_P);
-            _print(l_vecP);
+//            _print(l_vecP);
             
             // rgb -> bgr
             Vec3b l_bgrP(0, 0, 0);
             convertRGBtoBGR(&l_bgrP, l_vecP);
-            _print(l_bgrP);
+//            _print(l_bgrP);
             
             // copy
             l_pPrjImg[x] = l_bgrP;
-            _print(l_pPrjImg[x]);
+//            _print(l_pPrjImg[x]);
             
             // print
-            _print4(l_C, l_P, l_V, l_invV);
-            _print_bar;
+//            _print4(l_C, l_P, l_V, l_invV);
+//            _print_bar;
         }
     }
     

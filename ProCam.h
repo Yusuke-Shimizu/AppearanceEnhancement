@@ -13,7 +13,8 @@
 #include "myOpenCV.h"
 
 // 使用PC
-#define MAC
+//#define MAC
+#define MAC_PROJECTOR
 //#define LINUX
 
 // 定義
@@ -23,6 +24,15 @@
 #define MAC_PRJ_HEIGHT 1050
 #define LINUX_PRJ_WIDTH 1024
 #define LINUX_PRJ_HEIGHT 768
+
+const cv::Size MAC_DISIPLAY_SIZE(1366, 768);
+const cv::Size LINUX_DISPLAY_SIZE(1680, 1050);
+const cv::Size MAC_OTHER_DISPLAY_SIZE(1680, 1050);
+const cv::Size PROJECTOR_DISPLAY_SIZE(1024, 768);
+
+const cv::Point MAC_OTHER_DISPLAY_POS(0, -1 * MAC_OTHER_DISPLAY_SIZE.height);
+const cv::Point MAC_PROJECTOR_DISPLAY_POS(0, -1 * PROJECTOR_DISPLAY_SIZE.height);
+const cv::Point LINUX_PROJECTOR_DISPLAY_POS(LINUX_DISPLAY_SIZE.width, 0);
 
 #define MAC_POS_X 0
 #define MAC_POS_Y -1050
@@ -37,13 +47,20 @@
 #define PRJ_SIZE_HEIGHT MAC_PRJ_HEIGHT
 #define POSITION_PROJECTION_IMAGE_X MAC_POS_X
 #define POSITION_PROJECTION_IMAGE_Y MAC_POS_Y
+#endif
 
-#else   // Linux
+#ifdef MAC_PROJECTOR
+#define PRJ_SIZE_WIDTH PROJECTOR_DISPLAY_SIZE.width
+#define PRJ_SIZE_HEIGHT PROJECTOR_DISPLAY_SIZE.height
+#define POSITION_PROJECTION_IMAGE_X MAC_PROJECTOR_DISPLAY_POS.x
+#define POSITION_PROJECTION_IMAGE_Y MAC_PROJECTOR_DISPLAY_POS.y
+#endif
+
+#ifdef LINUX   // Linux
 #define PRJ_SIZE_WIDTH LINUX_PRJ_WIDTH
 #define PRJ_SIZE_HEIGHT LINUX_PRJ_HEIGHT
 #define POSITION_PROJECTION_IMAGE_X LINUX_POS_X
 #define POSITION_PROJECTION_IMAGE_Y LINUX_POS_Y
-
 #endif
 
 // response size
@@ -116,7 +133,6 @@ public:
     bool getAccessMapCam2Pro(cv::Point* const accessMapCam2Pro);
     const cv::Mat_<cv::Vec2i>* getAccessMapCam2Prj(void);
     const cv::Mat_<cv::Vec3b>* getProjectorResponse(void);
-    bool getImageOnProjectorSpace(cv::Mat* const _psImg, const cv::Mat&  _csImg);
     ///////////////////////////////  save method ///////////////////////////////
 //    bool saveAccessMapCam2Pro(void);
     bool saveAccessMapCam2Prj(void);
@@ -133,6 +149,7 @@ public:
     bool colorCalibration(void);
     bool linearlizeOfProjector(void);
     ///////////////////////////////  convert method ///////////////////////////////
+    bool convertProjectorCoordinateSystemToCameraOne(cv::Mat* const _psImg, const cv::Mat&  _csImg);
     bool convertNonLinearImageToLinearOne(cv::Mat* const _linearImg, const cv::Mat&  _nonLinearImg);
 //    bool convertCameraImageToProjectorOne(cv::Mat* const _prjImg, const cv::Mat&  _camImg);
     ///////////////////////////////  other method ///////////////////////////////
