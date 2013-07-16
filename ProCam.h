@@ -91,6 +91,7 @@ private:
     cv::Mat m_ColorTransMatCam2Pro;     // カメラ色空間からプロジェクタ色空間への変換行列
     double* m_cameraResponse;           // カメラの応答特性[0-1]->[0-1]
     cv::Mat_<cv::Vec3b> m_projectorResponse;    // プロジェクタの応答特性[0-255]
+    cv::Mat_<cv::Vec3b> m_projectorResponseP2I;    // プロジェクタの応答特性のインバース[0-255]
     
     ProCam(const ProCam& _procam);      // コピーコンストラクタ隠し（プログラムで１つしか存在しない為）
 public:
@@ -112,6 +113,7 @@ public:
     bool initAccessMapCam2Prj(void);
     bool initCameraResponse(const int camResSize);
     bool initProjectorResponse(void);
+    bool initProjectorResponseP2I(void);
     ///////////////////////////////  set method ///////////////////////////////
     bool setCameraSize(const cv::Size* const cameraSize);
     bool setProjectorSize(const cv::Size& projectorSize);
@@ -120,6 +122,7 @@ public:
     bool setAccessMapCam2Prj(const cv::Mat_<cv::Vec2i>& _accessMapCam2Prj);
     bool setCameraResponse(const double* const camRes, const int camResSize);
     bool setProjectorResponse(const cv::Mat_<cv::Vec3b>& _response);
+    bool setProjectorResponseP2I(const cv::Mat_<cv::Vec3b>& _response);
     ///////////////////////////////  get method ///////////////////////////////
     bool getCameraSize(cv::Size* const cameraSize);
     cv::Size* getCameraSize(void);
@@ -133,6 +136,7 @@ public:
     bool getAccessMapCam2Pro(cv::Point* const accessMapCam2Pro);
     const cv::Mat_<cv::Vec2i>* getAccessMapCam2Prj(void);
     const cv::Mat_<cv::Vec3b>* getProjectorResponse(void);
+    const cv::Mat_<cv::Vec3b>* getProjectorResponseP2I(void);
     ///////////////////////////////  save method ///////////////////////////////
 //    bool saveAccessMapCam2Pro(void);
     bool saveAccessMapCam2Prj(void);
@@ -151,6 +155,7 @@ public:
     ///////////////////////////////  convert method ///////////////////////////////
     bool convertProjectorCoordinateSystemToCameraOne(cv::Mat* const _psImg, const cv::Mat&  _csImg);
     bool convertNonLinearImageToLinearOne(cv::Mat* const _linearImg, const cv::Mat&  _nonLinearImg);
+    bool convertPtoI(cv::Mat* const _I, const cv::Mat&  _P);
 //    bool convertCameraImageToProjectorOne(cv::Mat* const _prjImg, const cv::Mat&  _camImg);
     ///////////////////////////////  other method ///////////////////////////////
     bool captureFromLight(cv::Mat* const captureImage, const cv::Mat& projectionImage);

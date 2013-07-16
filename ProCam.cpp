@@ -71,6 +71,7 @@ bool ProCam::init(const cv::Size& projectorSize){
 //    if ( !initProjectorResponseSize(*cameraSize) ) return false;
 //    if ( !initProjectorResponseSize() ) return false;
     if ( !initProjectorResponse() ) return false;
+    if ( !initProjectorResponseP2I() ) return false;
     
     // アクセスマップの初期化
     if ( !initAccessMapCam2Pro() ) return false;
@@ -170,6 +171,26 @@ bool ProCam::initProjectorResponse(void){
     return true;
 }
 
+bool ProCam::initProjectorResponseP2I(void){
+    // init
+    const cv::Size* prjSize = getProjectorSize();
+    const cv::Size prjResSize(prjSize->width * 256, prjSize->height);
+    
+    // set projector response
+    m_projectorResponseP2I = cv::Mat_<cv::Vec3b>(prjResSize);
+    int rows = m_projectorResponseP2I.rows, cols = m_projectorResponseP2I.cols;
+    for (int y = 0; y < rows; ++ y) {
+        Vec3b* p_projectorResponse = m_projectorResponseP2I.ptr<Vec3b>(y);
+        for (int x = 0; x < cols; ++ x) {
+            // [0-255]の値を生成し代入
+            int val = x % 256;
+            Vec3b color(val, val, val);
+            p_projectorResponse[x] = color;
+        }
+    }
+    return true;
+}
+
 ///////////////////////////////  set method ///////////////////////////////
 // m_cameraSizeの設定
 bool ProCam::setCameraSize(const cv::Size* const cameraSize){
@@ -236,6 +257,20 @@ bool ProCam::setProjectorResponse(const cv::Mat_<cv::Vec3b>& _response){
         ERROR_PRINT("_response Size or Type is different from m_projectorResponse");
         _print_mat_propaty(_response);
         _print_mat_propaty(m_projectorResponse);
+        return false;
+    }
+    
+    // deep copy
+    m_projectorResponse = _response.clone();
+    return true;
+}
+
+bool ProCam::setProjectorResponseP2I(const cv::Mat_<cv::Vec3b>& _response){
+    // error processing
+    if ( !isEqualSizeAndType(_response, m_projectorResponseP2I)) {
+        ERROR_PRINT("_response Size or Type is different from m_projectorResponse");
+        _print_mat_propaty(_response);
+        _print_mat_propaty(m_projectorResponseP2I);
         return false;
     }
     
@@ -319,6 +354,9 @@ const cv::Mat_<cv::Vec2i>* ProCam::getAccessMapCam2Prj(void){
 
 const cv::Mat_<cv::Vec3b>* ProCam::getProjectorResponse(void){
     return &m_projectorResponse;
+}
+const cv::Mat_<cv::Vec3b>* ProCam::getProjectorResponseP2I(void){
+    return &m_projectorResponseP2I;
 }
 
 ///////////////////////////////  save method ///////////////////////////////
@@ -602,24 +640,30 @@ bool ProCam::linearlizeOfProjector(void){
     // init
     int rows = m_projectorResponse.rows, cols = m_projectorResponse.cols;
     Mat_<Vec3b> prjResponse(rows, cols);
+    Mat_<Vec3b> l_prjResponseP2I(rows, cols);
     for (int y = 0; y < rows; ++ y) {
         Vec3b* p_prjRes = prjResponse.ptr<Vec3b>(y);
+        Vec3b* l_pPrjResP2I = l_prjResponseP2I.ptr<Vec3b>(y);
+
         for (int x = 0; x < cols; ++ x) {
             int val = x % 256;
             Vec3b color(val);
             p_prjRes[x] = color;
+            l_pPrjResP2I[x] = color;
         }
     }
     
     // get projector response
     LinearizerOfProjector linearPrj(this);
-//    if ( !linearPrj.linearlize(&prjResponse) ) return false;
+    if ( !linearPrj.linearlize(&prjResponse, &l_prjResponseP2I) ) return false;
     
     // 落とした配列をメンバ配列に代入する
-//    if ( !setProjectorResponse(prjResponse) ) {ERROR_PRINT("error is setProjectorResponse"); return false;}
+    if ( !setProjectorResponse(prjResponse) ) {ERROR_PRINT("error is setProjectorResponse"); return false;}
+    if ( !setProjectorResponseP2I(l_prjResponseP2I) ) {ERROR_PRINT("error is setProjectorResponse"); return false;}
+
+    // save projecor response map
     cout << "saving projector response" << endl;
-//    saveProjectorResponse(PROJECTOR_RESPONSE_FILE_NAME_02, 0, 0);
-//    saveProjectorResponseForByte(PROJECTOR_RESPONSE_FILE_NAME_BYTE);
+    saveProjectorResponseForByte(PROJECTOR_RESPONSE_FILE_NAME_BYTE);
     cout << "saved projector response" << endl;
 //    cout << "loading projector response" << endl;
 //    loadProjectorResponseForByte(PROJECTOR_RESPONSE_FILE_NAME_BYTE);
@@ -719,6 +763,36 @@ bool ProCam::convertNonLinearImageToLinearOne(cv::Mat* const _linearImg, const c
     
     // deep copy
     *_linearImg = l_linearImage.clone();
+    
+    return true;
+}
+
+// PからIに変換する
+bool ProCam::convertPtoI(cv::Mat* const _I, const cv::Mat&  _P){
+    // error processing
+    if (!isEqualSizeAndType(*_I, _P)) {
+        cerr << "different size or type" << endl;
+        _print_mat_propaty(*_I);
+        _print_mat_propaty(_P);
+        exit(-1);
+    }
+    
+    // scanning all pixel
+    const Mat* l_transp2I = getProjectorResponseP2I();
+    const int rows = _I->rows, cols = _I->cols, ch = _I->channels();
+    for (int y = 0; y < cols; ++ y) {
+        Vec3b* l_pI = _I->ptr<Vec3b>(y);
+        const Vec3b* l_pP = _P.ptr<Vec3b>(y);
+        const Vec3b* l_pTransp2I = l_transp2I->ptr<Vec3b>(y);
+        
+        for (int x = 0; x < rows; ++ x) {
+            for (int c = 0; c < ch; ++ c) {
+                // convert
+                const int index = x * 256 + l_pP[x][c];
+                l_pI[x][c] = l_pTransp2I[index][c];
+            }
+        }
+    }
     
     return true;
 }

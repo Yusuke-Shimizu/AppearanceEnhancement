@@ -38,6 +38,7 @@ public:
     bool setProCam(ProCam* procam);
     bool setColorMixMatMap(const cv::Mat_<Vec9d>& _aMat);
     bool setResponseMap(cv::Mat_<cv::Vec3b>* const _responseMap, const cv::Mat_<cv::Vec3b>& _response, const int _depth, const int _maxDepth);
+    bool setResponseMap(cv::Mat_<cv::Vec3b>* const _responseMapP2I, const cv::Mat_<cv::Vec3b>& _CImage, const uchar _INum);
     ///////////////////////////////  get method ///////////////////////////////
     bool getProCam(ProCam* const procam);
     ProCam* getProCam(void);
@@ -51,12 +52,13 @@ public:
     bool loadColorMixingMatrix(const char* fileName);
     bool loadColorMixingMatrixOfByte(const char* fileName);
     ///////////////////////////////  other method ///////////////////////////////
-    bool linearlize(cv::Mat_<cv::Vec3b>* const _responseMap);
+    bool linearlize(cv::Mat_<cv::Vec3b>* const _responseMap, cv::Mat_<cv::Vec3b>* const _responseMapP2I);
     bool calcColorMixingMatrix(void);
     bool createVMap(const cv::Mat& _normalR2BL, const cv::Mat& _normalG2BL, const cv::Mat& _normalB2BL);
-    bool calcResponseFunction(cv::Mat_<cv::Vec3b>* const _responseMap);
+    bool calcResponseFunction(cv::Mat_<cv::Vec3b>* const _responseMap, cv::Mat_<cv::Vec3b>* const _responseMapP2I);
     bool getResponseOfAllPixel(cv::Mat_<cv::Vec3b>* const _response, const cv::Mat_<cv::Vec3b>& _CImage);
-    bool getResponse(cv::Vec3b* const _response, const cv::Vec3b& _C, const cv::Mat& _V);
+    bool calcP(cv::Vec3b* const _response, const cv::Vec3b& _C, const cv::Mat& _V);
+    bool calcPByVec(cv::Vec3b* const _response, const cv::Vec3b& _C, const Vec9d& _VVec);
     bool showVMap(void);
     bool doRadiometricCompensation(const cv::Mat& _desiredImage);
     bool doRadiometricCompensation(const cv::Vec3b& _desiredColor);
