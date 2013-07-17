@@ -823,5 +823,5 @@ void GeometricCalibration::test_accessMap(void){
     l_procam->convertProjectorCoordinateSystemToCameraOne(&prjImg, whiteImg);
     _print_mat_propaty(prjImg);
     MY_IMSHOW(prjImg);
-    MY_WAIT_KEY();
+//    MY_WAIT_KEY();
 }

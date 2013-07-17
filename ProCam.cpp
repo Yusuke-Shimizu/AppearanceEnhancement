@@ -106,7 +106,6 @@ bool ProCam::initVideoCapture(void){
         std::cerr << "ERROR : camera is not opened !!" << std::endl;
         return false;
     }
-    _print_name(m_video);
     return true;
 }
 
@@ -358,6 +357,19 @@ const cv::Mat_<cv::Vec3b>* ProCam::getProjectorResponse(void){
 const cv::Mat_<cv::Vec3b>* ProCam::getProjectorResponseP2I(void){
     return &m_projectorResponseP2I;
 }
+void ProCam::getProjectorResponseP2I(cv::Mat* const _responseImage, const int _index){
+    const Mat_<Vec3b>* l_prjResP2I = getProjectorResponseP2I();
+    const int rows = _responseImage->rows, cols = _responseImage->cols;
+    for (int y = 0; y < rows; ++ y) {
+        // init pointer
+        const Vec3b* l_pPrjResP2I = l_prjResP2I->ptr<Vec3b>(y);
+        Vec3b* l_pResImg = _responseImage->ptr<Vec3b>(y);
+        
+        for (int x = 0; x < cols; ++ x) {
+            l_pResImg[x] = l_pPrjResP2I[x * 256 + _index];
+        }
+    }
+}
 
 ///////////////////////////////  save method ///////////////////////////////
 bool ProCam::saveAccessMapCam2Prj(void){
@@ -470,43 +482,33 @@ bool ProCam::saveProjectorResponseForByte(const char* fileName){
     
     return true;
 }
-bool ProCam::loadProjectorResponseForByte(const char* fileName){
+
+bool ProCam::saveProjectorResponseP2IForByte(const char* fileName){
     // init
-    const Mat_<Vec3b>* const l_proRes_answer = &m_projectorResponse;
-    ifstream ifs(fileName);
-    if (!ifs) {
+    const Mat_<Vec3b>* const l_proRes = &m_projectorResponseP2I;
+    ofstream ofs;
+    ofs.open(fileName, ios_base::out | ios_base::trunc | ios_base::binary);
+    if (!ofs) {
         ERROR_PRINT2(fileName, "is Not Found");
         exit(-1);
     }
     
-    // get size
-    int rows = 0, cols = 0;
-    ifs.read((char*)&rows, sizeof(int));
-    ifs.read((char*)&cols, sizeof(int));
-    if (l_proRes_answer->rows != rows || l_proRes_answer->cols != cols) {
-        ERROR_PRINT3("different size", rows, cols);
-        exit(-1);
-    }
-    Mat_<Vec3b> l_proRes(rows, cols, CV_8UC3);
-    
-    // get number
+    // write
+    int rows = l_proRes->rows, cols = l_proRes->cols;
+    ofs.write((char*)&rows, sizeof(int));
+    ofs.write((char*)&cols, sizeof(int));
     for (int y = 0; y < rows; ++ y) {
-        Vec3b* p_proRes = l_proRes.ptr<Vec3b>(y);
-        const Vec3b* p_proRes_answer = l_proRes_answer->ptr<Vec3b>(y);
-        
+        const Vec3b* p_proRes = l_proRes->ptr<Vec3b>(y);
         for (int x = 0; x < cols; ++ x) {
             for (int ch = 0; ch < 3; ++ ch) {
-                ifs.read((char*)&p_proRes[x][ch], sizeof(uchar));
-                if (p_proRes[x][ch] != p_proRes_answer[x][ch]) {
-                    ERROR_PRINT3("diff number", p_proRes[x][ch], p_proRes_answer[x][ch]);
-                    exit(-1);
-                }
+                ofs.write((char*)&p_proRes[x][ch], sizeof(uchar));
             }
         }
     }
     
     return true;
 }
+
 ///////////////////////////////  load method ///////////////////////////////
 bool ProCam::loadAccessMapCam2Prj(void){
     cout << "loading look up table..." << endl;
@@ -569,6 +571,73 @@ bool ProCam::loadAccessMapCam2Prj(void){
     return true;
 }
 
+// load response function of projector
+bool ProCam::loadProjectorResponseForByte(const char* fileName){
+    // init
+    const Mat_<Vec3b>* const l_proRes_answer = &m_projectorResponse;
+    ifstream ifs(fileName);
+    if (!ifs) {
+        ERROR_PRINT2(fileName, "is Not Found");
+        exit(-1);
+    }
+    
+    // get size
+    int rows = 0, cols = 0;
+    ifs.read((char*)&rows, sizeof(int));
+    ifs.read((char*)&cols, sizeof(int));
+    if (l_proRes_answer->rows != rows || l_proRes_answer->cols != cols) {
+        ERROR_PRINT3("different size", rows, cols);
+        exit(-1);
+    }
+    Mat_<Vec3b> l_proRes(rows, cols, CV_8UC3);
+    
+    // get number
+    for (int y = 0; y < rows; ++ y) {
+        Vec3b* p_proRes = l_proRes.ptr<Vec3b>(y);
+        const Vec3b* p_proRes_answer = l_proRes_answer->ptr<Vec3b>(y);
+        
+        for (int x = 0; x < cols; ++ x) {
+            for (int ch = 0; ch < 3; ++ ch) {
+                ifs.read((char*)&p_proRes[x][ch], sizeof(uchar));
+                if (p_proRes[x][ch] != p_proRes_answer[x][ch]) {
+                    ERROR_PRINT3("diff number", p_proRes[x][ch], p_proRes_answer[x][ch]);
+                    exit(-1);
+                }
+            }
+        }
+    }
+    
+    return true;
+}
+
+bool ProCam::loadProjectorResponseP2IForByte(const char* fileName){
+    // init
+    ifstream ifs(fileName);
+    if (!ifs) {
+        ERROR_PRINT2(fileName, "is Not Found");
+        exit(-1);
+    }
+    
+    // get size
+    int rows = 0, cols = 0;
+    ifs.read((char*)&rows, sizeof(int));
+    ifs.read((char*)&cols, sizeof(int));
+    Mat_<Vec3b> l_proRes(rows, cols, CV_8UC3);
+    
+    // get number
+    for (int y = 0; y < rows; ++ y) {
+        Vec3b* p_proRes = l_proRes.ptr<Vec3b>(y);
+        
+        for (int x = 0; x < cols; ++ x) {
+            for (int ch = 0; ch < 3; ++ ch) {
+                ifs.read((char*)&p_proRes[x][ch], sizeof(uchar));
+            }
+        }
+    }
+    
+    return true;
+}
+
 ///////////////////////////////  calibration method ///////////////////////////////
 // 全てのキャリブレーションを行う
 bool ProCam::allCalibration(void){
@@ -582,6 +651,8 @@ bool ProCam::allCalibration(void){
 //        cerr << "geometric calibration error" << endl;
 //        return false;
 //    }
+    loadAccessMapCam2Prj();
+
     
     // linearized projector
     if ( !linearlizeOfProjector() ) {
@@ -619,7 +690,6 @@ bool ProCam::geometricCalibration(void){
     
     // save
     saveAccessMapCam2Prj();
-//    loadAccessMapCam2Prj();
     
     // test geometric calibration
     gc.test_accessMap();
@@ -658,16 +728,21 @@ bool ProCam::linearlizeOfProjector(void){
     if ( !linearPrj.linearlize(&prjResponse, &l_prjResponseP2I) ) return false;
     
     // 落とした配列をメンバ配列に代入する
-    if ( !setProjectorResponse(prjResponse) ) {ERROR_PRINT("error is setProjectorResponse"); return false;}
+//    if ( !setProjectorResponse(prjResponse) ) {ERROR_PRINT("error is setProjectorResponse"); return false;}
     if ( !setProjectorResponseP2I(l_prjResponseP2I) ) {ERROR_PRINT("error is setProjectorResponse"); return false;}
 
     // save projecor response map
     cout << "saving projector response" << endl;
-    saveProjectorResponseForByte(PROJECTOR_RESPONSE_FILE_NAME_BYTE);
+//    saveProjectorResponseForByte(PROJECTOR_RESPONSE_FILE_NAME_BYTE);
+    saveProjectorResponseP2IForByte(PROJECTOR_RESPONSE_FILE_NAME_BYTE);
     cout << "saved projector response" << endl;
 //    cout << "loading projector response" << endl;
 //    loadProjectorResponseForByte(PROJECTOR_RESPONSE_FILE_NAME_BYTE);
+//    loadProjectorResponseP2IForByte(PROJECTOR_RESPONSE_FILE_NAME_BYTE);
 //    cout << "loaded projector response" << endl;
+    
+    // show
+    showProjectorResponseP2I();
     
     // test
     cout << "do radiometric compensation" << endl;
@@ -778,18 +853,18 @@ bool ProCam::convertPtoI(cv::Mat* const _I, const cv::Mat&  _P){
     }
     
     // scanning all pixel
-    const Mat* l_transp2I = getProjectorResponseP2I();
+    const Mat* l_transP2I = getProjectorResponseP2I();
     const int rows = _I->rows, cols = _I->cols, ch = _I->channels();
-    for (int y = 0; y < cols; ++ y) {
+    for (int y = 0; y < rows; ++ y) {
         Vec3b* l_pI = _I->ptr<Vec3b>(y);
         const Vec3b* l_pP = _P.ptr<Vec3b>(y);
-        const Vec3b* l_pTransp2I = l_transp2I->ptr<Vec3b>(y);
+        const Vec3b* l_pTransP2I = l_transP2I->ptr<Vec3b>(y);
         
-        for (int x = 0; x < rows; ++ x) {
+        for (int x = 0; x < cols; ++ x) {
             for (int c = 0; c < ch; ++ c) {
                 // convert
-                const int index = x * 256 + l_pP[x][c];
-                l_pI[x][c] = l_pTransp2I[index][c];
+                const int index = x * 256 + (int)l_pP[x][c];
+                l_pI[x][c] = l_pTransP2I[index][c];
             }
         }
     }
@@ -841,5 +916,22 @@ bool ProCam::captureFromLinearLight(cv::Mat* const captureImage, const cv::Mat& 
     convertNonLinearImageToLinearOne(&l_linearProjectionImage, projectionImage);
     
     return captureFromLight(captureImage, l_linearProjectionImage);
+}
+
+// response mapの表示
+bool ProCam::showProjectorResponseP2I(void){
+    const Mat_<Vec3b>* l_responseMap = getProjectorResponseP2I();
+    Mat l_responseImage(l_responseMap->rows, l_responseMap->cols / 256, CV_8UC3, Scalar(0, 0, 0));
+    
+    for (int i = 0; i < 256; ++ i) {
+        _print(i);
+        getProjectorResponseP2I(&l_responseImage, i);
+        Mat l_flatImage(l_responseMap->rows, l_responseMap->cols / 256, CV_8UC3, Scalar(i, i, i));
+
+        MY_IMSHOW(l_responseImage);
+        MY_IMSHOW(l_flatImage);
+    }
+    
+    return true;
 }
 

@@ -137,16 +137,19 @@ public:
     const cv::Mat_<cv::Vec2i>* getAccessMapCam2Prj(void);
     const cv::Mat_<cv::Vec3b>* getProjectorResponse(void);
     const cv::Mat_<cv::Vec3b>* getProjectorResponseP2I(void);
+    void getProjectorResponseP2I(cv::Mat* const _responseImage, const int _index);
     ///////////////////////////////  save method ///////////////////////////////
 //    bool saveAccessMapCam2Pro(void);
     bool saveAccessMapCam2Prj(void);
     bool saveProjectorResponse(const char* fileName);
     bool saveProjectorResponse(const char* fileName, const uchar index, const uchar color);
     bool saveProjectorResponseForByte(const char* fileName);
+    bool saveProjectorResponseP2IForByte(const char* fileName);
     ///////////////////////////////  load method ///////////////////////////////
 //    bool loadAccessMapCam2Pro(void);
     bool loadAccessMapCam2Prj(void);
     bool loadProjectorResponseForByte(const char* fileName);
+    bool loadProjectorResponseP2IForByte(const char* fileName);
     ///////////////////////////////  calibration method ///////////////////////////////
     bool allCalibration(void);
     bool geometricCalibration(void);
@@ -160,6 +163,7 @@ public:
     ///////////////////////////////  other method ///////////////////////////////
     bool captureFromLight(cv::Mat* const captureImage, const cv::Mat& projectionImage);
     bool captureFromLinearLight(cv::Mat* const captureImage, const cv::Mat& projectionImage);
+    bool showProjectorResponseP2I(void);
 };
 
 #endif /* defined(__cameraBase03__ProCam__) */

@@ -129,10 +129,12 @@ bool LinearizerOfProjector::setResponseMap(cv::Mat_<cv::Vec3b>* const _responseM
             calcPByVec(&l_pPImageOnCS[x], l_pCImage[x], l_pVMap[x]);
         }
     }
+    MY_IMSHOW(l_PImageOnCameraSpace);
     
     // convert P on Camera Space to Projector Space
     Mat l_PImageOnProjectorSpace(*l_prjSize, CV_8UC3, Scalar(0, 0, 0));    // カメラ座標系におけるP（=V^{-1}C）
     l_procam->convertProjectorCoordinateSystemToCameraOne(&l_PImageOnProjectorSpace, l_PImageOnCameraSpace);
+    MY_IMSHOW(l_PImageOnCameraSpace);
     
     // setting
     int PRows = l_prjSize->height, PCols = l_prjSize->width, PCh = _responseMapP2I->channels();
@@ -144,6 +146,9 @@ bool LinearizerOfProjector::setResponseMap(cv::Mat_<cv::Vec3b>* const _responseM
             for (int ch = 0; ch < PCh; ++ ch) {
                 const int responseIndex = x * 256 + l_pPImageOnPS[x][ch];   // l_pResponseMapP2Iのインデックス
                 l_pResponseMapP2I[responseIndex][ch] = _INum;
+//                int l_pPIOPSint = (int)l_pPImageOnPS[x][ch];
+//                int l_INint = (int)_INum;
+//                _print2(l_pPIOPSint, l_INint);
             }
         }
     }
@@ -281,7 +286,7 @@ bool LinearizerOfProjector::linearlize(cv::Mat_<cv::Vec3b>* const _responseOfPro
     cout << "created Color Mixing Matrix" << endl;
     
     // show V map
-    showVMap();
+//    showVMap();
     
     // save
     cout << "saving Color Mixing Matrix..." << endl;
@@ -302,9 +307,6 @@ bool LinearizerOfProjector::linearlize(cv::Mat_<cv::Vec3b>* const _responseOfPro
 //        exit(-1);
 //    }
 //    cout << "loaded Color Mixing Matrix" << endl;
-
-    // キー待機
-    MY_WAIT_KEY();
 
     // プロジェクタの応答特性を計算
     cout << "creating response function..." << endl;
@@ -463,16 +465,16 @@ bool LinearizerOfProjector::calcResponseFunction(cv::Mat_<cv::Vec3b>* const _res
     Mat camColor = Mat::zeros(3, 1, CV_64FC1);
     Mat camImage = Mat::zeros(*l_cameraSize, CV_8UC3), prjImage = Mat::zeros(*l_projectorSize, CV_8UC3);
     Mat_<cv::Vec3b> l_responseImage(*l_cameraSize);
-    Mat_<Vec3b> l_responseMap(_responseMap->rows, _responseMap->cols, CV_8UC3); // _responseMapの一時的な置き場
+//    Mat_<Vec3b> l_responseMap(_responseMap->rows, _responseMap->cols, CV_8UC3); // _responseMapの一時的な置き場
     Mat_<Vec3b> l_responseMapP2I(_responseMapP2I->rows, _responseMapP2I->cols, CV_8UC3); // _responseMapP2Iの一時的な置き場
 
     // projection RGB * luminance
     // scanning all luminance[0-255] of projector
-    for (int prjLuminance = 100; prjLuminance < 256; prjLuminance+=10) {
+    for (int prjLuminance = 100; prjLuminance < 256; prjLuminance+=100) {
         // create flat color image
         cv::Vec3b prjColor(prjLuminance, prjLuminance, prjLuminance);
         prjImage = cv::Scalar(prjColor);
-//        _print2(prjLuminance, prjColor);
+        _print2(prjLuminance, prjColor);
 
         // capture from projection image
         l_procam->captureFromLight(&camImage, prjImage);
@@ -481,22 +483,22 @@ bool LinearizerOfProjector::calcResponseFunction(cv::Mat_<cv::Vec3b>* const _res
         // --------- OK -------------
         
         // calc response function
-        getResponseOfAllPixel(&l_responseImage, camImage);
-        MY_IMSHOW(l_responseImage);
-        waitKey(1);
+//        getResponseOfAllPixel(&l_responseImage, camImage);
+//        MY_IMSHOW(l_responseImage);
+//        waitKey(1);
         
         // set response map
-        setResponseMap(&l_responseMap, l_responseImage, prjLuminance, 256);
-        Vec3b* l_pResMap = l_responseMap.ptr<Vec3b>(0);
-        _print2(prjLuminance, l_pResMap[prjLuminance]);
-        _print2(prjLuminance, l_responseMap.at<Vec3b>(0, prjLuminance));
+//        setResponseMap(&l_responseMap, l_responseImage, prjLuminance, 256);
+//        Vec3b* l_pResMap = l_responseMap.ptr<Vec3b>(0);
+//        _print2(prjLuminance, l_pResMap[prjLuminance]);
+//        _print2(prjLuminance, l_responseMap.at<Vec3b>(0, prjLuminance));
         
         // set inverce response function
         setResponseMap(&l_responseMapP2I, l_responseImage, prjLuminance);
     }
     
     // deep copy
-    *_responseMap = l_responseMap.clone();
+//    *_responseMap = l_responseMap.clone();
     *_responseMapP2I = l_responseMapP2I.clone();
     return true;
 }
