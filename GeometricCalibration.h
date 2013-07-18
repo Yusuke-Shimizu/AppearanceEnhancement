@@ -10,6 +10,7 @@
 #define __cameraBase03__GeometricCalibration__
 
 #include <iostream>
+#include <string>
 #include "myOpenCV.h"
 #include "ProCam.h"
 
@@ -26,6 +27,7 @@
 // window name
 #define W_NAME_GEO_CAMERA "geometric calibration camera"
 #define W_NAME_GEO_PROJECTOR "geometric calibration projector"
+const std::string DIFF_FILE_FOLDER_NAME = "calibrationData/geometricCalibration/";
 
 // 先攻宣言
 class ProCam;

@@ -114,6 +114,7 @@ public:
     bool initCameraResponse(const int camResSize);
     bool initProjectorResponse(void);
     bool initProjectorResponseP2I(void);
+    bool initProjectorResponseP2I(cv::Mat* const _prjResP2I);
     ///////////////////////////////  set method ///////////////////////////////
     bool setCameraSize(const cv::Size* const cameraSize);
     bool setProjectorSize(const cv::Size& projectorSize);
@@ -164,6 +165,7 @@ public:
     bool captureFromLight(cv::Mat* const captureImage, const cv::Mat& projectionImage);
     bool captureFromLinearLight(cv::Mat* const captureImage, const cv::Mat& projectionImage);
     bool showProjectorResponseP2I(void);
+    bool printProjectorResponseP2I(const cv::Point& _pt);
 };
 
 #endif /* defined(__cameraBase03__ProCam__) */

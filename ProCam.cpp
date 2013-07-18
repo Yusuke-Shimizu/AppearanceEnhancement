@@ -183,8 +183,19 @@ bool ProCam::initProjectorResponseP2I(void){
         for (int x = 0; x < cols; ++ x) {
             // [0-255]の値を生成し代入
             int val = x % 256;
-            Vec3b color(val, val, val);
-            p_projectorResponse[x] = color;
+            p_projectorResponse[x] = Vec3b(val, val, val);
+        }
+    }
+    return true;
+}
+
+bool ProCam::initProjectorResponseP2I(cv::Mat* const _prjResP2I){
+    int rows = _prjResP2I->rows, cols = _prjResP2I->cols;
+    for (int y = 0; y < rows; ++ y) {
+        Vec3b* l_pPrjResP2I = _prjResP2I->ptr<Vec3b>(y);
+        
+        for (int x = 0; x < cols; ++ x) {
+            l_pPrjResP2I[x] = Vec3b(x % 256, x % 256, x % 256);
         }
     }
     return true;
@@ -274,7 +285,7 @@ bool ProCam::setProjectorResponseP2I(const cv::Mat_<cv::Vec3b>& _response){
     }
     
     // deep copy
-    m_projectorResponse = _response.clone();
+    m_projectorResponseP2I = _response.clone();
     return true;
 }
 
@@ -359,6 +370,12 @@ const cv::Mat_<cv::Vec3b>* ProCam::getProjectorResponseP2I(void){
 }
 void ProCam::getProjectorResponseP2I(cv::Mat* const _responseImage, const int _index){
     const Mat_<Vec3b>* l_prjResP2I = getProjectorResponseP2I();
+    if (_responseImage->rows != l_prjResP2I->rows || _responseImage->cols != l_prjResP2I->cols / 256) {
+        cerr << "different size" << endl;
+        _print_mat_propaty(*_responseImage);
+        _print_mat_propaty(*l_prjResP2I);
+        exit(-1);
+    }
     const int rows = _responseImage->rows, cols = _responseImage->cols;
     for (int y = 0; y < rows; ++ y) {
         // init pointer
@@ -485,7 +502,7 @@ bool ProCam::saveProjectorResponseForByte(const char* fileName){
 
 bool ProCam::saveProjectorResponseP2IForByte(const char* fileName){
     // init
-    const Mat_<Vec3b>* const l_proRes = &m_projectorResponseP2I;
+    const Mat_<Vec3b>* const l_proRes = getProjectorResponseP2I();
     ofstream ofs;
     ofs.open(fileName, ios_base::out | ios_base::trunc | ios_base::binary);
     if (!ofs) {
@@ -503,6 +520,7 @@ bool ProCam::saveProjectorResponseP2IForByte(const char* fileName){
             for (int ch = 0; ch < 3; ++ ch) {
                 ofs.write((char*)&p_proRes[x][ch], sizeof(uchar));
             }
+            _print(p_proRes[x]);
         }
     }
     
@@ -631,10 +649,15 @@ bool ProCam::loadProjectorResponseP2IForByte(const char* fileName){
         for (int x = 0; x < cols; ++ x) {
             for (int ch = 0; ch < 3; ++ ch) {
                 ifs.read((char*)&p_proRes[x][ch], sizeof(uchar));
+                int prjResInt = (int)p_proRes[x][ch];
+                _print(prjResInt);
             }
+            _print(p_proRes[x]);
         }
     }
     
+    // setting
+    setProjectorResponseP2I(l_proRes);
     return true;
 }
 
@@ -651,7 +674,7 @@ bool ProCam::allCalibration(void){
 //        cerr << "geometric calibration error" << endl;
 //        return false;
 //    }
-    loadAccessMapCam2Prj();
+//    loadAccessMapCam2Prj();
 
     
     // linearized projector
@@ -711,38 +734,40 @@ bool ProCam::linearlizeOfProjector(void){
     int rows = m_projectorResponse.rows, cols = m_projectorResponse.cols;
     Mat_<Vec3b> prjResponse(rows, cols);
     Mat_<Vec3b> l_prjResponseP2I(rows, cols);
-    for (int y = 0; y < rows; ++ y) {
-        Vec3b* p_prjRes = prjResponse.ptr<Vec3b>(y);
-        Vec3b* l_pPrjResP2I = l_prjResponseP2I.ptr<Vec3b>(y);
-
-        for (int x = 0; x < cols; ++ x) {
-            int val = x % 256;
-            Vec3b color(val);
-            p_prjRes[x] = color;
-            l_pPrjResP2I[x] = color;
-        }
-    }
+//    for (int y = 0; y < rows; ++ y) {
+//        Vec3b* p_prjRes = prjResponse.ptr<Vec3b>(y);
+//        Vec3b* l_pPrjResP2I = l_prjResponseP2I.ptr<Vec3b>(y);
+//
+//        for (int x = 0; x < cols; ++ x) {
+//            int val = x % 256;
+//            Vec3b color(val);
+//            p_prjRes[x] = color;
+//            l_pPrjResP2I[x] = color;
+//        }
+//    }
+    initProjectorResponseP2I(&prjResponse);
+    initProjectorResponseP2I(&l_prjResponseP2I);
     
     // get projector response
     LinearizerOfProjector linearPrj(this);
-    if ( !linearPrj.linearlize(&prjResponse, &l_prjResponseP2I) ) return false;
+//    if ( !linearPrj.linearlize(&prjResponse, &l_prjResponseP2I) ) return false;
+//    loadProjectorResponseP2IForByte(PROJECTOR_RESPONSE_FILE_NAME_BYTE);
     
     // 落とした配列をメンバ配列に代入する
 //    if ( !setProjectorResponse(prjResponse) ) {ERROR_PRINT("error is setProjectorResponse"); return false;}
-    if ( !setProjectorResponseP2I(l_prjResponseP2I) ) {ERROR_PRINT("error is setProjectorResponse"); return false;}
+//    if ( !setProjectorResponseP2I(l_prjResponseP2I) ) {ERROR_PRINT("error is setProjectorResponse"); return false;}
 
     // save projecor response map
     cout << "saving projector response" << endl;
 //    saveProjectorResponseForByte(PROJECTOR_RESPONSE_FILE_NAME_BYTE);
     saveProjectorResponseP2IForByte(PROJECTOR_RESPONSE_FILE_NAME_BYTE);
     cout << "saved projector response" << endl;
-//    cout << "loading projector response" << endl;
-//    loadProjectorResponseForByte(PROJECTOR_RESPONSE_FILE_NAME_BYTE);
-//    loadProjectorResponseP2IForByte(PROJECTOR_RESPONSE_FILE_NAME_BYTE);
-//    cout << "loaded projector response" << endl;
     
     // show
     showProjectorResponseP2I();
+    
+    // print
+    printProjectorResponseP2I(Point(cols/2/256, rows/2));
     
     // test
     cout << "do radiometric compensation" << endl;
@@ -926,7 +951,7 @@ bool ProCam::showProjectorResponseP2I(void){
     for (int i = 0; i < 256; ++ i) {
         _print(i);
         getProjectorResponseP2I(&l_responseImage, i);
-        Mat l_flatImage(l_responseMap->rows, l_responseMap->cols / 256, CV_8UC3, Scalar(i, i, i));
+        Mat l_flatImage(l_responseImage.rows, l_responseImage.cols, CV_8UC3, Scalar(i, i, i));
 
         MY_IMSHOW(l_responseImage);
         MY_IMSHOW(l_flatImage);
@@ -935,3 +960,17 @@ bool ProCam::showProjectorResponseP2I(void){
     return true;
 }
 
+// projector responseの出力
+bool ProCam::printProjectorResponseP2I(const cv::Point& _pt){
+    const Mat_<Vec3b>* l_responseMap = getProjectorResponseP2I();
+    Mat l_responseImage(l_responseMap->rows, l_responseMap->cols / 256, CV_8UC3, Scalar(0, 0, 0));
+    
+    for (int i = 0; i < 256; ++ i) {
+        getProjectorResponseP2I(&l_responseImage, i);
+        
+        Vec3i tmp = (Vec3i)l_responseImage.at<Vec3b>(_pt);
+        _print_gnuplot4(std::cout, i, tmp[2], tmp[1], tmp[0]);
+    }
+    
+    return true;
+}

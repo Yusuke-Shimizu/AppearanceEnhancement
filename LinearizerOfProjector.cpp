@@ -134,7 +134,7 @@ bool LinearizerOfProjector::setResponseMap(cv::Mat_<cv::Vec3b>* const _responseM
     // convert P on Camera Space to Projector Space
     Mat l_PImageOnProjectorSpace(*l_prjSize, CV_8UC3, Scalar(0, 0, 0));    // カメラ座標系におけるP（=V^{-1}C）
     l_procam->convertProjectorCoordinateSystemToCameraOne(&l_PImageOnProjectorSpace, l_PImageOnCameraSpace);
-    MY_IMSHOW(l_PImageOnCameraSpace);
+    MY_IMSHOW(l_PImageOnProjectorSpace);
     
     // setting
     int PRows = l_prjSize->height, PCols = l_prjSize->width, PCh = _responseMapP2I->channels();
@@ -146,9 +146,6 @@ bool LinearizerOfProjector::setResponseMap(cv::Mat_<cv::Vec3b>* const _responseM
             for (int ch = 0; ch < PCh; ++ ch) {
                 const int responseIndex = x * 256 + l_pPImageOnPS[x][ch];   // l_pResponseMapP2Iのインデックス
                 l_pResponseMapP2I[responseIndex][ch] = _INum;
-//                int l_pPIOPSint = (int)l_pPImageOnPS[x][ch];
-//                int l_INint = (int)_INum;
-//                _print2(l_pPIOPSint, l_INint);
             }
         }
     }
@@ -264,6 +261,7 @@ bool LinearizerOfProjector::loadColorMixingMatrixOfByte(const char* fileName){
     const int rows = l_cmmMap.rows, cols = l_cmmMap.cols;
     for (int y = 0; y < rows; ++ y) {
         const Vec9d* p_cmmMap = l_cmmMap.ptr<Vec9d>(y);
+        
         for (int x = 0; x < cols; ++ x) {
             for (int i = 0; i < 9; ++ i) {
                 ifs.read((char*)&p_cmmMap[x][i], sizeof(double));
@@ -275,11 +273,13 @@ bool LinearizerOfProjector::loadColorMixingMatrixOfByte(const char* fileName){
     setColorMixMatMap(l_cmmMap);
     return true;
 }
+
 ///////////////////////////////  other method ///////////////////////////////
 // プロジェクタの線形化を行うメソッド
 // input / responseOfProjector  : 線形化のルックアップテーブルを入れる配列
 // return   : 成功したかどうか
 bool LinearizerOfProjector::linearlize(cv::Mat_<cv::Vec3b>* const _responseOfProjector, cv::Mat_<cv::Vec3b>* const _responseMapP2I){
+    ///////////////// create V map /////////////////
     // 色変換行列の生成
     cout << "creating Color Mixing Matrix..." << endl;
     if( !calcColorMixingMatrix() ) return false;
@@ -294,23 +294,20 @@ bool LinearizerOfProjector::linearlize(cv::Mat_<cv::Vec3b>* const _responseOfPro
 //        ERROR_PRINT("save dame ppo-i");
 //        exit(-1);
 //    }
-    if ( !saveColorMixingMatrixOfByte(CMM_MAP_FILE_NAME_BYTE) ) {
-        ERROR_PRINT("save dame ppo-i");
-        exit(-1);
-    }
+    if ( !saveColorMixingMatrixOfByte(CMM_MAP_FILE_NAME_BYTE) ) return false;
     cout << "saved Color Mixing Matrix" << endl;
 
     // load
 //    cout << "loading Color Mixing Matrix..." << endl;
-//    if ( !loadColorMixingMatrixOfByte(CMM_MAP_FILE_NAME_BYTE) ) {
-//        ERROR_PRINT("save dame ppo-i");
-//        exit(-1);
-//    }
+//    if ( !loadColorMixingMatrixOfByte(CMM_MAP_FILE_NAME_BYTE) ) return false;
 //    cout << "loaded Color Mixing Matrix" << endl;
 
+    ///////////////// create projector response function /////////////////
     // プロジェクタの応答特性を計算
     cout << "creating response function..." << endl;
-    if ( !calcResponseFunction(_responseOfProjector, _responseMapP2I)) return false;
+//    if ( !calcResponseFunction(_responseOfProjector, _responseMapP2I)) return false;
+    ProCam* l_procam = getProCam();
+    l_procam->loadProjectorResponseP2IForByte(PROJECTOR_RESPONSE_FILE_NAME_BYTE);
     cout << "created response function" << endl;
     
     cout << "linealize is finish" << endl;
@@ -467,6 +464,13 @@ bool LinearizerOfProjector::calcResponseFunction(cv::Mat_<cv::Vec3b>* const _res
     Mat_<cv::Vec3b> l_responseImage(*l_cameraSize);
 //    Mat_<Vec3b> l_responseMap(_responseMap->rows, _responseMap->cols, CV_8UC3); // _responseMapの一時的な置き場
     Mat_<Vec3b> l_responseMapP2I(_responseMapP2I->rows, _responseMapP2I->cols, CV_8UC3); // _responseMapP2Iの一時的な置き場
+    int rows = _responseMapP2I->rows, cols = _responseMapP2I->cols;
+    for (int y = 0; y < rows; ++ y) {
+        Vec3b* p_responseMapP2I = l_responseMapP2I.ptr<Vec3b>(y);
+        for (int x = 0; x < cols; ++ x) {
+            p_responseMapP2I[x] = Vec3b(x % 256, x % 256, x % 256);
+        }
+    }
 
     // projection RGB * luminance
     // scanning all luminance[0-255] of projector
@@ -494,7 +498,7 @@ bool LinearizerOfProjector::calcResponseFunction(cv::Mat_<cv::Vec3b>* const _res
 //        _print2(prjLuminance, l_responseMap.at<Vec3b>(0, prjLuminance));
         
         // set inverce response function
-        setResponseMap(&l_responseMapP2I, l_responseImage, prjLuminance);
+        setResponseMap(&l_responseMapP2I, camImage, prjLuminance);
     }
     
     // deep copy

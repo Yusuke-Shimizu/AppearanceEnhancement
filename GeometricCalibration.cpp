@@ -434,7 +434,7 @@ void GeometricCalibration::addSpatialCodeOfProCam(bool* const spatialCodeProject
     Mat diffPosiNega8u = Mat::zeros(diffPosiNega16s.rows, diffPosiNega16s.cols, CV_8UC1);
     convertMatDepth16sTo8u(&diffPosiNega8u, &diffPosiNega16s);
     ostringstream oss;
-    oss << "diffImage" << (num++) << ".png";
+    oss << DIFF_FILE_FOLDER_NAME << "diffImage" << (num++) << ".png";
     imwrite(oss.str().c_str(), diffPosiNega8u);
 //    cout << "write diffImage.png" << endl;
     
@@ -789,8 +789,9 @@ bool GeometricCalibration::doCalibration(Mat_<Vec2i>* const _accessMapCam2Pro, c
     }
     
 	// 使用したウィンドウの削除
-	destroyWindow(W_NAME_GEO_CAMERA);
-	destroyWindow(W_NAME_GEO_PROJECTOR);
+//	destroyWindow(W_NAME_GEO_CAMERA);
+//	destroyWindow(W_NAME_GEO_PROJECTOR);
+    destroyAllWindows();
     
     // プロカム間のアクセスマップを作る
     Point* l_accessMapCam2Pro = new Point[cameraSize->area()];  // Mat_<Vec2i>へ変換する為の変数
