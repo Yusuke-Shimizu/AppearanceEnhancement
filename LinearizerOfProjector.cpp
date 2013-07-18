@@ -283,6 +283,7 @@ bool LinearizerOfProjector::linearlize(cv::Mat_<cv::Vec3b>* const _responseOfPro
     // 色変換行列の生成
     cout << "creating Color Mixing Matrix..." << endl;
     if( !calcColorMixingMatrix() ) return false;
+//    if ( !loadColorMixingMatrixOfByte(CMM_MAP_FILE_NAME_BYTE) ) return false;
     cout << "created Color Mixing Matrix" << endl;
     
     // show V map
@@ -290,17 +291,8 @@ bool LinearizerOfProjector::linearlize(cv::Mat_<cv::Vec3b>* const _responseOfPro
     
     // save
     cout << "saving Color Mixing Matrix..." << endl;
-//    if ( !saveColorMixingMatrix(CMM_MAP_FILE_NAME) ) {
-//        ERROR_PRINT("save dame ppo-i");
-//        exit(-1);
-//    }
     if ( !saveColorMixingMatrixOfByte(CMM_MAP_FILE_NAME_BYTE) ) return false;
     cout << "saved Color Mixing Matrix" << endl;
-
-    // load
-//    cout << "loading Color Mixing Matrix..." << endl;
-//    if ( !loadColorMixingMatrixOfByte(CMM_MAP_FILE_NAME_BYTE) ) return false;
-//    cout << "loaded Color Mixing Matrix" << endl;
 
     ///////////////// create projector response function /////////////////
     // プロジェクタの応答特性を計算
@@ -484,22 +476,13 @@ bool LinearizerOfProjector::calcResponseFunction(cv::Mat_<cv::Vec3b>* const _res
         l_procam->captureFromLight(&camImage, prjImage);
         MY_IMSHOW(camImage);
         waitKey(1);
-        // --------- OK -------------
-        
-        // calc response function
-//        getResponseOfAllPixel(&l_responseImage, camImage);
-//        MY_IMSHOW(l_responseImage);
-//        waitKey(1);
-        
-        // set response map
-//        setResponseMap(&l_responseMap, l_responseImage, prjLuminance, 256);
-//        Vec3b* l_pResMap = l_responseMap.ptr<Vec3b>(0);
-//        _print2(prjLuminance, l_pResMap[prjLuminance]);
-//        _print2(prjLuminance, l_responseMap.at<Vec3b>(0, prjLuminance));
         
         // set inverce response function
         setResponseMap(&l_responseMapP2I, camImage, prjLuminance);
     }
+    
+    // interpolation projector response
+    l_procam->interpolationProjectorResponseP2I(&l_responseMapP2I);
     
     // deep copy
 //    *_responseMap = l_responseMap.clone();

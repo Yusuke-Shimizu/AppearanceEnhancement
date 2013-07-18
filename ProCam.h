@@ -77,6 +77,8 @@ const cv::Point LINUX_PROJECTOR_DISPLAY_POS(LINUX_DISPLAY_SIZE.width, 0);
 #define SLEEP_TIME 100
 #define CAPTURE_NUM 10
 
+const uchar INIT_RES_NUM = 0;   // 応答特性の初期値
+
 // 先攻宣言
 class GeometricCalibration;
 class LinearizerOfProjector;
@@ -166,6 +168,7 @@ public:
     bool captureFromLinearLight(cv::Mat* const captureImage, const cv::Mat& projectionImage);
     bool showProjectorResponseP2I(void);
     bool printProjectorResponseP2I(const cv::Point& _pt);
+    bool interpolationProjectorResponseP2I(cv::Mat* const _prjRes);
 };
 
 #endif /* defined(__cameraBase03__ProCam__) */

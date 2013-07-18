@@ -194,8 +194,13 @@ bool ProCam::initProjectorResponseP2I(cv::Mat* const _prjResP2I){
     for (int y = 0; y < rows; ++ y) {
         Vec3b* l_pPrjResP2I = _prjResP2I->ptr<Vec3b>(y);
         
-        for (int x = 0; x < cols; ++ x) {
-            l_pPrjResP2I[x] = Vec3b(x % 256, x % 256, x % 256);
+        for (int x = 0; x < cols / 256; ++ x) {
+//            l_pPrjResP2I[x] = Vec3b(x % 256, x % 256, x % 256);
+            for (int i = 1; i < 255; ++ i) {
+                l_pPrjResP2I[x * 256 + i] = Vec3b(INIT_RES_NUM, INIT_RES_NUM, INIT_RES_NUM);
+            }
+            l_pPrjResP2I[x * 256 + 0] = Vec3b(0, 0, 0);
+            l_pPrjResP2I[x * 256 + 255] = Vec3b(255, 255, 255);
         }
     }
     return true;
@@ -970,6 +975,52 @@ bool ProCam::printProjectorResponseP2I(const cv::Point& _pt){
         
         Vec3i tmp = (Vec3i)l_responseImage.at<Vec3b>(_pt);
         _print_gnuplot4(std::cout, i, tmp[2], tmp[1], tmp[0]);
+    }
+    
+    return true;
+}
+
+// projector responseの補間を行う
+bool interpolationProjectorResponseP2I(cv::Mat* const _prjRes){
+    // initialize
+    int rows = _prjRes->rows, cols = _prjRes->cols / 256, channels = _prjRes->channels();
+    if (_prjRes->isContinuous()) {
+        cols *= rows;
+        rows = 1;
+    }
+    
+    // scan all pixel and color value
+    for (int y = 0; y < rows; ++ y) {
+        Vec3b* l_pPrjRes = _prjRes->ptr<Vec3b>(y);
+        for (int x = 0; x < cols; ++ x) {
+            
+            // scan all luminance
+            for (int p = 1; p < 255; ++ p) {    // 最初と最後は初期化の時に決定済みである為，除外
+                Vec3b l_vecPrjRes = l_pPrjRes[x * 256 + p];
+                
+                // scan all color
+                for (int c = 0; c < channels; ++ channels) {
+                    if (l_vecPrjRes[c] == INIT_RES_NUM) {   // 抜けている箇所の特定
+                        uchar p0 = p - 1, i0 = l_pPrjRes[x * 256 + p0][c];  // 下端の値
+
+                        // 上端の検索
+                        uchar p1 = p + 1, i1 = 0;
+                        for (; ; ++ p1) {
+                            if (l_pPrjRes[x * 256 + p1][c] != INIT_RES_NUM) {
+                                i1 = l_pPrjRes[x * 256 + p1][c];
+                                break;
+                            }
+                        }
+                        
+                        // set alpha
+                        double alpha = (double)(p - p0)/(double)(p1 - p0);
+                        
+                        // 抜けている箇所の修復
+                        l_vecPrjRes[c] = i0 + (uchar)(alpha * (double)(i1 - i0));
+                    }
+                }
+            }
+        }
     }
     
     return true;
