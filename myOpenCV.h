@@ -24,7 +24,7 @@
 #define DEPTH_S16BIT_MAX 32767
 
 #define _print_vector(vec) std::cout<<#vec<<"[b, g, r] = "<<(vec)<<" ("<<&(vec)<<") ("<<__FUNCTION__<<")"<<std::endl
-#define MY_IMSHOW(img) cv::imshow(#img, img)
+#define MY_IMSHOW(img) cv::imshow(#img, img);cv::waitKey(1)
 #define _print_mat_propaty(mat) _print_name(mat);printMatPropaty(mat)
 
 typedef cv::Vec<double, 9> Vec9d;
@@ -133,6 +133,10 @@ bool calcAverageOfImage(cv::Vec3b* const _aveColor, const cv::Mat& image);
 inline void MY_WAIT_KEY(void){
     std::cout << "push any key" << std::endl;
     cv::waitKey(-1);
+}
+inline void MY_WAIT_KEY(const int key){
+    std::cout << "push " << key << " key" << std::endl;
+    while(cv::waitKey(1) != key){};
 }
 
 #endif

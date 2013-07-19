@@ -14,8 +14,8 @@
 
 // 使用PC
 //#define MAC
-#define MAC_PROJECTOR
-//#define LINUX
+//#define MAC_PROJECTOR
+#define LINUX
 
 // 定義
 #define VGA_WIDTH 640
@@ -74,7 +74,7 @@ const cv::Point LINUX_PROJECTOR_DISPLAY_POS(LINUX_DISPLAY_SIZE.width, 0);
 #define WINDOW_NAME "projection image"
 
 // スリープ時間(ms)
-#define SLEEP_TIME 100
+#define SLEEP_TIME 30
 #define CAPTURE_NUM 10
 
 const uchar INIT_RES_NUM = 0;   // 応答特性の初期値
@@ -169,6 +169,7 @@ public:
     bool showProjectorResponseP2I(void);
     bool printProjectorResponseP2I(const cv::Point& _pt);
     bool interpolationProjectorResponseP2I(cv::Mat* const _prjRes);
+    bool checkCameraLinearity(void);
 };
 
 #endif /* defined(__cameraBase03__ProCam__) */

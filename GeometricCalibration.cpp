@@ -822,7 +822,6 @@ void GeometricCalibration::test_accessMap(void){
     const Size* camSize = l_procam->getCameraSize();
     Mat whiteImg(*camSize, CV_8UC3, Scalar(255, 255, 255)), prjImg(*prjSize, CV_8UC3, Scalar(0, 0, 0));
     l_procam->convertProjectorCoordinateSystemToCameraOne(&prjImg, whiteImg);
-    _print_mat_propaty(prjImg);
     MY_IMSHOW(prjImg);
 //    MY_WAIT_KEY();
 }
