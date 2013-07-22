@@ -29,6 +29,8 @@ const cv::Size MAC_DISIPLAY_SIZE(1366, 768);
 const cv::Size LINUX_DISPLAY_SIZE(1680, 1050);
 const cv::Size MAC_OTHER_DISPLAY_SIZE(1680, 1050);
 const cv::Size PROJECTOR_DISPLAY_SIZE(1024, 768);
+const cv::Size USB_CAMERA_SIZE(2592, 1944);
+const cv::Size IEEE_CAMERA_SIZE(640, 480);
 
 const cv::Point MAC_OTHER_DISPLAY_POS(0, -1 * MAC_OTHER_DISPLAY_SIZE.height);
 const cv::Point MAC_PROJECTOR_DISPLAY_POS(0, -1 * PROJECTOR_DISPLAY_SIZE.height);
@@ -92,7 +94,7 @@ private:
     cv::Mat_<cv::Vec2i> m_accessMapCam2Prj; // カメラからプロジェクタへの位置マップ
     cv::Mat m_ColorTransMatCam2Pro;     // カメラ色空間からプロジェクタ色空間への変換行列
     double* m_cameraResponse;           // カメラの応答特性[0-1]->[0-1]
-    cv::Mat_<cv::Vec3b> m_projectorResponse;    // プロジェクタの応答特性[0-255]
+    cv::Mat_<cv::Vec3b> m_projectorResponseI2P;    // プロジェクタの応答特性[0-255]
     cv::Mat_<cv::Vec3b> m_projectorResponseP2I;    // プロジェクタの応答特性のインバース[0-255]
     
     ProCam(const ProCam& _procam);      // コピーコンストラクタ隠し（プログラムで１つしか存在しない為）
@@ -127,25 +129,21 @@ public:
     bool setProjectorResponse(const cv::Mat_<cv::Vec3b>& _response);
     bool setProjectorResponseP2I(const cv::Mat_<cv::Vec3b>& _response);
     ///////////////////////////////  get method ///////////////////////////////
-    bool getCameraSize(cv::Size* const cameraSize);
     cv::Size* getCameraSize(void);
     int getPixelsOfCamera(void);
-    bool getProjectorSize(cv::Size* const projectorSize);
     cv::Size* getProjectorSize(void);
     bool getCaptureImage(cv::Mat* const image);
-    bool getVideoCapture(cv::VideoCapture* _video);
     cv::VideoCapture* getVideoCapture(void);
     bool getAccessMapCam2Pro(cv::Point* const accessMapCam2Pro, const cv::Size& mapSize);
     bool getAccessMapCam2Pro(cv::Point* const accessMapCam2Pro);
     const cv::Mat_<cv::Vec2i>* getAccessMapCam2Prj(void);
     const cv::Mat_<cv::Vec3b>* getProjectorResponse(void);
     const cv::Mat_<cv::Vec3b>* getProjectorResponseP2I(void);
-    void getProjectorResponseP2I(cv::Mat* const _responseImage, const int _index);
+    void getImageProjectorResponseP2I(cv::Mat* const _responseImage, const cv::Mat& _responseMap, const int _index);
+    void getImageProjectorResponseP2I(cv::Mat* const _responseImage, const int _index);
     ///////////////////////////////  save method ///////////////////////////////
 //    bool saveAccessMapCam2Pro(void);
     bool saveAccessMapCam2Prj(void);
-    bool saveProjectorResponse(const char* fileName);
-    bool saveProjectorResponse(const char* fileName, const uchar index, const uchar color);
     bool saveProjectorResponseForByte(const char* fileName);
     bool saveProjectorResponseP2IForByte(const char* fileName);
     ///////////////////////////////  load method ///////////////////////////////
@@ -163,12 +161,17 @@ public:
     bool convertNonLinearImageToLinearOne(cv::Mat* const _linearImg, const cv::Mat&  _nonLinearImg);
     bool convertPtoI(cv::Mat* const _I, const cv::Mat&  _P);
 //    bool convertCameraImageToProjectorOne(cv::Mat* const _prjImg, const cv::Mat&  _camImg);
+    ///////////////////////////////  show method ///////////////////////////////
+    bool showProjectorResponseP2I(void);
+    bool showProjectorResponseP2I(const cv::Mat& _prjRes);
+    ///////////////////////////////  print method ///////////////////////////////
+    bool printProjectorResponseP2I(const cv::Point& _pt);
+    bool printProjectorResponseP2I(const cv::Point& _pt, const cv::Mat& _prjRes);
     ///////////////////////////////  other method ///////////////////////////////
     bool captureFromLight(cv::Mat* const captureImage, const cv::Mat& projectionImage);
     bool captureFromLinearLight(cv::Mat* const captureImage, const cv::Mat& projectionImage);
-    bool showProjectorResponseP2I(void);
-    bool printProjectorResponseP2I(const cv::Point& _pt);
     bool interpolationProjectorResponseP2I(cv::Mat* const _prjRes);
+    bool test_interpolationProjectorResponseP2I(void);
     bool checkCameraLinearity(void);
 };
 

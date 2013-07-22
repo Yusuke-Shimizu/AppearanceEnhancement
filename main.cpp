@@ -25,8 +25,7 @@ int main(int argc, const char * argv[])
     // プロカムの設定
     Size prjSize(PRJ_SIZE_WIDTH, PRJ_SIZE_HEIGHT);
     ProCam procam(prjSize);
-//    procam.allCalibration();
-    procam.checkCameraLinearity();
-    
+    procam.allCalibration();
+//    procam.test_interpolationProjectorResponseP2I();
     return 0;
 }

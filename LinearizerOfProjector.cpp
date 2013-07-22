@@ -611,12 +611,15 @@ bool LinearizerOfProjector::doRadiometricCompensation(const cv::Mat& _desiredIma
     // projection
     Mat l_cameraImage(*l_camSize, CV_8UC3, Scalar(0, 0, 0));
     l_procam->captureFromLight(&l_cameraImage, l_LProjectionImage);
-    MY_IMSHOW(_desiredImage);
-    MY_IMSHOW(l_projectionImageOnCameraSpace);
-    MY_IMSHOW(l_projectionImageOnProjectorSpace);
-    MY_IMSHOW(l_LProjectionImage);
-    MY_IMSHOW(l_cameraImage);
-    MY_WAIT_KEY();
+    imshow("desired C", _desiredImage);
+    imshow("P on Camera Domain", l_projectionImageOnCameraSpace);
+    imshow("P on Projector Domain", l_projectionImageOnProjectorSpace);
+    imshow("I", l_LProjectionImage);
+    imshow("C", l_cameraImage);
+    l_procam->captureFromLight(&l_cameraImage, _desiredImage);
+    imshow("C when projection desired C", l_cameraImage);
+
+    MY_WAIT_KEY(CV_BUTTON_ESC);
     
     return true;
 }

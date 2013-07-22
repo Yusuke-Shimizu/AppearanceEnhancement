@@ -27,6 +27,12 @@
 #define MY_IMSHOW(img) cv::imshow(#img, img);cv::waitKey(1)
 #define _print_mat_propaty(mat) _print_name(mat);printMatPropaty(mat)
 
+const int CV_BUTTON_ESC     = 27;
+const int CV_BUTTON_UP      = 63232;
+const int CV_BUTTON_DOWN    = 63233;
+const int CV_BUTTON_LEFT    = 63234;
+const int CV_BUTTON_RIGHT   = 63235;
+
 typedef cv::Vec<double, 9> Vec9d;
 
 enum ColorName{CV_RED = 2, CV_GREEN = 1, CV_BLUE = 0};
@@ -135,8 +141,12 @@ inline void MY_WAIT_KEY(void){
     cv::waitKey(-1);
 }
 inline void MY_WAIT_KEY(const int key){
-    std::cout << "push " << key << " key" << std::endl;
-    while(cv::waitKey(1) != key){};
+    while(true){
+        std::cout << "push " << key << " key" << std::endl;
+        int pushKey = cv::waitKey(0);
+        _print(pushKey);
+        if (pushKey == key) break;
+    }
 }
 
 #endif
