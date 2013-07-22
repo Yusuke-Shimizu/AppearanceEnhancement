@@ -43,10 +43,10 @@ const int CV_BUTTON_RIGHT   = 63235;
 #endif
 #ifdef LINUX
 const int CV_BUTTON_ESC     = 1048603;
-const int CV_BUTTON_UP      = 63232;
-const int CV_BUTTON_DOWN    = 63233;
-const int CV_BUTTON_LEFT    = 63234;
-const int CV_BUTTON_RIGHT   = 63235;
+const int CV_BUTTON_UP      = 1113938;
+const int CV_BUTTON_DOWN    = 1113940;
+const int CV_BUTTON_LEFT    = 1113937;
+const int CV_BUTTON_RIGHT   = 1113939;
 #endif
 
 typedef cv::Vec<double, 9> Vec9d;
