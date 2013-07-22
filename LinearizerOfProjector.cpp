@@ -324,7 +324,7 @@ bool LinearizerOfProjector::calcColorMixingMatrix(void){
         cv::Mat white_img    (*projectorSize, depth8x3, cv::Scalar(255, 255, 255));
 
         // projection and capture image
-        procam->captureFromLight(&black_cap, black_img);
+        procam->captureFromLight(&black_cap, black_img, SLEEP_TIME * 2);
         procam->captureFromLight(&red_cap, red_img);
         procam->captureFromLight(&green_cap, green_img);
         procam->captureFromLight(&blue_cap, blue_img);
@@ -450,7 +450,6 @@ bool LinearizerOfProjector::calcResponseFunction(cv::Mat_<cv::Vec3b>* const _res
     Mat_<cv::Vec3b> l_responseImage(*l_cameraSize);
 //    Mat_<Vec3b> l_responseMap(_responseMap->rows, _responseMap->cols, CV_8UC3); // _responseMapの一時的な置き場
 //    Mat_<Vec3b> l_responseMapP2I(_responseMapP2I->rows, _responseMapP2I->cols, CV_8UC3); // _responseMapP2Iの一時的な置き場
-//    l_procam->initProjectorResponseP2I(&l_responseMapP2I);
     Mat_<Vec3b> l_responseMapP2I = _responseMap->clone();
     
 
@@ -592,35 +591,36 @@ bool LinearizerOfProjector::showVMap(void){
 bool LinearizerOfProjector::doRadiometricCompensation(const cv::Mat& _desiredImage){
     // init
     ProCam* l_procam = getProCam();
-    
+    imshow("desired C", _desiredImage);
+
     // P = V^{-1}C
     const Size* l_camSize = l_procam->getCameraSize();
     Mat l_projectionImageOnCameraSpace(*l_camSize, CV_8UC3, Scalar(0, 0, 0));
     convertCameraImageToProjectorOne(&l_projectionImageOnCameraSpace, _desiredImage);
-    
+    imshow("P on Camera Domain", l_projectionImageOnCameraSpace);
+
     // camera coordinate system -> projector coordinate system
     const Size* l_prjSize = l_procam->getProjectorSize();
     Mat l_projectionImageOnProjectorSpace(*l_prjSize, CV_8UC3, Scalar(0, 0, 0));
     l_procam->convertProjectorCoordinateSystemToCameraOne(&l_projectionImageOnProjectorSpace, l_projectionImageOnCameraSpace);
+    imshow("P on Projector Domain", l_projectionImageOnProjectorSpace);
 
     // non linear -> linear
     Mat l_LProjectionImage(*l_prjSize, CV_8UC3, Scalar(0, 0, 0));
 //    l_procam->convertNonLinearImageToLinearOne(&l_LProjectionImage, l_projectionImageOnProjectorSpace);
     l_procam->convertPtoI(&l_LProjectionImage, l_projectionImageOnProjectorSpace);
+    imshow("I", l_LProjectionImage);
     
     // projection
     Mat l_cameraImage(*l_camSize, CV_8UC3, Scalar(0, 0, 0));
     l_procam->captureFromLight(&l_cameraImage, l_LProjectionImage);
-    imshow("desired C", _desiredImage);
-    imshow("P on Camera Domain", l_projectionImageOnCameraSpace);
-    imshow("P on Projector Domain", l_projectionImageOnProjectorSpace);
-    imshow("I", l_LProjectionImage);
     imshow("C", l_cameraImage);
-//    l_procam->captureFromLight(&l_cameraImage, _desiredImage);
+
+    // projection normaly desired image
     l_procam->captureFromNonGeometricTranslatedLight(&l_cameraImage, _desiredImage);
     imshow("C when projection desired C", l_cameraImage);
 
-    MY_WAIT_KEY(CV_BUTTON_ESC);
+//    MY_WAIT_KEY(CV_BUTTON_ESC);
     
     return true;
 }

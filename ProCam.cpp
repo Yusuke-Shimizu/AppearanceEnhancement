@@ -674,19 +674,22 @@ bool ProCam::linearlizeOfProjector(void){
     if ( !linearPrj.linearlize(&prjResponse, &l_prjResponseP2I) ) return false;
     
     // show
-    /*while(true) */showProjectorResponseP2I();
+    showProjectorResponseP2I();
     
     // print
     printProjectorResponseP2I(Point(cols*0.6/256, rows*0.6));
     
     // test
     cout << "do radiometric compensation" << endl;
-    int prjLum = 0;
+    int prjLum = 100;
     while (true) {
-        linearPrj.doRadiometricCompensation(++ prjLum);
+        _print(prjLum);
+        linearPrj.doRadiometricCompensation(prjLum);
+        prjLum += 1;
         if (prjLum > 256) {
             prjLum = 0;
         }
+        if (waitKey(5) == CV_BUTTON_ESC) break;
     }
     cout << "did radiometric compensation" << endl;
     return true;
@@ -822,15 +825,28 @@ bool ProCam::showProjectorResponseP2I(void){
 bool ProCam::showProjectorResponseP2I(const cv::Mat& _prjRes){
     Mat l_responseImage(_prjRes.rows, _prjRes.cols / 256, CV_8UC3, Scalar(0, 0, 0));
     
-    for (int i = 0; i < 256; ++ i) {
+    for (int i = 0;;) {
         _print(i);
         getImageProjectorResponseP2I(&l_responseImage, _prjRes, i);
         Mat l_flatImage(l_responseImage.rows, l_responseImage.cols, CV_8UC3, Scalar(i, i, i));
         
         MY_IMSHOW(l_flatImage);
         MY_IMSHOW(l_responseImage);
-        waitKey(1);
+        if (i > 256) i = 0;
+        
+        // handle image
+        int pushKey = waitKey(0);
+        if (pushKey == CV_BUTTON_LEFT || pushKey == CV_BUTTON_DOWN){
+            ++ i;
+        }
+        if (pushKey == CV_BUTTON_RIGHT || pushKey == CV_BUTTON_UP){
+            -- i;
+        }
+        if (pushKey == CV_BUTTON_ESC) {
+            cout<<"finish show image"<<endl;break;
+        }
     }
+    destroyAllWindows();
     
     return true;
 }
@@ -856,52 +872,56 @@ bool ProCam::printProjectorResponseP2I(const cv::Point& _pt, const cv::Mat& _prj
     return true;
 }
 
-///////////////////////////////  other method ///////////////////////////////
+///////////////////////////////  capture from light method ///////////////////////////////
 
 // output / captureImage    : 撮影した画像を代入する場所
 // input / projectionImage  : 投影する画像
 // return                   : 成功したかどうか
-bool ProCam::captureFromLight(cv::Mat* const captureImage, const cv::Mat& projectionImage){
+bool ProCam::captureFromLight(cv::Mat* const captureImage, const cv::Mat& projectionImage, const int _waitTimeNum){
     // 投影
     imshow(WINDOW_NAME, projectionImage);
     cvMoveWindow(WINDOW_NAME, POSITION_PROJECTION_IMAGE_X, POSITION_PROJECTION_IMAGE_Y);
-    cv::waitKey(SLEEP_TIME / 2);
+    cv::waitKey(_waitTimeNum);
     
     // N回撮影する
     cv::Mat image;
-//    Mat_<Vec3b>* aImage = new Mat_<Vec3b>[CAPTURE_NUM];
-//    Size* camSize = getCameraSize();
-//    Mat_<Vec3d> sumImage = Mat::zeros(*camSize, CV_64FC3), tmp;
+    //    Mat_<Vec3b>* aImage = new Mat_<Vec3b>[CAPTURE_NUM];
+    //    Size* camSize = getCameraSize();
+    //    Mat_<Vec3d> sumImage = Mat::zeros(*camSize, CV_64FC3), tmp;
     for (int i = 0; i < CAPTURE_NUM; ++ i) {
-//        aImage[i] = Mat::zeros(*camSize, CV_8UC3);
+        //        aImage[i] = Mat::zeros(*camSize, CV_8UC3);
         getCaptureImage(&image);
-//        getCaptureImage(&aImage[i]);
+        //        getCaptureImage(&aImage[i]);
         
         // uchar -> double
-//        aImage[i].convertTo(tmp, CV_64FC3);
-
+        //        aImage[i].convertTo(tmp, CV_64FC3);
+        
         // add
-//        sumImage += tmp;
+        //        sumImage += tmp;
     }
-//    sumImage /= CAPTURE_NUM;
+    //    sumImage /= CAPTURE_NUM;
     
     *captureImage = image.clone();
-//    *captureImage = sumImage.clone();
-    cv::waitKey(SLEEP_TIME / 2);
-
+    //    *captureImage = sumImage.clone();
+    cv::waitKey(_waitTimeNum);
+    
     return true;
 }
 
+//bool ProCam::captureFromLight(cv::Mat* const captureImage, const cv::Mat& projectionImage){
+//}
+
 bool ProCam::captureFromNonGeometricTranslatedLight(cv::Mat* const captureImage, const cv::Mat& projectionImage){
     // error processing
-    const Size* l_prjSize = getProjectorSize();
-    if (projectionImage.rows != l_prjSize->height || projectionImage.cols != l_prjSize->width) {
+    const Size* l_camSize = getCameraSize();
+    if (projectionImage.rows != l_camSize->height || projectionImage.cols != l_camSize->width) {
         cout << "size is different" << endl;
         _print_mat_propaty(projectionImage);
-        _print(*l_prjSize);
+        _print(*l_camSize);
         exit(-1);
     }
     
+    const Size* l_prjSize = getProjectorSize();
     Mat l_projectionImageOnProjectorSpace(*l_prjSize, CV_8UC3, Scalar(0, 0, 0));
     convertProjectorCoordinateSystemToCameraOne(&l_projectionImageOnProjectorSpace, projectionImage);
     return captureFromLight(captureImage, l_projectionImageOnProjectorSpace);
@@ -917,6 +937,8 @@ bool ProCam::captureFromLinearLight(cv::Mat* const captureImage, const cv::Mat& 
     
     return captureFromLight(captureImage, l_linearProjectionImage);
 }
+
+///////////////////////////////  other method ///////////////////////////////
 
 // projector responseの補間を行う
 bool ProCam::interpolationProjectorResponseP2I(cv::Mat* const _prjRes){

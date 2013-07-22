@@ -72,7 +72,7 @@ const cv::Point LINUX_PROJECTOR_DISPLAY_POS(LINUX_DISPLAY_SIZE.width, 0);
 #define WINDOW_NAME "projection image"
 
 // スリープ時間(ms)
-#define SLEEP_TIME 50
+#define SLEEP_TIME 20
 #define CAPTURE_NUM 10
 
 const uchar INIT_RES_NUM = 0;   // 応答特性の初期値
@@ -163,10 +163,12 @@ public:
     ///////////////////////////////  print method ///////////////////////////////
     bool printProjectorResponseP2I(const cv::Point& _pt);
     bool printProjectorResponseP2I(const cv::Point& _pt, const cv::Mat& _prjRes);
-    ///////////////////////////////  other method ///////////////////////////////
-    bool captureFromLight(cv::Mat* const captureImage, const cv::Mat& projectionImage);
+    ///////////////////////////////  capture from light method ///////////////////////////////
+    bool captureFromLight(cv::Mat* const captureImage, const cv::Mat& projectionImage, const int _waitTimeNum = SLEEP_TIME);
+//    bool captureFromLight(cv::Mat* const captureImage, const cv::Mat& projectionImage);
     bool captureFromNonGeometricTranslatedLight(cv::Mat* const captureImage, const cv::Mat& projectionImage);
     bool captureFromLinearLight(cv::Mat* const captureImage, const cv::Mat& projectionImage);
+    ///////////////////////////////  other method ///////////////////////////////
     bool interpolationProjectorResponseP2I(cv::Mat* const _prjRes);
     bool test_interpolationProjectorResponseP2I(void);
     bool checkCameraLinearity(void);
