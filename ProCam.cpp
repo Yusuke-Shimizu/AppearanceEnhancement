@@ -177,7 +177,7 @@ bool ProCam::initProjectorResponseP2I(cv::Mat* const _prjResP2I){
         Vec3b* l_pPrjResP2I = _prjResP2I->ptr<Vec3b>(y);
         
         for (int x = 0; x < cols / 256; ++ x) {
-            for (int i = 1; i < 255; ++ i) {
+            for (int i = 0; i < 256; ++ i) {
                 l_pPrjResP2I[x * 256 + i] = Vec3b(INIT_RES_NUM, INIT_RES_NUM, INIT_RES_NUM);
             }
             l_pPrjResP2I[x * 256 + 0] = Vec3b(0, 0, 0);
@@ -900,6 +900,7 @@ bool ProCam::captureFromLinearLight(cv::Mat* const captureImage, const cv::Mat& 
 
 // projector responseの補間を行う
 bool ProCam::interpolationProjectorResponseP2I(cv::Mat* const _prjRes){
+    cout << "interpolation now ..." << endl;
     // initialize
     int rows = _prjRes->rows, cols = _prjRes->cols / 256, channels = _prjRes->channels();
     if (_prjRes->isContinuous()) {
@@ -907,15 +908,15 @@ bool ProCam::interpolationProjectorResponseP2I(cv::Mat* const _prjRes){
         rows = 1;
     }
     
-    // scan all pixel and color value
+    // scan all pixel
     for (int y = 0; y < rows; ++ y) {
         Vec3b* l_pPrjRes = _prjRes->ptr<Vec3b>(y);
         for (int x = 0; x < cols; ++ x) {
             
-            // scan all luminance
-            for (int p = 1; p < 255; ++ p) {    // 最初と最後は初期化の時に決定済みである為，除外
-                // scan all color
-                for (int c = 0; c < channels; ++ c) {
+            // scan all color
+            for (int c = 0; c < channels; ++ c) {
+                // scan all luminance
+                for (int p = 1; p < 255; ++ p) {    // 最初と最後は初期化の時に決定済みである為，除外
                     if (l_pPrjRes[x * 256 + p][c] == INIT_RES_NUM) {   // 抜けている箇所の特定
                         uchar p0 = p - 1, i0 = l_pPrjRes[x * 256 + p0][c];  // 下端の値
 
@@ -927,9 +928,13 @@ bool ProCam::interpolationProjectorResponseP2I(cv::Mat* const _prjRes){
                                 break;
                             }
                         }
+                        if (p == 1 && p1 == 255) {
+                            l_pPrjRes[x * 256 + p1][c] = INIT_RES_NUM;
+                            break;
+                        }
                         
                         // 抜けていた箇所全てを修復
-                        for (int p_current = p + 1; p_current < p1; ++ p_current) {
+                        for (int p_current = p; p_current < p1; ++ p_current) {
                             // set alpha
                             double alpha = (double)(p_current - p0)/(double)(p1 - p0);
                             
@@ -942,13 +947,20 @@ bool ProCam::interpolationProjectorResponseP2I(cv::Mat* const _prjRes){
         }
     }
     
+    cout << "finished interpolation" << endl;
+
     return true;
 }
 // test of front method
 bool ProCam::test_interpolationProjectorResponseP2I(void){
     Mat m1(2, 256, CV_8UC3, Scalar(INIT_RES_NUM, INIT_RES_NUM, INIT_RES_NUM));
-    m1.at<Vec3b>(0, 255) = Vec3b(127, 127, 127);
-    m1.at<Vec3b>(1, 255) = Vec3b(0, 0, 0);
+//    m1.at<Vec3b>(0, 255) = Vec3b(127, 127, 127);
+//    m1.at<Vec3b>(1, 255) = Vec3b(0, 0, 0);
+    for (int i = 0; i < 256; i += 5) {
+        m1.at<Vec3b>(0, i) = Vec3b(i, i, i);
+        m1.at<Vec3b>(1, i) = Vec3b(0, 0, 0);
+    }
+    m1.at<Vec3b>(1, 255) = Vec3b(255, 255, 255);
     _print(m1);
     interpolationProjectorResponseP2I(&m1);
     _print(m1);

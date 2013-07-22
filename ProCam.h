@@ -76,7 +76,7 @@ const cv::Point LINUX_PROJECTOR_DISPLAY_POS(LINUX_DISPLAY_SIZE.width, 0);
 #define WINDOW_NAME "projection image"
 
 // スリープ時間(ms)
-#define SLEEP_TIME 30
+#define SLEEP_TIME 50
 #define CAPTURE_NUM 10
 
 const uchar INIT_RES_NUM = 0;   // 応答特性の初期値
