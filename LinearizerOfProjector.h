@@ -42,7 +42,6 @@ public:
     bool setResponseMap(cv::Mat_<cv::Vec3b>* const _responseMap, const cv::Mat_<cv::Vec3b>& _response, const int _depth, const int _maxDepth);
     bool setResponseMap(cv::Mat_<cv::Vec3b>* const _responseMapP2I, const cv::Mat_<cv::Vec3b>& _CImage, const uchar _INum);
     ///////////////////////////////  get method ///////////////////////////////
-    bool getProCam(ProCam* const procam);
     ProCam* getProCam(void);
     const cv::Mat_<Vec9d>* getColorMixMatMap(void);
     ///////////////////////////////  init method ///////////////////////////////
@@ -66,6 +65,7 @@ public:
     bool doRadiometricCompensation(const cv::Vec3b& _desiredColor);
     bool doRadiometricCompensation(const uchar& _desiredColorNumber);
     bool convertCameraImageToProjectorOne(cv::Mat* const _prjImg, const cv::Mat&  _camImg);
+    bool beZeroAtNonProjectionArea(cv::Mat* const _responseMap);
 };
 
 #endif /* defined(__cameraBase03__LinearizerOfProjector__) */

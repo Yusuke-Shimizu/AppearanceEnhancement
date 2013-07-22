@@ -136,13 +136,26 @@ bool LinearizerOfProjector::setResponseMap(cv::Mat_<cv::Vec3b>* const _responseM
     l_procam->convertProjectorCoordinateSystemToCameraOne(&l_PImageOnProjectorSpace, l_PImageOnCameraSpace);
     MY_IMSHOW(l_PImageOnProjectorSpace);
     
+    // create check mat
+    const Mat l_whiteCameraImage(l_camSize->height, l_camSize->width, CV_8UC3, Scalar(255, 255, 255));
+    Mat l_whiteImageOnProjectorDomain(l_prjSize->height, l_prjSize->width, CV_8UC3, Scalar(0, 0, 0));
+    l_procam->convertProjectorCoordinateSystemToCameraOne(&l_whiteImageOnProjectorDomain, l_whiteCameraImage);
+    Vec3b l_nonProjectionColor(0, 0, 0);
+    
     // setting
     int PRows = l_prjSize->height, PCols = l_prjSize->width, PCh = _responseMapP2I->channels();
     for (int y = 0; y < PRows; ++ y) {
         const Vec3b* l_pPImageOnPS = l_PImageOnProjectorSpace.ptr<Vec3b>(y);
         Vec3b* l_pResponseMapP2I = _responseMapP2I->ptr<Vec3b>(y);
+        Vec3b* l_checkMap = l_whiteImageOnProjectorDomain.ptr<Vec3b>(y);
         
         for (int x = 0; x < PCols; ++ x) {
+            // 投影しない箇所の設定を飛ばす
+            if (l_checkMap[x] == l_nonProjectionColor) {
+                continue;
+            }
+            
+            // 投影する場所のみの設定
             for (int ch = 0; ch < PCh; ++ ch) {
                 const int responseIndex = x * 256 + l_pPImageOnPS[x][ch];   // l_pResponseMapP2Iのインデックス
                 l_pResponseMapP2I[responseIndex][ch] = _INum;
@@ -155,10 +168,6 @@ bool LinearizerOfProjector::setResponseMap(cv::Mat_<cv::Vec3b>* const _responseM
 
 ///////////////////////////////  get method ///////////////////////////////
 //
-bool LinearizerOfProjector::getProCam(ProCam* const procam){
-    *procam = *m_procam;
-    return true;
-}
 ProCam* LinearizerOfProjector::getProCam(void){
     return m_procam;
 }
@@ -470,6 +479,9 @@ bool LinearizerOfProjector::calcResponseFunction(cv::Mat_<cv::Vec3b>* const _res
         setResponseMap(&l_responseMapP2I, camImage, prjLuminance);
     }
     
+    // 投影しない部分を全て０にする
+    beZeroAtNonProjectionArea(&l_responseMapP2I);
+    
     // interpolation projector response
     l_procam->interpolationProjectorResponseP2I(&l_responseMapP2I);
     
@@ -702,6 +714,37 @@ bool LinearizerOfProjector::convertCameraImageToProjectorOne(cv::Mat* const _prj
     
     // deep copy
     *_prjImg = l_prjImg.clone();
+    
+    return true;
+}
+
+// 投影しない部分の応答特性マップを０にする
+bool LinearizerOfProjector::beZeroAtNonProjectionArea(cv::Mat* const _responseMap){
+    ProCam* l_procam = getProCam();
+    const Size* prjSize = l_procam->getProjectorSize();
+    const Size* camSize = l_procam->getCameraSize();
+    const Mat whiteCameraImage(camSize->height, camSize->width, CV_8UC3, Scalar(255, 255, 255));
+    Mat whiteImageOnProjectorDomain(prjSize->height, prjSize->width, CV_8UC3, Scalar(0, 0, 0));
+    
+    // camera domain -> projector domain
+    l_procam->convertProjectorCoordinateSystemToCameraOne(&whiteImageOnProjectorDomain, whiteCameraImage);
+    
+    // error processing
+    if (!isEqualSizeAndType(*_responseMap, whiteImageOnProjectorDomain)) {
+        cout << "diff size or type" << endl;
+        _print_mat_propaty(*_responseMap);
+        _print_mat_propaty(whiteImageOnProjectorDomain);
+        exit(-1);
+    }
+    
+    //
+    const int rows = _responseMap->rows, cols = _responseMap->cols;
+    for (int y = 0; y < rows; ++ y) {
+        
+        for (int x = 0; x < cols; ++ x) {
+            ;
+        }
+    }
     
     return true;
 }
