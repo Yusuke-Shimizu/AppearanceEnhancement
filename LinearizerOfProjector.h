@@ -17,6 +17,8 @@
 #define CMM_MAP_FILE_NAME "calibrationData/cmmMap.dat"
 #define CMM_MAP_FILE_NAME_BYTE "calibrationData/cmmMap_byte.dat"
 
+const int PROJECTION_LUMINANCE_STEP = 1;
+
 // 先攻宣言
 class ProCam;
 

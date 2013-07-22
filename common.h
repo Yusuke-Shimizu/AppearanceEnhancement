@@ -9,6 +9,11 @@
 #ifndef cameraBase03_common_h
 #define cameraBase03_common_h
 
+// 使用PC
+//#define MAC
+//#define MAC_PROJECTOR
+#define LINUX
+
 // プリント系
 #define _print(var) std::cout<<#var<<" = "<<(var)<<" ("<<&(var)<<") ("<<__FUNCTION__<<")"<<std::endl
 #define _print2(var1, var2) std::cout<<"["<<#var1<<", "<<#var2<<"]"<<" = ["<<(var1)<<", "<<(var2)<<"] ("<<&(var1)<<") ("<<__FUNCTION__<<")"<<std::endl

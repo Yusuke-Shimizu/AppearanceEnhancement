@@ -11,11 +11,7 @@
 
 #include "LinearizerOfProjector.h"
 #include "myOpenCV.h"
-
-// 使用PC
-//#define MAC
-//#define MAC_PROJECTOR
-#define LINUX
+#include "common.h"
 
 // 定義
 #define VGA_WIDTH 640
@@ -169,6 +165,7 @@ public:
     bool printProjectorResponseP2I(const cv::Point& _pt, const cv::Mat& _prjRes);
     ///////////////////////////////  other method ///////////////////////////////
     bool captureFromLight(cv::Mat* const captureImage, const cv::Mat& projectionImage);
+    bool captureFromNonGeometricTranslatedLight(cv::Mat* const captureImage, const cv::Mat& projectionImage);
     bool captureFromLinearLight(cv::Mat* const captureImage, const cv::Mat& projectionImage);
     bool interpolationProjectorResponseP2I(cv::Mat* const _prjRes);
     bool test_interpolationProjectorResponseP2I(void);

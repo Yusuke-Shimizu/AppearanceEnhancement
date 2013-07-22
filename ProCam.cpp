@@ -116,7 +116,6 @@ bool ProCam::initAccessMapCam2Pro(void){
 //    getCameraSize(&cameraSize);
     
     // init
-//    m_accessMapCam2Pro = (cv::Point*)malloc(sizeof(cv::Point) * cameraSize.area());
     m_accessMapCam2Pro = new cv::Point[cameraSize->area()];
     for (int y = 0; y < cameraSize->height; ++ y) {
         for (int x = 0; x < cameraSize->width; ++ x) {
@@ -682,7 +681,13 @@ bool ProCam::linearlizeOfProjector(void){
     
     // test
     cout << "do radiometric compensation" << endl;
-    linearPrj.doRadiometricCompensation(100);
+    int prjLum = 0;
+    while (true) {
+        linearPrj.doRadiometricCompensation(++ prjLum);
+        if (prjLum > 256) {
+            prjLum = 0;
+        }
+    }
     cout << "did radiometric compensation" << endl;
     return true;
 }
@@ -885,6 +890,21 @@ bool ProCam::captureFromLight(cv::Mat* const captureImage, const cv::Mat& projec
     cv::waitKey(SLEEP_TIME / 2);
 
     return true;
+}
+
+bool ProCam::captureFromNonGeometricTranslatedLight(cv::Mat* const captureImage, const cv::Mat& projectionImage){
+    // error processing
+    const Size* l_prjSize = getProjectorSize();
+    if (projectionImage.rows != l_prjSize->height || projectionImage.cols != l_prjSize->width) {
+        cout << "size is different" << endl;
+        _print_mat_propaty(projectionImage);
+        _print(*l_prjSize);
+        exit(-1);
+    }
+    
+    Mat l_projectionImageOnProjectorSpace(*l_prjSize, CV_8UC3, Scalar(0, 0, 0));
+    convertProjectorCoordinateSystemToCameraOne(&l_projectionImageOnProjectorSpace, projectionImage);
+    return captureFromLight(captureImage, l_projectionImageOnProjectorSpace);
 }
 
 // 線形化したプロジェクタを用いて投影・撮影を行う

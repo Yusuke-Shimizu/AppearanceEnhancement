@@ -456,7 +456,7 @@ bool LinearizerOfProjector::calcResponseFunction(cv::Mat_<cv::Vec3b>* const _res
 
     // projection RGB * luminance
     // scanning all luminance[0-255] of projector
-    for (int prjLuminance = 0; prjLuminance < 256; prjLuminance+=10) {
+    for (int prjLuminance = 0; prjLuminance < 256; prjLuminance += PROJECTION_LUMINANCE_STEP) {
         // create flat color image
         cv::Vec3b prjColor(prjLuminance, prjLuminance, prjLuminance);
         prjImage = cv::Scalar(prjColor);
@@ -616,7 +616,8 @@ bool LinearizerOfProjector::doRadiometricCompensation(const cv::Mat& _desiredIma
     imshow("P on Projector Domain", l_projectionImageOnProjectorSpace);
     imshow("I", l_LProjectionImage);
     imshow("C", l_cameraImage);
-    l_procam->captureFromLight(&l_cameraImage, _desiredImage);
+//    l_procam->captureFromLight(&l_cameraImage, _desiredImage);
+    l_procam->captureFromNonGeometricTranslatedLight(&l_cameraImage, _desiredImage);
     imshow("C when projection desired C", l_cameraImage);
 
     MY_WAIT_KEY(CV_BUTTON_ESC);

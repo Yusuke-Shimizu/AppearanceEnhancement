@@ -27,11 +27,27 @@
 #define MY_IMSHOW(img) cv::imshow(#img, img);cv::waitKey(1)
 #define _print_mat_propaty(mat) _print_name(mat);printMatPropaty(mat)
 
+#ifdef MAC
 const int CV_BUTTON_ESC     = 27;
 const int CV_BUTTON_UP      = 63232;
 const int CV_BUTTON_DOWN    = 63233;
 const int CV_BUTTON_LEFT    = 63234;
 const int CV_BUTTON_RIGHT   = 63235;
+#endif
+#ifdef MAC_PROJECTOR
+const int CV_BUTTON_ESC     = 27;
+const int CV_BUTTON_UP      = 63232;
+const int CV_BUTTON_DOWN    = 63233;
+const int CV_BUTTON_LEFT    = 63234;
+const int CV_BUTTON_RIGHT   = 63235;
+#endif
+#ifdef LINUX
+const int CV_BUTTON_ESC     = 1048603;
+const int CV_BUTTON_UP      = 63232;
+const int CV_BUTTON_DOWN    = 63233;
+const int CV_BUTTON_LEFT    = 63234;
+const int CV_BUTTON_RIGHT   = 63235;
+#endif
 
 typedef cv::Vec<double, 9> Vec9d;
 
