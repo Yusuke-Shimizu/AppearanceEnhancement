@@ -61,15 +61,14 @@ const cv::Point LINUX_PROJECTOR_DISPLAY_POS(LINUX_DISPLAY_SIZE.width, 0);
 #define POSITION_PROJECTION_IMAGE_Y LINUX_POS_Y
 #endif
 
-// response size
-//#define RESPONSE_SIZE 256*3
-
 // 幾何キャリブレーションで得たルックアップテーブルのファイル名
-#define LOOK_UP_TABLE_FILE_NAME "calibrationData/lookUpTableCameraToProjector.dat"
-#define PROJECTOR_RESPONSE_FILE_NAME "calibrationData/projectorResponse.dat"
-#define PROJECTOR_RESPONSE_FILE_NAME_02 "calibrationData/projectorResponse02.dat"
+#define LOOK_UP_TABLE_FILE_NAME "calibrationData/lookUpTableCameraToProjector.dat"  // 幾何変換表（カメラ=>プロジェクタ）
+//#define PROJECTOR_RESPONSE_FILE_NAME "calibrationData/projectorResponse.dat"
+//#define PROJECTOR_RESPONSE_FILE_NAME_02 "calibrationData/projectorResponse02.dat"
 #define PROJECTOR_RESPONSE_I2P_FILE_NAME_BYTE "calibrationData/projectorResponseI2PForByte.dat"
 #define PROJECTOR_RESPONSE_P2I_FILE_NAME_BYTE "calibrationData/projectorResponseP2IForByte.dat"
+#define PROJECTOR_RESPONSE_AT_SOME_POINT_I2P_FILE_NAME "calibrationData/projectorResponseAtSomePointI2P.dat"
+#define PROJECTOR_RESPONSE_AT_SOME_POINT_P2I_FILE_NAME "calibrationData/projectorResponseAtSomePointP2I.dat"
 #define WINDOW_NAME "projection image"
 
 // スリープ時間(ms)

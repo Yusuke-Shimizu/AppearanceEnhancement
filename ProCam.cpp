@@ -699,8 +699,8 @@ bool ProCam::linearlizeOfProjector(void){
     Point pt(cols*0.6/256, rows*0.6);
     printProjectorResponseP2I(pt);
     printProjectorResponseP2I(pt, prjResponse);
-    savePrintProjectorResponse("prjResI2P.txt", pt, prjResponse);
-    savePrintProjectorResponse("prjResP2I.txt", pt, l_prjResponseP2I);
+    savePrintProjectorResponse(PROJECTOR_RESPONSE_AT_SOME_POINT_I2P_FILE_NAME, pt, prjResponse);
+    savePrintProjectorResponse(PROJECTOR_RESPONSE_AT_SOME_POINT_P2I_FILE_NAME, pt, l_prjResponseP2I);
 
     // test
     cout << "do radiometric compensation" << endl;

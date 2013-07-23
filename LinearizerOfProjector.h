@@ -39,8 +39,8 @@ public:
     ///////////////////////////////  set method ///////////////////////////////
     bool setProCam(ProCam* procam);
     bool setColorMixMatMap(const cv::Mat_<Vec9d>& _aMat);
-    bool setResponseMap(cv::Mat_<cv::Vec3b>* const _responseMap, const cv::Mat_<cv::Vec3b>& _response, const int _depth, const int _maxDepth);
-    bool setResponseMap(cv::Mat_<cv::Vec3b>* const _responseMapP2I, const cv::Mat_<cv::Vec3b>& _CImage, const uchar _INum);
+//    bool setResponseMap(cv::Mat_<cv::Vec3b>* const _responseMap, const cv::Mat_<cv::Vec3b>& _response, const int _depth, const int _maxDepth);
+    bool setResponseMap(cv::Mat_<cv::Vec3b>* const _responseMapP2I, cv::Mat_<cv::Vec3b>* const _responseMapI2P, const cv::Mat_<cv::Vec3b>& _CImage, const uchar _INum);
     ///////////////////////////////  get method ///////////////////////////////
     ProCam* getProCam(void);
     const cv::Mat_<Vec9d>* getColorMixMatMap(void);

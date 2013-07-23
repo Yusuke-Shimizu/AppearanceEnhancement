@@ -80,26 +80,26 @@ bool LinearizerOfProjector::setColorMixMatMap(const cv::Mat_<Vec9d>& _aMat){
 // input / _depth           : 深さ
 // input / _maxDepth        : 深さの最大値（=256）
 // return                   : 成功したかどうか
-bool LinearizerOfProjector::setResponseMap(cv::Mat_<cv::Vec3b>* const _responseMap, const cv::Mat_<cv::Vec3b>& _response, const int _depth, const int _maxDepth){
-    // init
-    int rows = _response.rows, cols = _response.cols;
-    if ( isContinuous(*_responseMap, _response) ) {
-        cols *= rows;
-        rows = 1;
-    }
-    
-    for (int y = 0; y < rows; ++ y) {
-        cv::Vec3b* p_responseMap = _responseMap->ptr<cv::Vec3b>(y);
-        const cv::Vec3b* p_response = _response.ptr<cv::Vec3b>(y);
-        
-        for (int x = 0; x < cols; ++ x) {
-            p_responseMap[x * _maxDepth + _depth] = p_response[x];
-        }
-    }
-    return true;
-}
+//bool LinearizerOfProjector::setResponseMap(cv::Mat_<cv::Vec3b>* const _responseMap, const cv::Mat_<cv::Vec3b>& _response, const int _depth, const int _maxDepth){
+//    // init
+//    int rows = _response.rows, cols = _response.cols;
+//    if ( isContinuous(*_responseMap, _response) ) {
+//        cols *= rows;
+//        rows = 1;
+//    }
+//    
+//    for (int y = 0; y < rows; ++ y) {
+//        cv::Vec3b* p_responseMap = _responseMap->ptr<cv::Vec3b>(y);
+//        const cv::Vec3b* p_response = _response.ptr<cv::Vec3b>(y);
+//        
+//        for (int x = 0; x < cols; ++ x) {
+//            p_responseMap[x * _maxDepth + _depth] = p_response[x];
+//        }
+//    }
+//    return true;
+//}
 
-bool LinearizerOfProjector::setResponseMap(cv::Mat_<cv::Vec3b>* const _responseMapP2I, const cv::Mat_<cv::Vec3b>& _CImage, const uchar _INum){
+bool LinearizerOfProjector::setResponseMap(cv::Mat_<cv::Vec3b>* const _responseMapP2I, cv::Mat_<cv::Vec3b>* const _responseMapI2P, const cv::Mat_<cv::Vec3b>& _CImage, const uchar _INum){
     // error
     ProCam* l_procam = getProCam();
     const Size* l_prjSize = l_procam->getProjectorSize();
@@ -147,6 +147,7 @@ bool LinearizerOfProjector::setResponseMap(cv::Mat_<cv::Vec3b>* const _responseM
     for (int y = 0; y < PRows; ++ y) {
         const Vec3b* l_pPImageOnPS = l_PImageOnProjectorSpace.ptr<Vec3b>(y);
         Vec3b* l_pResponseMapP2I = _responseMapP2I->ptr<Vec3b>(y);
+        Vec3b* l_pResponseMapI2P = _responseMapI2P->ptr<Vec3b>(y);
         Vec3b* l_checkMap = l_whiteImageOnProjectorDomain.ptr<Vec3b>(y);
         
         for (int x = 0; x < PCols; ++ x) {
@@ -158,8 +159,13 @@ bool LinearizerOfProjector::setResponseMap(cv::Mat_<cv::Vec3b>* const _responseM
             
             // 投影する場所のみの設定
             for (int ch = 0; ch < PCh; ++ ch) {
+                // setting P2I
                 const int responseIndex = x * 256 + l_pPImageOnPS[x][ch];   // l_pResponseMapP2Iのインデックス
                 l_pResponseMapP2I[responseIndex][ch] = _INum;
+
+                // setting P2I
+                const int responseIndexI2P = x * 256 + _INum;   // l_pResponseMapI2Pのインデックス
+                l_pResponseMapI2P[responseIndexI2P][ch] = l_pPImageOnPS[x][ch];
             }
         }
     }
@@ -292,8 +298,8 @@ bool LinearizerOfProjector::linearlize(cv::Mat_<cv::Vec3b>* const _responseOfPro
     ///////////////// create V map /////////////////
     // 色変換行列の生成
     cout << "creating Color Mixing Matrix..." << endl;
-//    if( !calcColorMixingMatrix() ) return false;
-    if ( !loadColorMixingMatrixOfByte(CMM_MAP_FILE_NAME_BYTE) ) return false;
+    if( !calcColorMixingMatrix() ) return false;
+//    if ( !loadColorMixingMatrixOfByte(CMM_MAP_FILE_NAME_BYTE) ) return false;
     cout << "created Color Mixing Matrix" << endl;
     
     // show V map
@@ -302,10 +308,10 @@ bool LinearizerOfProjector::linearlize(cv::Mat_<cv::Vec3b>* const _responseOfPro
     ///////////////// create projector response function /////////////////
     // プロジェクタの応答特性を計算
     cout << "creating response function..." << endl;
-//    if ( !calcResponseFunction(_responseOfProjector, _responseMapP2I)) return false;
-    ProCam* l_procam = getProCam();
-    l_procam->loadProjectorResponseP2IForByte(PROJECTOR_RESPONSE_P2I_FILE_NAME_BYTE);
-    l_procam->loadProjectorResponseForByte(PROJECTOR_RESPONSE_I2P_FILE_NAME_BYTE);
+    if ( !calcResponseFunction(_responseOfProjector, _responseMapP2I)) return false;
+//    ProCam* l_procam = getProCam();
+//    l_procam->loadProjectorResponseP2IForByte(PROJECTOR_RESPONSE_P2I_FILE_NAME_BYTE);
+//    l_procam->loadProjectorResponseForByte(PROJECTOR_RESPONSE_I2P_FILE_NAME_BYTE);
     cout << "created response function" << endl;
     
     cout << "linealize is finish" << endl;
@@ -476,12 +482,13 @@ bool LinearizerOfProjector::calcResponseFunction(cv::Mat_<cv::Vec3b>* const _res
         MY_IMSHOW(camImage);
         waitKey(1);
         
-        // set inverce response function(P2I)
-        setResponseMap(&l_responseMapP2I, camImage, prjLuminance);
+        // set inverce response function(P2I and I2P)
+        setResponseMap(&l_responseMapP2I, &l_responseMap, camImage, prjLuminance);
 
+        l_procam->printProjectorResponseP2I(Point(l_projectorSize->width * 0.6, l_projectorSize->height * 0.6), l_responseMap);
         // set I2P response function
-        getResponseOfAllPixel(&l_responseImage, camImage);
-        setResponseMap(&l_responseMap, l_responseImage, prjLuminance, 256);
+//        getResponseOfAllPixel(&l_responseImage, camImage);
+//        setResponseMap(&l_responseMap, l_responseImage, prjLuminance, 256);
     }
     
     // interpolation projector response
