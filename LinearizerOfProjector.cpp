@@ -152,6 +152,7 @@ bool LinearizerOfProjector::setResponseMap(cv::Mat_<cv::Vec3b>* const _responseM
         for (int x = 0; x < PCols; ++ x) {
             // 投影しない箇所の設定を飛ばす
             if (l_checkMap[x] == l_nonProjectionColor) {
+                l_pResponseMapP2I[x + 255] = Vec3b(0, 0, 0);
                 continue;
             }
             
@@ -479,9 +480,6 @@ bool LinearizerOfProjector::calcResponseFunction(cv::Mat_<cv::Vec3b>* const _res
         setResponseMap(&l_responseMapP2I, camImage, prjLuminance);
     }
     
-    // 投影しない部分を全て０にする
-    beZeroAtNonProjectionArea(&l_responseMapP2I);
-    
     // interpolation projector response
     l_procam->interpolationProjectorResponseP2I(&l_responseMapP2I);
     
@@ -603,34 +601,45 @@ bool LinearizerOfProjector::showVMap(void){
 bool LinearizerOfProjector::doRadiometricCompensation(const cv::Mat& _desiredImage){
     // init
     ProCam* l_procam = getProCam();
-    imshow("desired C", _desiredImage);
 
     // P = V^{-1}C
     const Size* l_camSize = l_procam->getCameraSize();
     Mat l_projectionImageOnCameraSpace(*l_camSize, CV_8UC3, Scalar(0, 0, 0));
     convertCameraImageToProjectorOne(&l_projectionImageOnCameraSpace, _desiredImage);
-    imshow("P on Camera Domain", l_projectionImageOnCameraSpace);
 
     // camera coordinate system -> projector coordinate system
     const Size* l_prjSize = l_procam->getProjectorSize();
     Mat l_projectionImageOnProjectorSpace(*l_prjSize, CV_8UC3, Scalar(0, 0, 0));
     l_procam->convertProjectorCoordinateSystemToCameraOne(&l_projectionImageOnProjectorSpace, l_projectionImageOnCameraSpace);
-    imshow("P on Projector Domain", l_projectionImageOnProjectorSpace);
 
     // non linear -> linear
     Mat l_LProjectionImage(*l_prjSize, CV_8UC3, Scalar(0, 0, 0));
 //    l_procam->convertNonLinearImageToLinearOne(&l_LProjectionImage, l_projectionImageOnProjectorSpace);
     l_procam->convertPtoI(&l_LProjectionImage, l_projectionImageOnProjectorSpace);
-    imshow("I", l_LProjectionImage);
     
     // projection
     Mat l_cameraImage(*l_camSize, CV_8UC3, Scalar(0, 0, 0));
     l_procam->captureFromLight(&l_cameraImage, l_LProjectionImage);
-    imshow("C", l_cameraImage);
 
     // projection normaly desired image
-    l_procam->captureFromNonGeometricTranslatedLight(&l_cameraImage, _desiredImage);
-    imshow("C when projection desired C", l_cameraImage);
+    Mat l_cameraImageFromDesiredImageProjection(*l_camSize, CV_8UC3, Scalar(0, 0, 0));
+    l_procam->captureFromNonGeometricTranslatedLight(&l_cameraImageFromDesiredImageProjection, _desiredImage);
+    
+    // calc difference
+    Vec3d l_diffC(0.0, 0.0, 0.0), l_diffPDC(0.0, 0.0, 0.0);
+    getAvgOfDiffMat2(&l_diffC, _desiredImage, l_cameraImage);
+    getAvgOfDiffMat2(&l_diffPDC, _desiredImage, l_cameraImageFromDesiredImageProjection);
+    _print2(l_diffC, l_diffPDC);
+//    _print_gnuplot7(cout, _desiredImage.at<Vec3b>(0,0)[0], l_diffC[2], l_diffC[1], l_diffC[0], l_diffPDC[2], l_diffPDC[1], l_diffPDC[0]);
+    
+    // show images
+    imshow("desired C", _desiredImage);
+    imshow("P on Camera Domain", l_projectionImageOnCameraSpace);
+    imshow("P on Projector Domain", l_projectionImageOnProjectorSpace);
+    imshow("I", l_LProjectionImage);
+    imshow("C", l_cameraImage);
+    imshow("C when projection desired C", l_cameraImageFromDesiredImageProjection);
+    waitKey(5);
 
 //    MY_WAIT_KEY(CV_BUTTON_ESC);
     
@@ -717,35 +726,3 @@ bool LinearizerOfProjector::convertCameraImageToProjectorOne(cv::Mat* const _prj
     
     return true;
 }
-
-// 投影しない部分の応答特性マップを０にする
-bool LinearizerOfProjector::beZeroAtNonProjectionArea(cv::Mat* const _responseMap){
-    ProCam* l_procam = getProCam();
-    const Size* prjSize = l_procam->getProjectorSize();
-    const Size* camSize = l_procam->getCameraSize();
-    const Mat whiteCameraImage(camSize->height, camSize->width, CV_8UC3, Scalar(255, 255, 255));
-    Mat whiteImageOnProjectorDomain(prjSize->height, prjSize->width, CV_8UC3, Scalar(0, 0, 0));
-    
-    // camera domain -> projector domain
-    l_procam->convertProjectorCoordinateSystemToCameraOne(&whiteImageOnProjectorDomain, whiteCameraImage);
-    
-    // error processing
-    if (!isEqualSizeAndType(*_responseMap, whiteImageOnProjectorDomain)) {
-        cout << "diff size or type" << endl;
-        _print_mat_propaty(*_responseMap);
-        _print_mat_propaty(whiteImageOnProjectorDomain);
-        exit(-1);
-    }
-    
-    //
-    const int rows = _responseMap->rows, cols = _responseMap->cols;
-    for (int y = 0; y < rows; ++ y) {
-        
-        for (int x = 0; x < cols; ++ x) {
-            ;
-        }
-    }
-    
-    return true;
-}
-

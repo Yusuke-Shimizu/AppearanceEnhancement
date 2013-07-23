@@ -143,6 +143,8 @@ bool compareMat(const cv::Mat& m1, const cv::Mat& m2, const double& thresh);
 void test_compareMat(void);
 bool getAvgOfDiffMat(double* const diff, const cv::Mat& m1, const cv::Mat& m2);
 void test_getAvgOfDiffMat(void);
+bool getAvgOfDiffMat2(cv::Vec3d* const diff, const cv::Mat& m1, const cv::Mat& m2);
+void test_getAvgOfDiffMat2(void);
 bool getRateOfDiffMat(double* const diff, const cv::Mat& m1, const cv::Mat& m2);
 void test_sizeCompare(void);
 void doAnyMethodForAllPixelOfMat(cv::Mat* const m1);

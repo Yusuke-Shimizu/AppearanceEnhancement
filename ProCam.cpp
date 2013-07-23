@@ -681,13 +681,14 @@ bool ProCam::linearlizeOfProjector(void){
     
     // test
     cout << "do radiometric compensation" << endl;
-    int prjLum = 100;
+    int prjLum = 0;
     while (true) {
         _print(prjLum);
         linearPrj.doRadiometricCompensation(prjLum);
-        prjLum += 1;
-        if (prjLum > 256) {
+        prjLum += 10;//1;
+        if (prjLum >= 255) {
             prjLum = 0;
+//            break;
         }
         if (waitKey(5) == CV_BUTTON_ESC) break;
     }

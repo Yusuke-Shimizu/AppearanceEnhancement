@@ -65,7 +65,6 @@ public:
     bool doRadiometricCompensation(const cv::Vec3b& _desiredColor);
     bool doRadiometricCompensation(const uchar& _desiredColorNumber);
     bool convertCameraImageToProjectorOne(cv::Mat* const _prjImg, const cv::Mat&  _camImg);
-    bool beZeroAtNonProjectionArea(cv::Mat* const _responseMap);
 };
 
 #endif /* defined(__cameraBase03__LinearizerOfProjector__) */

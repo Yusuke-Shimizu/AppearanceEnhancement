@@ -708,6 +708,45 @@ void test_getAvgOfDiffMat(void){
     _print3(diff, m1, m5);
 }
 
+// 行列の差の絶対値の平均を求める
+bool getAvgOfDiffMat2(cv::Vec3d* const diff, const cv::Mat& m1, const cv::Mat& m2){
+    // error processing
+    if ( !isEqualSizeAndType(m1, m2) ) return false;
+    
+    // init
+    Mat diffMat = Mat::zeros(m1.rows, m2.cols, CV_64FC3);
+    Mat l_m1_64bit(m1.rows, m2.cols, CV_64FC3), l_m2_64bit(m1.rows, m2.cols, CV_64FC3);
+    m1.convertTo(l_m1_64bit, CV_64FC3);
+    m2.convertTo(l_m2_64bit, CV_64FC3);
+    
+    // 差の絶対値を取得
+    absdiff(l_m1_64bit, l_m2_64bit, diffMat);
+    
+    // 上の行列の要素の平均値を取得
+    reduce(diffMat, diffMat, 0, CV_REDUCE_AVG);
+    reduce(diffMat, diffMat, 1, CV_REDUCE_AVG);
+    
+    *diff = diffMat.at<Vec3d>(0, 0);
+    
+    return true;
+}
+void test_getAvgOfDiffMat2(void){
+    Vec3d diff(0.0, 0.0, 0.0);
+    const Mat m1(3, 3, CV_8UC3, Scalar(0, 0, 0));
+    const Mat m2(3, 3, CV_8UC3, Scalar(100, 200, 255));
+    const Mat m3 = (Mat_<Vec3b>(3, 3) << Vec3b(0, 10, 20), Vec3b(30, 40, 50), Vec3b(60, 70, 80), Vec3b(90, 100, 110), Vec3b(120, 130, 140), Vec3b(150, 160, 170), Vec3b(180, 190, 200), Vec3b(210, 220, 230), Vec3b(240, 250, 255));
+    
+    _print(m1);
+    _print(m2);
+    _print(m3);
+    getAvgOfDiffMat2(&diff, m1, m2);
+    _print2("m1 - m2 = ", diff);
+    getAvgOfDiffMat2(&diff, m1, m3);
+    _print2("m1 - m3 = ", diff);
+    getAvgOfDiffMat2(&diff, m2, m3);
+    _print2("m2 - m3 = ", diff);
+}
+
 // 差の比率を取得
 bool getRateOfDiffMat(double* const diff, const cv::Mat& m1, const cv::Mat& m2){
     if ( !getAvgOfDiffMat(diff, m1, m2) ) return false;

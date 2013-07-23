@@ -25,10 +25,7 @@ int main(int argc, const char * argv[])
     // プロカムの設定
     Size prjSize(PRJ_SIZE_WIDTH, PRJ_SIZE_HEIGHT);
     ProCam procam(prjSize);
-//    procam.allCalibration();
-//    procam.test_interpolationProjectorResponseP2I();
-    Mat test(prjSize.height, prjSize.width, CV_8UC3, Scalar(0, 0, 0));
-    procam.initProjectorResponseP2I(&test);
-    procam.printProjectorResponseP2I(Point(100, 100), test);
+    procam.allCalibration();
+//    test_getAvgOfDiffMat2();
     return 0;
 }
