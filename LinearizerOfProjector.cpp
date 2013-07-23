@@ -304,7 +304,8 @@ bool LinearizerOfProjector::linearlize(cv::Mat_<cv::Vec3b>* const _responseOfPro
     cout << "creating response function..." << endl;
 //    if ( !calcResponseFunction(_responseOfProjector, _responseMapP2I)) return false;
     ProCam* l_procam = getProCam();
-    l_procam->loadProjectorResponseP2IForByte(PROJECTOR_RESPONSE_FILE_NAME_BYTE);
+    l_procam->loadProjectorResponseP2IForByte(PROJECTOR_RESPONSE_P2I_FILE_NAME_BYTE);
+    l_procam->loadProjectorResponseForByte(PROJECTOR_RESPONSE_I2P_FILE_NAME_BYTE);
     cout << "created response function" << endl;
     
     cout << "linealize is finish" << endl;
@@ -458,8 +459,7 @@ bool LinearizerOfProjector::calcResponseFunction(cv::Mat_<cv::Vec3b>* const _res
     Mat camColor = Mat::zeros(3, 1, CV_64FC1);
     Mat camImage = Mat::zeros(*l_cameraSize, CV_8UC3), prjImage = Mat::zeros(*l_projectorSize, CV_8UC3);
     Mat_<cv::Vec3b> l_responseImage(*l_cameraSize);
-//    Mat_<Vec3b> l_responseMap(_responseMap->rows, _responseMap->cols, CV_8UC3); // _responseMapの一時的な置き場
-//    Mat_<Vec3b> l_responseMapP2I(_responseMapP2I->rows, _responseMapP2I->cols, CV_8UC3); // _responseMapP2Iの一時的な置き場
+    Mat_<Vec3b> l_responseMap = _responseMap->clone(); // _responseMapの一時的な置き場
     Mat_<Vec3b> l_responseMapP2I = _responseMap->clone();
     
 
@@ -476,20 +476,28 @@ bool LinearizerOfProjector::calcResponseFunction(cv::Mat_<cv::Vec3b>* const _res
         MY_IMSHOW(camImage);
         waitKey(1);
         
-        // set inverce response function
+        // set inverce response function(P2I)
         setResponseMap(&l_responseMapP2I, camImage, prjLuminance);
+
+        // set I2P response function
+        getResponseOfAllPixel(&l_responseImage, camImage);
+        setResponseMap(&l_responseMap, l_responseImage, prjLuminance, 256);
     }
     
     // interpolation projector response
     l_procam->interpolationProjectorResponseP2I(&l_responseMapP2I);
     
     // set and save
+    // P2I
     l_procam->setProjectorResponseP2I(l_responseMapP2I);
-    l_procam->saveProjectorResponseP2IForByte(PROJECTOR_RESPONSE_FILE_NAME_BYTE);
+    l_procam->saveProjectorResponseP2IForByte(PROJECTOR_RESPONSE_P2I_FILE_NAME_BYTE);
+    // I2P
+    l_procam->setProjectorResponse(l_responseMap);
+    l_procam->saveProjectorResponseForByte(PROJECTOR_RESPONSE_I2P_FILE_NAME_BYTE);
     
     // deep copy
-//    *_responseMap = l_responseMap.clone();
-    *_responseMapP2I = l_responseMapP2I.clone();
+    *_responseMap = l_responseMap.clone();          // I2P
+    *_responseMapP2I = l_responseMapP2I.clone();    // P2I
     return true;
 }
 
@@ -553,9 +561,12 @@ bool LinearizerOfProjector::calcP(cv::Vec3b* const _response, const cv::Vec3b& _
     Mat P = invV * l_CMat;      // V^{-1} * C
 //    _print4(P, _C, _I, _V);
     
-    // return _response
+    // inverce convert
     Vec3b l_vecP(P);    // Mat -> Vec3b
-    *_response = l_vecP;
+    Vec3b l_vecP_bgr(0, 0, 0);
+    convertRGBtoBGR(&l_vecP_bgr, l_vecP);
+    
+    *_response = l_vecP_bgr;
     return true;
 }
 bool LinearizerOfProjector::calcPByVec(cv::Vec3b* const _response, const cv::Vec3b& _C, const Vec9d& _VVec){

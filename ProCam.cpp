@@ -462,6 +462,25 @@ bool ProCam::saveProjectorResponseP2IForByte(const char* fileName){
     return true;
 }
 
+// printProjectorResponseの内容を保存
+bool ProCam::savePrintProjectorResponse(const char* fileName, const cv::Point& _pt, const cv::Mat& _prjRes){
+    Mat l_responseImage(_prjRes.rows, _prjRes.cols / 256, CV_8UC3, Scalar(0, 0, 0));
+    ofstream ofs(fileName);
+    if (!ofs) {
+        cout << fileName << "is not found" << endl;
+        exit(-1);
+    }
+    
+    for (int i = 0; i < 256; ++ i) {
+        getImageProjectorResponseP2I(&l_responseImage, _prjRes, i);
+        
+        Vec3i tmp = (Vec3i)l_responseImage.at<Vec3b>(_pt);
+        _print_gnuplot4(ofs, i, tmp[2], tmp[1], tmp[0]);
+    }
+    
+    return true;
+}
+
 ///////////////////////////////  load method ///////////////////////////////
 bool ProCam::loadAccessMapCam2Prj(void){
     cout << "loading look up table..." << endl;
@@ -677,8 +696,12 @@ bool ProCam::linearlizeOfProjector(void){
     showProjectorResponseP2I();
     
     // print
-    printProjectorResponseP2I(Point(cols*0.6/256, rows*0.6));
-    
+    Point pt(cols*0.6/256, rows*0.6);
+    printProjectorResponseP2I(pt);
+    printProjectorResponseP2I(pt, prjResponse);
+    savePrintProjectorResponse("prjResI2P.txt", pt, prjResponse);
+    savePrintProjectorResponse("prjResP2I.txt", pt, l_prjResponseP2I);
+
     // test
     cout << "do radiometric compensation" << endl;
     int prjLum = 0;
@@ -686,7 +709,7 @@ bool ProCam::linearlizeOfProjector(void){
         _print(prjLum);
         linearPrj.doRadiometricCompensation(prjLum);
         prjLum += 10;//1;
-        if (prjLum >= 255) {
+        if (prjLum >= 256) {
             prjLum = 0;
 //            break;
         }
