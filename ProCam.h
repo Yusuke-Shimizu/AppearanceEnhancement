@@ -135,7 +135,7 @@ public:
     bool getAccessMapCam2Pro(cv::Point* const accessMapCam2Pro, const cv::Size& mapSize);
     bool getAccessMapCam2Pro(cv::Point* const accessMapCam2Pro);
     const cv::Mat_<cv::Vec2i>* getAccessMapCam2Prj(void);
-    const cv::Mat_<cv::Vec3b>* getProjectorResponse(void);
+    const cv::Mat_<cv::Vec3b>* getProjectorResponseI2P(void);
     const cv::Mat_<cv::Vec3b>* getProjectorResponseP2I(void);
     void getImageProjectorResponseP2I(cv::Mat* const _responseImage, const cv::Mat& _responseMap, const int _index);
     void getImageProjectorResponseP2I(cv::Mat* const _responseImage, const int _index);
@@ -145,6 +145,8 @@ public:
     bool saveProjectorResponseForByte(const char* fileName);
     bool saveProjectorResponseP2IForByte(const char* fileName);
     bool savePrintProjectorResponse(const char* fileName, const cv::Point& _pt, const cv::Mat& _prjRes);
+    bool savePrintProjectorResponseI2P(const char* fileName, const cv::Point& _pt);
+    bool savePrintProjectorResponseP2I(const char* fileName, const cv::Point& _pt);
     ///////////////////////////////  load method ///////////////////////////////
 //    bool loadAccessMapCam2Pro(void);
     bool loadAccessMapCam2Prj(void);
@@ -162,11 +164,13 @@ public:
 //    bool convertCameraImageToProjectorOne(cv::Mat* const _prjImg, const cv::Mat&  _camImg);
     ///////////////////////////////  show method ///////////////////////////////
     bool showAccessMapCam2Prj(void);
+    bool showProjectorResponseI2P(void);
     bool showProjectorResponseP2I(void);
-    bool showProjectorResponseP2I(const cv::Mat& _prjRes);
+    bool showProjectorResponse(const cv::Mat& _prjRes);
     ///////////////////////////////  print method ///////////////////////////////
+    bool printProjectorResponseI2P(const cv::Point& _pt);
     bool printProjectorResponseP2I(const cv::Point& _pt);
-    bool printProjectorResponseP2I(const cv::Point& _pt, const cv::Mat& _prjRes);
+    bool printProjectorResponse(const cv::Point& _pt, const cv::Mat& _prjRes);
     ///////////////////////////////  capture from light method ///////////////////////////////
     bool captureFromLight(cv::Mat* const captureImage, const cv::Mat& projectionImage, const int _waitTimeNum = SLEEP_TIME);
     bool captureFromFlatLight(cv::Mat* const captureImage, const cv::Vec3b& projectionColor, const int _waitTimeNum = SLEEP_TIME);

@@ -267,8 +267,8 @@ bool LinearizerOfProjector::linearlize(cv::Mat_<cv::Vec3b>* const _responseOfPro
     ///////////////// create V map /////////////////
     // 色変換行列の生成
     cout << "creating Color Mixing Matrix..." << endl;
-    if( !calcColorMixingMatrix() ) return false;
-//    if ( !loadColorMixingMatrixOfByte(CMM_MAP_FILE_NAME_BYTE) ) return false;
+//    if( !calcColorMixingMatrix() ) return false;
+    if ( !loadColorMixingMatrixOfByte(CMM_MAP_FILE_NAME_BYTE) ) return false;
     cout << "created Color Mixing Matrix" << endl;
     
     // show V map
@@ -277,13 +277,11 @@ bool LinearizerOfProjector::linearlize(cv::Mat_<cv::Vec3b>* const _responseOfPro
     ///////////////// create projector response function /////////////////
     // プロジェクタの応答特性を計算
     cout << "creating response function..." << endl;
-    if ( !calcResponseFunction(_responseOfProjector, _responseMapP2I)) return false;
-//    ProCam* l_procam = getProCam();
-//    l_procam->loadProjectorResponseP2IForByte(PROJECTOR_RESPONSE_P2I_FILE_NAME_BYTE);
-//    l_procam->loadProjectorResponseForByte(PROJECTOR_RESPONSE_I2P_FILE_NAME_BYTE);
+//    if ( !calcResponseFunction(_responseOfProjector, _responseMapP2I)) return false;
+    ProCam* l_procam = getProCam();
+    l_procam->loadProjectorResponseP2IForByte(PROJECTOR_RESPONSE_P2I_FILE_NAME_BYTE);
+    l_procam->loadProjectorResponseForByte(PROJECTOR_RESPONSE_I2P_FILE_NAME_BYTE);
     cout << "created response function" << endl;
-    
-    
     
     cout << "linealize is finish" << endl;
     return true;
