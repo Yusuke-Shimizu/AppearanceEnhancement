@@ -32,12 +32,10 @@ using namespace cv;
 
 ///////////////////////////////  constructor ///////////////////////////////
 LinearizerOfProjector::LinearizerOfProjector(ProCam* procam){
-//    cout << "setting LinearizerOfProjector..." << endl;
     setProCam(procam);
     const cv::Size* cameraSize = procam->getCameraSize();
-//    const Size* prjSize = procam->getProjectorSize();
     initColorMixingMatrixMap(*cameraSize);
-//    cout << "finish LinearizerOfProjector" << endl;
+    initAllCImages();
 }
 
 ///////////////////////////////  destructor ///////////////////////////////
@@ -49,7 +47,6 @@ LinearizerOfProjector::~LinearizerOfProjector(void){
 // プロカムのセッティング
 bool LinearizerOfProjector::setProCam(ProCam* procam){
     m_procam = procam;
-//    _print_name(*procam);
     return true;
 }
 
@@ -142,6 +139,29 @@ bool LinearizerOfProjector::setResponseMap(cv::Mat_<cv::Vec3b>* const _responseM
     return true;
 }
 
+// m_allCImagesの設定
+bool LinearizerOfProjector::setAllCImages(const cv::Mat& _allCImages){
+    // error handle
+    const Mat* l_allCImages_true = getAllCImages();
+    if (!isEqualSizeAndType(_allCImages, *l_allCImages_true)) {
+        cerr << "setting mat size is different" << endl;
+        _print_mat_propaty(_allCImages);
+        _print_mat_propaty(*l_allCImages_true);
+        exit(-1);
+    }
+    
+    // set
+    m_allCImages = _allCImages.clone();
+    
+    return true;
+}
+
+// m_allCImagesにある輝度の画像を設定
+bool LinearizerOfProjector::setAllCImages(const cv::Mat& _CImage, const int _luminance){
+    // set
+    return insertMatForDeepDepthMat(&m_allCImages, _CImage, _luminance);
+}
+
 ///////////////////////////////  get method ///////////////////////////////
 //
 ProCam* LinearizerOfProjector::getProCam(void){
@@ -151,6 +171,11 @@ ProCam* LinearizerOfProjector::getProCam(void){
 // m_colorMixingMatrixMapポインタの取得
 const cv::Mat_<Vec9d>* LinearizerOfProjector::getColorMixMatMap(void){
     return &m_colorMixingMatrixMap;
+}
+
+// m_allCImagesの取得
+const cv::Mat* LinearizerOfProjector::getAllCImages(void){
+    return &m_allCImages;
 }
 
 ///////////////////////////////  init method ///////////////////////////////
@@ -166,11 +191,21 @@ bool LinearizerOfProjector::initColorMixingMatrixMap(const cv::Size& _cameraSize
         Vec9d* p_cmmm = m_colorMixingMatrixMap.ptr<Vec9d>(y);
         for (int x = 0; x < cols; ++ x) {
             p_cmmm[x] = l_initV;
-//            _print(p_cmmm[x]);
         }
     }
     return true;
 }
+
+// m_allCImagesの初期化
+bool LinearizerOfProjector::initAllCImages(void){
+    ProCam* l_procam = getProCam();
+    const Size* camSize = l_procam->getCameraSize();
+    const Size allImgSize(camSize->width * 256, camSize->height);
+    
+    m_allCImages = Mat(allImgSize, CV_8UC3, Scalar(0, 0, 0));
+    return true;
+}
+
 ///////////////////////////////  save method ///////////////////////////////
 bool LinearizerOfProjector::saveColorMixingMatrix(const char* fileName){
     // init
@@ -222,6 +257,14 @@ bool LinearizerOfProjector::saveColorMixingMatrixOfByte(const char* fileName){
 
     return true;
 }
+
+bool LinearizerOfProjector::saveAllCImages(const char* fileName, const cv::Point& _pt){
+    ProCam* l_procam = getProCam();
+    const Mat* l_allCImages = getAllCImages();
+    l_procam->savePrintProjectorResponse(fileName, _pt, *l_allCImages);
+    return true;
+}
+
 ///////////////////////////////  load method ///////////////////////////////
 bool LinearizerOfProjector::loadColorMixingMatrix(const char* fileName){
     return true;
@@ -427,14 +470,13 @@ bool LinearizerOfProjector::calcResponseFunction(cv::Mat_<cv::Vec3b>* const _res
     Mat_<cv::Vec3b> l_responseImage(*l_cameraSize);
     Mat_<Vec3b> l_responseMap = _responseMap->clone(); // _responseMapの一時的な置き場
     Mat_<Vec3b> l_responseMapP2I = _responseMap->clone();
-    
 
     // projection RGB * luminance
     // scanning all luminance[0-255] of projector
     int prjLuminance = 0;
     _print(prjLuminance);
     l_procam->captureFromFlatGrayLight(&camImage, prjLuminance, SLEEP_TIME * 2);
-    for (prjLuminance = 1; prjLuminance < 256; prjLuminance += PROJECTION_LUMINANCE_STEP) {
+    for (prjLuminance = 0; prjLuminance < 256; prjLuminance += PROJECTION_LUMINANCE_STEP) {
         _print(prjLuminance);
 
         // capture from projection image
@@ -444,6 +486,9 @@ bool LinearizerOfProjector::calcResponseFunction(cv::Mat_<cv::Vec3b>* const _res
         
         // set inverce response function(P2I and I2P)
         setResponseMap(&l_responseMapP2I, &l_responseMap, camImage, prjLuminance);
+        
+        // set all C images
+        setAllCImages(camImage, prjLuminance);
     }
     
     // interpolation projector response

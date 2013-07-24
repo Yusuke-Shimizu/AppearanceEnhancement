@@ -501,7 +501,6 @@ bool ProCam::savePrintProjectorResponseP2I(const char* fileName, const cv::Point
     return savePrintProjectorResponse(fileName, _pt, *l_responseMap);
 }
 
-
 ///////////////////////////////  load method ///////////////////////////////
 bool ProCam::loadAccessMapCam2Prj(void){
     cout << "loading look up table..." << endl;
@@ -702,6 +701,7 @@ bool ProCam::linearlizeOfProjector(void){
     printProjectorResponseI2P(pt);
     savePrintProjectorResponseP2I(PROJECTOR_RESPONSE_AT_SOME_POINT_P2I_FILE_NAME, pt);
     savePrintProjectorResponseI2P(PROJECTOR_RESPONSE_AT_SOME_POINT_I2P_FILE_NAME, pt);
+    linearPrj.saveAllCImages(PROJECTOR_ALL_C_IMAGES_FILE_NAME, pt);
 
     // test
     cout << "do radiometric compensation" << endl;
@@ -905,6 +905,7 @@ bool ProCam::printProjectorResponseI2P(const cv::Point& _pt){
     
     return printProjectorResponse(_pt, *l_responseMap);
 }
+//
 bool ProCam::printProjectorResponseP2I(const cv::Point& _pt){
     const Mat_<Vec3b>* l_responseMap = getProjectorResponseP2I();
     

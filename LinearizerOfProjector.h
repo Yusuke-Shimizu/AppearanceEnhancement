@@ -27,12 +27,12 @@ private:
     ProCam* m_procam;
 //    cv::Mat** m_aColorMixingMatrix;  // 全カメラ画素分のC=VPのV, プロジェクタからカメラへの色変換行列
 //    std::vector<cv::Mat> m_aColorMixingMatrix;  // 全カメラ画素分のC=VPのV, プロジェクタからカメラへの色変換行列
-    cv::Mat_<Vec9d> m_colorMixingMatrixMap;    // 全カメラ画素分のC=VPのV, プロジェクタからカメラへの色変換行列（サイズ：カメラと同じ）
+    cv::Mat_<Vec9d> m_colorMixingMatrixMap;     // 全カメラ画素分のC=VPのV, プロジェクタからカメラへの色変換行列（サイズ：カメラと同じ）
+    cv::Mat m_allCImages;                       // ０から２５５を投影し撮影したものを全て格納している場所
     
     LinearizerOfProjector(const LinearizerOfProjector& _lop);   // コピーコンストラクタ隠し（プログラムで１つしか存在しない為）
 public:
     ///////////////////////////////  constructor ///////////////////////////////
-    LinearizerOfProjector(void);
     LinearizerOfProjector(ProCam* procam);
     ///////////////////////////////  destructor ///////////////////////////////
     ~LinearizerOfProjector(void);
@@ -41,14 +41,19 @@ public:
     bool setColorMixMatMap(const cv::Mat_<Vec9d>& _aMat);
 //    bool setResponseMap(cv::Mat_<cv::Vec3b>* const _responseMap, const cv::Mat_<cv::Vec3b>& _response, const int _depth, const int _maxDepth);
     bool setResponseMap(cv::Mat_<cv::Vec3b>* const _responseMapP2I, cv::Mat_<cv::Vec3b>* const _responseMapI2P, const cv::Mat_<cv::Vec3b>& _CImage, const uchar _INum);
+    bool setAllCImages(const cv::Mat& _allCImages);
+    bool setAllCImages(const cv::Mat& _CImage, const int _luminance);
     ///////////////////////////////  get method ///////////////////////////////
     ProCam* getProCam(void);
     const cv::Mat_<Vec9d>* getColorMixMatMap(void);
+    const cv::Mat* getAllCImages(void);
     ///////////////////////////////  init method ///////////////////////////////
     bool initColorMixingMatrixMap(const cv::Size& _cameraSize);
+    bool initAllCImages(void);
     ///////////////////////////////  save method ///////////////////////////////
     bool saveColorMixingMatrix(const char* fileName);
     bool saveColorMixingMatrixOfByte(const char* fileName);
+    bool saveAllCImages(const char* fileName, const cv::Point& _pt);
     ///////////////////////////////  load method ///////////////////////////////
     bool loadColorMixingMatrix(const char* fileName);
     bool loadColorMixingMatrixOfByte(const char* fileName);

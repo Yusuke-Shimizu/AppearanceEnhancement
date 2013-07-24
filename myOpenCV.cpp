@@ -1002,3 +1002,31 @@ void on_mouse (int event, int x, int y, int flags, void *param = NULL) {
 //    cvShowImage ("Image", img);
 }
 
+// 深いデプスのMatにあるレイヤーの画像を挿入
+bool insertMatForDeepDepthMat(cv::Mat* const _deepDepthMat, const cv::Mat& _oneLayerMat, const int _depth, const int _maxDepth){
+    // error handle
+    if (_deepDepthMat->rows != _oneLayerMat.rows || _deepDepthMat->cols / _maxDepth != _oneLayerMat.cols) {
+        std::cerr << "size error" << std::endl;
+        _print_mat_propaty(*_deepDepthMat);
+        _print_mat_propaty(_oneLayerMat);
+        exit(-1);
+    } else if (_depth > _maxDepth || _depth <= 0) {
+        _print2(_depth, _maxDepth);
+        exit(-1);
+    }
+    
+    // set
+    const int rows = _oneLayerMat.rows, cols = _oneLayerMat.cols;
+    for (int y = 0; y < rows; ++ y) {
+        Vec3b* l_pDeepDepthMat = _deepDepthMat->ptr<Vec3b>(y);
+        const Vec3b* l_pOneLayerMat = _oneLayerMat.ptr<Vec3b>(y);
+        
+        for (int x = 0; x < cols; ++ x) {
+            l_pDeepDepthMat[x * _maxDepth + _depth] = l_pOneLayerMat[x];
+        }
+    }
+    
+    return true;
+}
+
+

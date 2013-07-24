@@ -153,6 +153,7 @@ bool mulElmByElm(cv::Mat* const dst, const cv::Mat& src1, const cv::Mat& src2);
 bool divElmByElm(cv::Mat* const dst, const cv::Mat& src1, const cv::Mat& src2);
 bool normalizeByAnyColorChannel(cv::Mat* const image, const ColorName _cName);
 bool calcAverageOfImage(cv::Vec3b* const _aveColor, const cv::Mat& image);
+bool insertMatForDeepDepthMat(cv::Mat* const _deepDepthMat, const cv::Mat& _oneLayerMat, const int _depth, const int _maxDepth = 256);
 ///////////////////////////////  inline method ///////////////////////////////
 inline void MY_WAIT_KEY(void){
     std::cout << "push any key" << std::endl;

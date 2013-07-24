@@ -70,6 +70,7 @@ const cv::Point LINUX_PROJECTOR_DISPLAY_POS(LINUX_DISPLAY_SIZE.width, 0);
 #define PROJECTOR_RESPONSE_P2I_FILE_NAME_BYTE "calibrationData/projectorResponseP2IForByte.dat"
 #define PROJECTOR_RESPONSE_AT_SOME_POINT_I2P_FILE_NAME "calibrationData/projectorResponseAtSomePointI2P.dat"
 #define PROJECTOR_RESPONSE_AT_SOME_POINT_P2I_FILE_NAME "calibrationData/projectorResponseAtSomePointP2I.dat"
+#define PROJECTOR_ALL_C_IMAGES_FILE_NAME "calibrationData/allCImages.dat"
 #define WINDOW_NAME "projection image"
 
 // スリープ時間(ms)
