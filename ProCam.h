@@ -27,6 +27,7 @@ const cv::Size MAC_OTHER_DISPLAY_SIZE(1680, 1050);
 const cv::Size PROJECTOR_DISPLAY_SIZE(1024, 768);
 const cv::Size USB_CAMERA_SIZE(2592, 1944);
 const cv::Size IEEE_CAMERA_SIZE(640, 480);
+const cv::Size MAC_INSIDE_CAMERA_SIZE(1280, 720);
 
 const cv::Point MAC_OTHER_DISPLAY_POS(0, -1 * MAC_OTHER_DISPLAY_SIZE.height);
 const cv::Point MAC_PROJECTOR_DISPLAY_POS(0, -1 * PROJECTOR_DISPLAY_SIZE.height);
@@ -108,6 +109,7 @@ public:
     bool init(const int _size);
     bool init(void);
     bool initCameraSize(void);
+    bool initProjectorSize(const cv::Size& projectorSize);
     bool initVideoCapture(void);
     bool initAccessMapCam2Pro(void);
     bool initAccessMapCam2Prj(void);
@@ -159,6 +161,7 @@ public:
     bool convertPtoI(cv::Mat* const _I, const cv::Mat&  _P);
 //    bool convertCameraImageToProjectorOne(cv::Mat* const _prjImg, const cv::Mat&  _camImg);
     ///////////////////////////////  show method ///////////////////////////////
+    bool showAccessMapCam2Prj(void);
     bool showProjectorResponseP2I(void);
     bool showProjectorResponseP2I(const cv::Mat& _prjRes);
     ///////////////////////////////  print method ///////////////////////////////
@@ -166,7 +169,8 @@ public:
     bool printProjectorResponseP2I(const cv::Point& _pt, const cv::Mat& _prjRes);
     ///////////////////////////////  capture from light method ///////////////////////////////
     bool captureFromLight(cv::Mat* const captureImage, const cv::Mat& projectionImage, const int _waitTimeNum = SLEEP_TIME);
-//    bool captureFromLight(cv::Mat* const captureImage, const cv::Mat& projectionImage);
+    bool captureFromFlatLight(cv::Mat* const captureImage, const cv::Vec3b& projectionColor, const int _waitTimeNum = SLEEP_TIME);
+    bool captureFromFlatGrayLight(cv::Mat* const captureImage, const uchar& projectionNum, const int _waitTimeNum = SLEEP_TIME);
     bool captureFromNonGeometricTranslatedLight(cv::Mat* const captureImage, const cv::Mat& projectionImage);
     bool captureFromLinearLight(cv::Mat* const captureImage, const cv::Mat& projectionImage);
     ///////////////////////////////  other method ///////////////////////////////
