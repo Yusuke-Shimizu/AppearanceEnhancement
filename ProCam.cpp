@@ -90,12 +90,15 @@ bool ProCam::init(void) { return init(100); }
 // return   : 成功したかどうか
 bool ProCam::initCameraSize(void){
     // videoCaptureからサイズを取得する
-    VideoCapture* l_video = getVideoCapture();
-    cv::Size videoSize(l_video->get(CV_CAP_PROP_FRAME_WIDTH), l_video->get(CV_CAP_PROP_FRAME_HEIGHT));
+//    VideoCapture* l_video = getVideoCapture();
+//    cv::Size videoSize(l_video->get(CV_CAP_PROP_FRAME_WIDTH), l_video->get(CV_CAP_PROP_FRAME_HEIGHT));
+    Mat image;
+    getCaptureImage(&image);
+    const Size camSize(image.cols, image.rows);
 
     // setting
-    if( !setCameraSize(&videoSize) ) return false;
-    cout << "camera size is " << videoSize << endl;
+    if( !setCameraSize(camSize) ) return false;
+    cout << "camera size is " << camSize << endl;
     
     return true;
 }
@@ -109,7 +112,8 @@ bool ProCam::initProjectorSize(const cv::Size& projectorSize){
 // ビデオキャプチャーの初期化
 // return   : 成功したかどうか
 bool ProCam::initVideoCapture(void){
-    m_video = cv::VideoCapture(0);
+//    m_video = cv::VideoCapture(0);
+    m_video.open(0);
     if( !m_video.isOpened() ){
         std::cerr << "ERROR : camera is not opened !!" << std::endl;
         return false;
@@ -196,8 +200,8 @@ bool ProCam::initProjectorResponseP2I(cv::Mat* const _prjResP2I){
 
 ///////////////////////////////  set method ///////////////////////////////
 // m_cameraSizeの設定
-bool ProCam::setCameraSize(const cv::Size* const cameraSize){
-    m_cameraSize = *cameraSize;
+bool ProCam::setCameraSize(const cv::Size& cameraSize){
+    m_cameraSize = cameraSize;
     return true;
 }
 
@@ -307,9 +311,12 @@ cv::Size* ProCam::getProjectorSize(void){
 // m_videoから撮影画像を取得
 // output/image : 取得した画像を入れる行列
 // return       : 成功したかどうか
-bool ProCam::getCaptureImage(cv::Mat* const image){
+bool ProCam::getCaptureImage(cv::Mat* const _image){
     VideoCapture* l_video = getVideoCapture();
-    *l_video >> *image;
+    Mat l_bayerImage;
+    *l_video >> l_bayerImage;
+//    *image = tmp;
+    cv::cvtColor(l_bayerImage, *_image, CV_BayerBG2RGB);
     return true;
 }
 
@@ -621,17 +628,12 @@ bool ProCam::loadProjectorResponseP2IForByte(const char* fileName){
 ///////////////////////////////  calibration method ///////////////////////////////
 // 全てのキャリブレーションを行う
 bool ProCam::allCalibration(void){
-    Mat projectionImage = Mat::zeros(PRJ_SIZE_HEIGHT, PRJ_SIZE_WIDTH, CV_8UC3);
-    imshow(WINDOW_NAME, projectionImage);
-//    cvMoveWindow(WINDOW_NAME, POSITION_PROJECTION_IMAGE_X, POSITION_PROJECTION_IMAGE_Y);    // mac
-    cv::waitKey(1);
     // geometri calibration
     if ( !geometricCalibration() ) {
         cerr << "geometric calibration error" << endl;
         return false;
     }
 
-    
     // linearized projector
     if ( !linearlizeOfProjector() ) {
         cerr << "linearized error of projector" << endl;
@@ -653,16 +655,17 @@ bool ProCam::geometricCalibration(void){
     Size* camSize = getCameraSize();
     Mat_<Vec2i> l_accessMapCam2Prj(*camSize);
     
-    // geometric calibration
-//    VideoCapture* video = getVideoCapture();
-//    GeometricCalibration gc(this);
-//    if (!gc.doCalibration(&l_accessMapCam2Prj, video)) return false;
-//    setAccessMapCam2Prj(l_accessMapCam2Prj);
-//    saveAccessMapCam2Prj();
-    
+#ifdef GEO_CAL_CALC_FLAG
+    // calculation
+    VideoCapture* video = getVideoCapture();
+    GeometricCalibration gc(this);
+    if (!gc.doCalibration(&l_accessMapCam2Prj, video)) return false;
+    setAccessMapCam2Prj(l_accessMapCam2Prj);
+    saveAccessMapCam2Prj();
+#else
     // load
     loadAccessMapCam2Prj();
-
+#endif
     // show geometric map
     showAccessMapCam2Prj();
     
@@ -708,7 +711,7 @@ bool ProCam::linearlizeOfProjector(void){
     int prjLum = 0;
     linearPrj.doRadiometricCompensation(prjLum);
     while (true) {
-        _print(prjLum);
+//        _print(prjLum);
         linearPrj.doRadiometricCompensation(prjLum);
         prjLum += 1;    //1 or 10
         if (prjLum >= 256) {
@@ -932,29 +935,16 @@ bool ProCam::printProjectorResponse(const cv::Point& _pt, const cv::Mat& _prjRes
 bool ProCam::captureFromLight(cv::Mat* const captureImage, const cv::Mat& projectionImage, const int _waitTimeNum){
     // 投影
     imshow(WINDOW_NAME, projectionImage);
-    cvMoveWindow(WINDOW_NAME, POSITION_PROJECTION_IMAGE_X, POSITION_PROJECTION_IMAGE_Y);
+    cvMoveWindow(WINDOW_NAME, POSITION_OF_PROJECTION_IMAGE.x, POSITION_OF_PROJECTION_IMAGE.y);
     cv::waitKey(_waitTimeNum);
     
     // N回撮影する
     cv::Mat image;
-    //    Mat_<Vec3b>* aImage = new Mat_<Vec3b>[CAPTURE_NUM];
-    //    Size* camSize = getCameraSize();
-    //    Mat_<Vec3d> sumImage = Mat::zeros(*camSize, CV_64FC3), tmp;
     for (int i = 0; i < CAPTURE_NUM; ++ i) {
-        //        aImage[i] = Mat::zeros(*camSize, CV_8UC3);
         getCaptureImage(&image);
-        //        getCaptureImage(&aImage[i]);
-        
-        // uchar -> double
-        //        aImage[i].convertTo(tmp, CV_64FC3);
-        
-        // add
-        //        sumImage += tmp;
     }
-    //    sumImage /= CAPTURE_NUM;
     
     *captureImage = image.clone();
-    //    *captureImage = sumImage.clone();
     cv::waitKey(_waitTimeNum);
     
     return true;
@@ -970,7 +960,7 @@ bool ProCam::captureFromFlatGrayLight(cv::Mat* const captureImage, const uchar& 
     return captureFromFlatLight(captureImage, l_projectionColor, _waitTimeNum);
 }
 
-bool ProCam::captureFromNonGeometricTranslatedLight(cv::Mat* const captureImage, const cv::Mat& projectionImage){
+bool ProCam::captureFromLightOnProjectorDomain(cv::Mat* const captureImage, const cv::Mat& projectionImage, const int _waitTimeNum){
     // error processing
     const Size* l_camSize = getCameraSize();
     if (projectionImage.rows != l_camSize->height || projectionImage.cols != l_camSize->width) {
@@ -983,18 +973,27 @@ bool ProCam::captureFromNonGeometricTranslatedLight(cv::Mat* const captureImage,
     const Size* l_prjSize = getProjectorSize();
     Mat l_projectionImageOnProjectorSpace(*l_prjSize, CV_8UC3, Scalar(0, 0, 0));
     convertProjectorCoordinateSystemToCameraOne(&l_projectionImageOnProjectorSpace, projectionImage);
-    return captureFromLight(captureImage, l_projectionImageOnProjectorSpace);
+    return captureFromLight(captureImage, l_projectionImageOnProjectorSpace, _waitTimeNum);
+}
+bool ProCam::captureFromFlatLightOnProjectorDomain(cv::Mat* const _captureImage, const cv::Vec3b& _projectionColor, const int _waitTimeNum){
+    const Size* l_prjSize = getProjectorSize();
+    const Mat l_projectionImage(*l_prjSize, CV_8UC3, Scalar(_projectionColor));
+    return captureFromLightOnProjectorDomain(_captureImage, l_projectionImage, _waitTimeNum);
+}
+bool ProCam::captureFromFlatGrayLightOnProjectorDomain(cv::Mat* const _captureImage, const uchar _projectionNumber, const int _waitTimeNum){
+    const Vec3b l_projectionColor(_projectionNumber, _projectionNumber, _projectionNumber);
+    return captureFromFlatLightOnProjectorDomain(_captureImage, l_projectionColor, _waitTimeNum);
 }
 
 // 線形化したプロジェクタを用いて投影・撮影を行う
-bool ProCam::captureFromLinearLight(cv::Mat* const captureImage, const cv::Mat& projectionImage){
+bool ProCam::captureFromLinearLight(cv::Mat* const captureImage, const cv::Mat& projectionImage, const int _waitTimeNum){
     // init lineared projection image
     Mat l_linearProjectionImage(projectionImage.rows, projectionImage.cols, CV_8UC3, Scalar(0, 0, 0));    // プロジェクタ強度の線形化を行った後の投影像
     
     // non linear image -> linear one
     convertNonLinearImageToLinearOne(&l_linearProjectionImage, projectionImage);
     
-    return captureFromLight(captureImage, l_linearProjectionImage);
+    return captureFromLight(captureImage, l_linearProjectionImage, _waitTimeNum);
 }
 
 ///////////////////////////////  other method ///////////////////////////////

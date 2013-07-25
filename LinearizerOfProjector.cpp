@@ -310,8 +310,11 @@ bool LinearizerOfProjector::linearlize(cv::Mat_<cv::Vec3b>* const _responseOfPro
     ///////////////// create V map /////////////////
     // 色変換行列の生成
     cout << "creating Color Mixing Matrix..." << endl;
-//    if( !calcColorMixingMatrix() ) return false;
+#ifdef PRJ_LIN_COLOR_CALC_FLAG
+    if( !calcColorMixingMatrix() ) return false;
+#else
     if ( !loadColorMixingMatrixOfByte(CMM_MAP_FILE_NAME_BYTE) ) return false;
+#endif
     cout << "created Color Mixing Matrix" << endl;
     
     // show V map
@@ -320,10 +323,13 @@ bool LinearizerOfProjector::linearlize(cv::Mat_<cv::Vec3b>* const _responseOfPro
     ///////////////// create projector response function /////////////////
     // プロジェクタの応答特性を計算
     cout << "creating response function..." << endl;
-//    if ( !calcResponseFunction(_responseOfProjector, _responseMapP2I)) return false;
+#ifdef PRJ_LINEAR_CALC_FLAG
+    if ( !calcResponseFunction(_responseOfProjector, _responseMapP2I)) return false;
+#else
     ProCam* l_procam = getProCam();
     l_procam->loadProjectorResponseP2IForByte(PROJECTOR_RESPONSE_P2I_FILE_NAME_BYTE);
     l_procam->loadProjectorResponseForByte(PROJECTOR_RESPONSE_I2P_FILE_NAME_BYTE);
+#endif
     cout << "created response function" << endl;
     
     cout << "linealize is finish" << endl;
@@ -641,14 +647,15 @@ bool LinearizerOfProjector::doRadiometricCompensation(const cv::Mat& _desiredIma
 
     // projection normaly desired image
     Mat l_cameraImageFromDesiredImageProjection(*l_camSize, CV_8UC3, Scalar(0, 0, 0));
-    l_procam->captureFromNonGeometricTranslatedLight(&l_cameraImageFromDesiredImageProjection, _desiredImage);
+    l_procam->captureFromLightOnProjectorDomain(&l_cameraImageFromDesiredImageProjection, _desiredImage);
     
     // calc difference
     Vec3d l_diffC(0.0, 0.0, 0.0), l_diffPDC(0.0, 0.0, 0.0);
     getAvgOfDiffMat2(&l_diffC, _desiredImage, l_cameraImage);
     getAvgOfDiffMat2(&l_diffPDC, _desiredImage, l_cameraImageFromDesiredImageProjection);
-    _print2(l_diffC, l_diffPDC);
-//    _print_gnuplot7(cout, _desiredImage.at<Vec3b>(0,0)[0], l_diffC[2], l_diffC[1], l_diffC[0], l_diffPDC[2], l_diffPDC[1], l_diffPDC[0]);
+//    _print2(l_diffC, l_diffPDC);
+    int index = (int)_desiredImage.at<Vec3b>(0,0)[0];
+    _print_gnuplot7(cout, index, l_diffC[2], l_diffC[1], l_diffC[0], l_diffPDC[2], l_diffPDC[1], l_diffPDC[0]);
     
     // show images
     imshow("desired C", _desiredImage);

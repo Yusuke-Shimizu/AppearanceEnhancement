@@ -537,17 +537,18 @@ void test_round0to1ForMat(void){
 // 符号付き１６ビット行列を表示
 // windowName   : ウィンドウ名
 // mat16s       : 表示する画像（符号付き１６ビット）
-void imshow16s(const char* const windowName, const Mat* const mat16s){
+void imshow16s(const char* const windowName, const Mat& mat16s){
     //error processing
-    if (mat16s->depth() != CV_16SC1) {
-        int mat16sDepth = mat16s->depth();
+    if (mat16s.depth() != CV_16SC1) {
+        int mat16sDepth = mat16s.depth();
         ERROR_PRINT(mat16sDepth);
+        _print_mat_propaty(mat16s);
         return;
     }
     
     // １６ビットから８ビットへ変換
-    Mat diffPosiNega8u = Mat::zeros(mat16s->rows, mat16s->cols, CV_8UC1);
-    convertMatDepth16sTo8u(&diffPosiNega8u, mat16s);
+    Mat diffPosiNega8u = Mat::zeros(mat16s.rows, mat16s.cols, CV_8UC1);
+    convertMatDepth16sTo8u(&diffPosiNega8u, &mat16s);
     
     // ８ビット画像を表示
     imshow(windowName, diffPosiNega8u);
@@ -1010,7 +1011,8 @@ bool insertMatForDeepDepthMat(cv::Mat* const _deepDepthMat, const cv::Mat& _oneL
         _print_mat_propaty(*_deepDepthMat);
         _print_mat_propaty(_oneLayerMat);
         exit(-1);
-    } else if (_depth > _maxDepth || _depth <= 0) {
+    } else if (_depth > _maxDepth || _depth < 0) {
+        std::cerr << "_depth is more than _maxDepth or less than 0" << std::endl;
         _print2(_depth, _maxDepth);
         exit(-1);
     }

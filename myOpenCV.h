@@ -133,7 +133,7 @@ bool roundXtoYForMat(cv::Mat* const _mat, const double& _X, const double& _Y);
 bool round0to1ForMat(cv::Mat* const _mat);
 void test_round0to1ForMat(void);
 ///////////////////////////////  other method ///////////////////////////////
-void imshow16s(const char* const windowName, const cv::Mat* const mat16s);
+void imshow16s(const char* const windowName, const cv::Mat& mat16s);
 void videoCapture_test(void);
 void test_sizeArea(void);
 bool calcMultiplyEachElement(cv::Mat* om, const cv::Mat& im1, const cv::Mat& im2);

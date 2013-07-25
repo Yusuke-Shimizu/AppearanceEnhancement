@@ -23,7 +23,7 @@ int main(int argc, const char * argv[])
 //    AppearanceEnhancement ae = AppearanceEnhancement();
 //    ae.test_RadiometricModel();
     // プロカムの設定
-    Size prjSize(PRJ_SIZE_WIDTH, PRJ_SIZE_HEIGHT);
+    Size prjSize(PRJ_SIZE);
     ProCam procam(prjSize);
     procam.allCalibration();
 //    test_getAvgOfDiffMat2();

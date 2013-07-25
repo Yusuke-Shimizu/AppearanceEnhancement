@@ -13,53 +13,42 @@
 #include "myOpenCV.h"
 #include "common.h"
 
+//#define GEO_CAL_CALC_FLAG       // 幾何変換を計算するフラグ
+//#define PRJ_LIN_COLOR_CALC_FLAG // 線形化の際に用いる色変換を計算するフラグ
+//#define PRJ_LINEAR_CALC_FLAG    // 線形化変換を計算するフラグ
+
 // 定義
-#define VGA_WIDTH 640
-#define VGA_HEIGHT 480
-#define MAC_PRJ_WIDTH 1680
-#define MAC_PRJ_HEIGHT 1050
-#define LINUX_PRJ_WIDTH 1024
-#define LINUX_PRJ_HEIGHT 768
+const cv::Size VGA_SIZE(640, 480);
+const cv::Size XGA_SIZE(1024, 768);
+const cv::Size HDTV_720P_SIZE(1280, 720);
+const cv::Size WSXGA_PLUS_SIZE(1680, 1050);
 
 const cv::Size MAC_DISIPLAY_SIZE(1366, 768);
-const cv::Size LINUX_DISPLAY_SIZE(1680, 1050);
-const cv::Size MAC_OTHER_DISPLAY_SIZE(1680, 1050);
-const cv::Size PROJECTOR_DISPLAY_SIZE(1024, 768);
+const cv::Size LINUX_DISPLAY_SIZE(WSXGA_PLUS_SIZE);
+const cv::Size MAC_OTHER_DISPLAY_SIZE(WSXGA_PLUS_SIZE);
+const cv::Size PROJECTOR_DISPLAY_SIZE(XGA_SIZE);
+const cv::Size IEEE_CAMERA_SIZE(VGA_SIZE);
+const cv::Size IEEE_CAMERA_SIZE2(XGA_SIZE);
 const cv::Size USB_CAMERA_SIZE(2592, 1944);
-const cv::Size IEEE_CAMERA_SIZE(640, 480);
-const cv::Size MAC_INSIDE_CAMERA_SIZE(1280, 720);
+const cv::Size MAC_INSIDE_CAMERA_SIZE(HDTV_720P_SIZE);
 
 const cv::Point MAC_OTHER_DISPLAY_POS(0, -1 * MAC_OTHER_DISPLAY_SIZE.height);
 const cv::Point MAC_PROJECTOR_DISPLAY_POS(0, -1 * PROJECTOR_DISPLAY_SIZE.height);
 const cv::Point LINUX_PROJECTOR_DISPLAY_POS(LINUX_DISPLAY_SIZE.width, 0);
 
-#define MAC_POS_X 0
-#define MAC_POS_Y -1050
-#define LINUX_POS_X 1680
-#define LINUX_POS_Y 0
-
-//#define PRJ_SIZE_WIDTH VGA_WIDTH
-//#define PRJ_SIZE_HEIGHT VGA_HEIGHT
-
 #ifdef MAC
-#define PRJ_SIZE_WIDTH MAC_PRJ_WIDTH
-#define PRJ_SIZE_HEIGHT MAC_PRJ_HEIGHT
-#define POSITION_PROJECTION_IMAGE_X MAC_POS_X
-#define POSITION_PROJECTION_IMAGE_Y MAC_POS_Y
+const cv::Size PRJ_SIZE(MAC_OTHER_DISPLAY_SIZE);
+const cv::Point POSITION_OF_PROJECTION_IMAGE(MAC_OTHER_DISPLAY_POS);
 #endif
 
 #ifdef MAC_PROJECTOR
-#define PRJ_SIZE_WIDTH PROJECTOR_DISPLAY_SIZE.width
-#define PRJ_SIZE_HEIGHT PROJECTOR_DISPLAY_SIZE.height
-#define POSITION_PROJECTION_IMAGE_X MAC_PROJECTOR_DISPLAY_POS.x
-#define POSITION_PROJECTION_IMAGE_Y MAC_PROJECTOR_DISPLAY_POS.y
+const cv::Size PRJ_SIZE(PROJECTOR_DISPLAY_SIZE);
+const cv::Point POSITION_OF_PROJECTION_IMAGE(MAC_PROJECTOR_DISPLAY_POS);
 #endif
 
 #ifdef LINUX   // Linux
-#define PRJ_SIZE_WIDTH LINUX_PRJ_WIDTH
-#define PRJ_SIZE_HEIGHT LINUX_PRJ_HEIGHT
-#define POSITION_PROJECTION_IMAGE_X LINUX_POS_X
-#define POSITION_PROJECTION_IMAGE_Y LINUX_POS_Y
+const cv::Size PRJ_SIZE(PROJECTOR_DISPLAY_SIZE);
+const cv::Point POSITION_OF_PROJECTION_IMAGE(LINUX_PROJECTOR_DISPLAY_POS);
 #endif
 
 // 幾何キャリブレーションで得たルックアップテーブルのファイル名
@@ -74,8 +63,8 @@ const cv::Point LINUX_PROJECTOR_DISPLAY_POS(LINUX_DISPLAY_SIZE.width, 0);
 #define WINDOW_NAME "projection image"
 
 // スリープ時間(ms)
-#define SLEEP_TIME 20
-#define CAPTURE_NUM 10
+const int SLEEP_TIME = 20;
+const int CAPTURE_NUM = 10;
 
 const uchar INIT_RES_NUM = 0;   // 応答特性の初期値
 
@@ -119,7 +108,7 @@ public:
     bool initProjectorResponseP2I(void);
     bool initProjectorResponseP2I(cv::Mat* const _prjResP2I);
     ///////////////////////////////  set method ///////////////////////////////
-    bool setCameraSize(const cv::Size* const cameraSize);
+    bool setCameraSize(const cv::Size& cameraSize);
     bool setProjectorSize(const cv::Size& projectorSize);
     bool setAccessMapCam2Pro(const cv::Point* const accessMapCam2Pro, const cv::Size& mapSize);
     bool setAccessMapCam2Pro(const cv::Point* const accessMapCam2Pro);
@@ -131,7 +120,7 @@ public:
     cv::Size* getCameraSize(void);
     int getPixelsOfCamera(void);
     cv::Size* getProjectorSize(void);
-    bool getCaptureImage(cv::Mat* const image);
+    bool getCaptureImage(cv::Mat* const _image);
     cv::VideoCapture* getVideoCapture(void);
     bool getAccessMapCam2Pro(cv::Point* const accessMapCam2Pro, const cv::Size& mapSize);
     bool getAccessMapCam2Pro(cv::Point* const accessMapCam2Pro);
@@ -173,11 +162,13 @@ public:
     bool printProjectorResponseP2I(const cv::Point& _pt);
     bool printProjectorResponse(const cv::Point& _pt, const cv::Mat& _prjRes);
     ///////////////////////////////  capture from light method ///////////////////////////////
-    bool captureFromLight(cv::Mat* const captureImage, const cv::Mat& projectionImage, const int _waitTimeNum = SLEEP_TIME);
-    bool captureFromFlatLight(cv::Mat* const captureImage, const cv::Vec3b& projectionColor, const int _waitTimeNum = SLEEP_TIME);
-    bool captureFromFlatGrayLight(cv::Mat* const captureImage, const uchar& projectionNum, const int _waitTimeNum = SLEEP_TIME);
-    bool captureFromNonGeometricTranslatedLight(cv::Mat* const captureImage, const cv::Mat& projectionImage);
-    bool captureFromLinearLight(cv::Mat* const captureImage, const cv::Mat& projectionImage);
+    bool captureFromLight(cv::Mat* const _captureImage, const cv::Mat& _projectionImage, const int _waitTimeNum = SLEEP_TIME);
+    bool captureFromFlatLight(cv::Mat* const _captureImage, const cv::Vec3b& _projectionColor, const int _waitTimeNum = SLEEP_TIME);
+    bool captureFromFlatGrayLight(cv::Mat* const _captureImage, const uchar& _projectionNum, const int _waitTimeNum = SLEEP_TIME);
+    bool captureFromLightOnProjectorDomain(cv::Mat* const _captureImage, const cv::Mat& _projectionImage, const int _waitTimeNum = SLEEP_TIME);
+    bool captureFromFlatLightOnProjectorDomain(cv::Mat* const _captureImage, const cv::Vec3b& _projectionColor, const int _waitTimeNum = SLEEP_TIME);
+    bool captureFromFlatGrayLightOnProjectorDomain(cv::Mat* const _captureImage, const uchar _projectionNumber, const int _waitTimeNum = SLEEP_TIME);
+    bool captureFromLinearLight(cv::Mat* const _captureImage, const cv::Mat& _projectionImage, const int _waitTimeNum = SLEEP_TIME);
     ///////////////////////////////  other method ///////////////////////////////
     bool interpolationProjectorResponseP2I(cv::Mat* const _prjRes);
     bool test_interpolationProjectorResponseP2I(void);

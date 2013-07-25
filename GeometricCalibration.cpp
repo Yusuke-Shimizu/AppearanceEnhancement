@@ -427,7 +427,7 @@ void GeometricCalibration::addSpatialCodeOfProCam(bool* const spatialCodeProject
     map2image(&diffPosiNega16s, binaryMapCamera, cameraSize);
     
     // 差分画像の表示 ok
-    imshow16s("diff image", &diffPosiNega16s);
+    imshow16s("diff image", diffPosiNega16s);
     cvMoveWindow("diff image", 0, 0);
     
     // 差分画像の書き出し
@@ -765,12 +765,12 @@ bool GeometricCalibration::doCalibration(Mat_<Vec2i>* const _accessMapCam2Pro, c
     Size* cameraSize = l_procam->getCameraSize();    // カメラの大きさ
 
     // init projection image
-    Size projectionSize(PRJ_SIZE_WIDTH, PRJ_SIZE_HEIGHT);       // 投影サイズ
-    Mat projectionImage = cv::Mat::zeros(projectionSize, CV_8UC3);
-    Size layerSize(calcBitCodeNumber(projectionSize.width), calcBitCodeNumber(projectionSize.height));
+    const Size* l_projectionSize = l_procam->getProjectorSize();       // 投影サイズ
+    Mat projectionImage = cv::Mat::zeros(*l_projectionSize, CV_8UC3);
+    Size layerSize(calcBitCodeNumber(l_projectionSize->width), calcBitCodeNumber(l_projectionSize->height));
     
     const int accessBitNum = layerSize.width + layerSize.height;  // アクセスに必要なビット数
-    const int pixelNumProjector = projectionSize.width * projectionSize.height;        // 全画素数
+    const int pixelNumProjector = l_projectionSize->width * l_projectionSize->height;        // 全画素数
     const int pixelNumCamera = cameraSize->width * cameraSize->height;        // 全画素数
     
     // 空間コード画像（大きさ：(縦層+横層)*全画素数）
@@ -782,31 +782,25 @@ bool GeometricCalibration::doCalibration(Mat_<Vec2i>* const _accessMapCam2Pro, c
     // 縦横の縞模様を投影しグレイコードをプロジェクタ，カメラ双方に付与する
     int offset = 0; // 初期ビットの位置
     for (int timeStep = 1; timeStep <= layerSize.width; ++ timeStep, ++ offset) {
-        addSpatialCodeOfProCam(grayCodeMapProjector, grayCodeMapCamera, &projectionSize, cameraSize, timeStep, offset, Vertical, video);
+        addSpatialCodeOfProCam(grayCodeMapProjector, grayCodeMapCamera, l_projectionSize, cameraSize, timeStep, offset, Vertical, video);
     }
     for (int timeStep = 1; timeStep <= layerSize.height; ++ timeStep, ++ offset) {
-        addSpatialCodeOfProCam(grayCodeMapProjector, grayCodeMapCamera, &projectionSize, cameraSize, timeStep, offset, Horizon, video);
+        addSpatialCodeOfProCam(grayCodeMapProjector, grayCodeMapCamera, l_projectionSize, cameraSize, timeStep, offset, Horizon, video);
     }
     
 	// 使用したウィンドウの削除
-//	destroyWindow(W_NAME_GEO_CAMERA);
-//	destroyWindow(W_NAME_GEO_PROJECTOR);
-    destroyAllWindows();
+	destroyWindow(W_NAME_GEO_CAMERA);
+	destroyWindow(W_NAME_GEO_PROJECTOR);
+//    destroyAllWindows();
     
     // プロカム間のアクセスマップを作る
     Point* l_accessMapCam2Pro = new Point[cameraSize->area()];  // Mat_<Vec2i>へ変換する為の変数
 //    setAccessMap(_accessMapCam2Pro, grayCodeMapCamera, grayCodeMapProjector, cameraSize, &projectionSize, &layerSize);
-    setAccessMap(l_accessMapCam2Pro, grayCodeMapCamera, grayCodeMapProjector, cameraSize, &projectionSize, &layerSize);
+    setAccessMap(l_accessMapCam2Pro, grayCodeMapCamera, grayCodeMapProjector, cameraSize, l_projectionSize, &layerSize);
     
     // 空間コード画像の解放
 	free(grayCodeMapProjector);
 	free(grayCodeMapCamera);
-    
-    // アクセスマップのテスト
-    test_accessMap(l_accessMapCam2Pro, *cameraSize, projectionSize, "access map image");
-    
-	// 幾何キャリブレーションのテスト
-//	test_geometricCalibration(_accessMapCam2Pro, &camera, &cameraSize, &projectionSize);
     
     // Point[] -> Mat_<Vec2i>
     convertArrPt2MatVec(_accessMapCam2Pro, l_accessMapCam2Pro, *cameraSize);
