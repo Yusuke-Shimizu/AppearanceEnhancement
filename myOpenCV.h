@@ -24,7 +24,7 @@
 #define DEPTH_S16BIT_MAX 32767
 
 #define _print_vector(vec) std::cout<<#vec<<"[b, g, r] = "<<(vec)<<" ("<<&(vec)<<") ("<<__FUNCTION__<<")"<<std::endl
-#define MY_IMSHOW(img) cv::imshow(#img, img);cv::waitKey(1)
+#define MY_IMSHOW(img) cv::imshow(#img, img);cv::waitKey(30)
 #define _print_mat_propaty(mat) _print_name(mat);printMatPropaty(mat)
 
 #ifdef MAC
@@ -48,6 +48,13 @@ const int CV_BUTTON_DOWN    = 1113940;
 const int CV_BUTTON_LEFT    = 1113937;
 const int CV_BUTTON_RIGHT   = 1113939;
 #endif
+
+// define based Color
+const cv::Vec3b CV_VEC3B_RED(0, 0, 255);
+const cv::Vec3b CV_VEC3B_GREEN(0, 255, 0);
+const cv::Vec3b CV_VEC3B_BLUE(255, 0, 0);
+const cv::Vec3b CV_VEC3B_BLACK(0, 0, 0);
+const cv::Vec3b CV_VEC3B_WHITE(255, 255, 255);
 
 typedef cv::Vec<double, 9> Vec9d;
 

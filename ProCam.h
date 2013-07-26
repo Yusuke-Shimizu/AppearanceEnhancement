@@ -14,7 +14,6 @@
 #include "common.h"
 
 //#define GEO_CAL_CALC_FLAG       // 幾何変換を計算するフラグ
-//#define PRJ_LIN_COLOR_CALC_FLAG // 線形化の際に用いる色変換を計算するフラグ
 //#define PRJ_LINEAR_CALC_FLAG    // 線形化変換を計算するフラグ
 
 // 定義
@@ -53,8 +52,6 @@ const cv::Point POSITION_OF_PROJECTION_IMAGE(LINUX_PROJECTOR_DISPLAY_POS);
 
 // 幾何キャリブレーションで得たルックアップテーブルのファイル名
 #define LOOK_UP_TABLE_FILE_NAME "calibrationData/lookUpTableCameraToProjector.dat"  // 幾何変換表（カメラ=>プロジェクタ）
-//#define PROJECTOR_RESPONSE_FILE_NAME "calibrationData/projectorResponse.dat"
-//#define PROJECTOR_RESPONSE_FILE_NAME_02 "calibrationData/projectorResponse02.dat"
 #define PROJECTOR_RESPONSE_I2P_FILE_NAME_BYTE "calibrationData/projectorResponseI2PForByte.dat"
 #define PROJECTOR_RESPONSE_P2I_FILE_NAME_BYTE "calibrationData/projectorResponseP2IForByte.dat"
 #define PROJECTOR_RESPONSE_AT_SOME_POINT_I2P_FILE_NAME "calibrationData/projectorResponseAtSomePointI2P.dat"

@@ -16,6 +16,7 @@
 
 #define CMM_MAP_FILE_NAME "calibrationData/cmmMap.dat"
 #define CMM_MAP_FILE_NAME_BYTE "calibrationData/cmmMap_byte.dat"
+const char ALL_C_IMAGES_FILE_NAME_BYTE[256] = "calibrationData/allCImages_byte.dat";
 
 const int PROJECTION_LUMINANCE_STEP = 1;
 
@@ -42,7 +43,7 @@ public:
 //    bool setResponseMap(cv::Mat_<cv::Vec3b>* const _responseMap, const cv::Mat_<cv::Vec3b>& _response, const int _depth, const int _maxDepth);
     bool setResponseMap(cv::Mat_<cv::Vec3b>* const _responseMapP2I, cv::Mat_<cv::Vec3b>* const _responseMapI2P, const cv::Mat_<cv::Vec3b>& _CImage, const uchar _INum);
     bool setAllCImages(const cv::Mat& _allCImages);
-    bool setAllCImages(const cv::Mat& _CImage, const int _luminance);
+    bool setCImages(const cv::Mat& _CImage, const int _luminance);
     ///////////////////////////////  get method ///////////////////////////////
     ProCam* getProCam(void);
     const cv::Mat_<Vec9d>* getColorMixMatMap(void);
@@ -51,12 +52,13 @@ public:
     bool initColorMixingMatrixMap(const cv::Size& _cameraSize);
     bool initAllCImages(void);
     ///////////////////////////////  save method ///////////////////////////////
-    bool saveColorMixingMatrix(const char* fileName);
-    bool saveColorMixingMatrixOfByte(const char* fileName);
-    bool saveAllCImages(const char* fileName, const cv::Point& _pt);
+    bool saveColorMixingMatrix(const char* _fileName);
+    bool saveColorMixingMatrixOfByte(const char* _fileName);
+    bool saveAllC(const char* _fileName, const cv::Point& _pt);
+    bool saveAllCImages(const char* _fileName = ALL_C_IMAGES_FILE_NAME_BYTE);
     ///////////////////////////////  load method ///////////////////////////////
-    bool loadColorMixingMatrix(const char* fileName);
     bool loadColorMixingMatrixOfByte(const char* fileName);
+    bool loadAllCImages(const char* _fileName = ALL_C_IMAGES_FILE_NAME_BYTE);
     ///////////////////////////////  other method ///////////////////////////////
     bool linearlize(cv::Mat_<cv::Vec3b>* const _responseMap, cv::Mat_<cv::Vec3b>* const _responseMapP2I);
     bool calcColorMixingMatrix(void);

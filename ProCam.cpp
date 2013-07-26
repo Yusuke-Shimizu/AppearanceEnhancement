@@ -539,24 +539,6 @@ bool ProCam::loadAccessMapCam2Prj(void){
         }
     }
     
-    // check
-//    const Mat_<Vec2i>* l_accessMapC2P_correct = getAccessMapCam2Prj();
-//    if (l_accessMapC2P.size != l_accessMapC2P_correct->size) {
-//        _print3("Size of loaded access map is different from correct this", l_accessMapC2P.size, l_accessMapC2P_correct->size);
-//        exit(-1);
-//    }
-//    for (int y = 0; y < rows; ++ y) {
-//        Vec2i* l_pAccessMapC2P = l_accessMapC2P.ptr<Vec2i>(y);
-//        const Vec2i* l_pAccessMapC2P_correct = l_accessMapC2P_correct->ptr<Vec2i>(y);
-//        
-//        for (int x = 0; x < cols; ++ x) {
-//            if (l_pAccessMapC2P[x] != l_pAccessMapC2P_correct[x]) {
-//                _print3("loaded access map is failed", l_pAccessMapC2P[x], l_pAccessMapC2P_correct[x]);
-//                exit(-1);
-//            }
-//        }
-//    }
-    
     // setting look up table
     setAccessMapCam2Prj(l_accessMapC2P);
     
@@ -657,9 +639,8 @@ bool ProCam::geometricCalibration(void){
     
 #ifdef GEO_CAL_CALC_FLAG
     // calculation
-    VideoCapture* video = getVideoCapture();
     GeometricCalibration gc(this);
-    if (!gc.doCalibration(&l_accessMapCam2Prj, video)) return false;
+    if (!gc.doCalibration(&l_accessMapCam2Prj)) return false;
     setAccessMapCam2Prj(l_accessMapCam2Prj);
     saveAccessMapCam2Prj();
 #else
@@ -704,19 +685,18 @@ bool ProCam::linearlizeOfProjector(void){
     printProjectorResponseI2P(pt);
     savePrintProjectorResponseP2I(PROJECTOR_RESPONSE_AT_SOME_POINT_P2I_FILE_NAME, pt);
     savePrintProjectorResponseI2P(PROJECTOR_RESPONSE_AT_SOME_POINT_I2P_FILE_NAME, pt);
-    linearPrj.saveAllCImages(PROJECTOR_ALL_C_IMAGES_FILE_NAME, pt);
+    linearPrj.saveAllC(PROJECTOR_ALL_C_IMAGES_FILE_NAME, pt);
 
     // test
     cout << "do radiometric compensation" << endl;
     int prjLum = 0;
     linearPrj.doRadiometricCompensation(prjLum);
     while (true) {
-//        _print(prjLum);
         linearPrj.doRadiometricCompensation(prjLum);
         prjLum += 1;    //1 or 10
         if (prjLum >= 256) {
             prjLum = 0;
-//            break;
+            break;
         }
         if (waitKey(5) == CV_BUTTON_ESC) break;
     }
@@ -852,7 +832,6 @@ bool ProCam::showAccessMapCam2Prj(void){
     convertProjectorCoordinateSystemToCameraOne(&prjImg, whiteImg);
     imshow("access map", prjImg);
     MY_IMSHOW(whiteImg);
-//    MY_WAIT_KEY(CV_BUTTON_ESC);
 
     return true;
 }

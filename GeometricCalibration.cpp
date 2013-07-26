@@ -358,21 +358,7 @@ void GeometricCalibration::test_insertAccessMap(void){
 }
 
 // 入力された投影像を投影・撮影を行い，撮影像を出力する
-void GeometricCalibration::captureProjectionImage(Mat* const captureImage, const Mat* const projectionImage, VideoCapture *videoStream){
-    // 投影
-//    imshow(W_NAME_GEO_PROJECTOR, *projectionImage);  // posi pattern
-//    waitKey(SLEEP_TIME);
-//    
-//    // 撮影
-//    Mat image;
-//    for (int i = 0; i < CAPTURE_NUM; ++ i) {
-//        *videoStream >> image;
-//    }
-//    *captureImage = image.clone();
-//    //imshow(W_NAME_GEO_CAMERA, *captureImage);
-//	//cvMoveWindow(W_NAME_GEO_CAMERA, projectionImage->rows, 0);
-//	waitKey(SLEEP_TIME);
-//    
+void GeometricCalibration::captureProjectionImage(Mat* const captureImage, const Mat* const projectionImage){
     ProCam* l_procam = getProCam();
     l_procam->captureFromLight(captureImage, *projectionImage);
 }
@@ -385,7 +371,7 @@ int num = 0;
 // offsetBit        : 追加するビットの位置
 // direction        : 縞の方向
 // camera           : カメラのストリーム
-void GeometricCalibration::addSpatialCodeOfProCam(bool* const spatialCodeProjector, bool* const spatialCodeCamera, const Size* const projectorSize, const Size* const cameraSize, const int patternLayerNum, const int offset, const stripeDirection direction, VideoCapture *videoStream){
+void GeometricCalibration::addSpatialCodeOfProCam(bool* const spatialCodeProjector, bool* const spatialCodeCamera, const Size* const projectorSize, const Size* const cameraSize, const int patternLayerNum, const int offset, const stripeDirection direction){
     // init
     Mat projectionPosiImage = cv::Mat::zeros(*projectorSize, CV_8UC3);  // ポジ画像
     
@@ -401,10 +387,10 @@ void GeometricCalibration::addSpatialCodeOfProCam(bool* const spatialCodeProject
     // posi
     Mat posiImage(*cameraSize, CV_8UC3), negaImage(*cameraSize, CV_8UC3);
     waitKey(SLEEP_TIME);
-    captureProjectionImage(&posiImage, &projectionPosiImage, videoStream);
+    captureProjectionImage(&posiImage, &projectionPosiImage);
     // nega
     Mat projectionNegaImage = ~projectionPosiImage;     // ネガ画像
-    captureProjectionImage(&negaImage, &projectionNegaImage, videoStream);
+    captureProjectionImage(&negaImage, &projectionNegaImage);
     projectionPosiImage.release();  // free
     projectionNegaImage.release();  // free
     
@@ -728,13 +714,6 @@ void GeometricCalibration::test_geometricCalibration(Point* const accessMapC2P, 
 	}
 }
 
-// 多分ミスってる
-void GeometricCalibration::test_accessMap(const Point* const accessMapCam2Pro, const Size& cameraSize, const Size& projectorSize, const char* _fileName){
-    Mat accessImage = Mat::zeros(cameraSize, CV_8UC3); // アクセスマップ画像
-    accessMap2image(&accessImage, accessMapCam2Pro, cameraSize, projectorSize);
-    imshow(_fileName, accessImage);
-}
-
 // 
 void GeometricCalibration::convertArrPt2MatVec(cv::Mat_<cv::Vec2i>* const dst, const cv::Point_<int>* src, const cv::Size& _srcSize){
     //
@@ -759,7 +738,7 @@ void GeometricCalibration::convertArrPt2MatVec(cv::Mat_<cv::Vec2i>* const dst, c
 }
 
 // 幾何キャリブレーション
-bool GeometricCalibration::doCalibration(Mat_<Vec2i>* const _accessMapCam2Pro, cv::VideoCapture* video){
+bool GeometricCalibration::doCalibration(Mat_<Vec2i>* const _accessMapCam2Pro){
     // init camera
     ProCam* l_procam = getProCam();
     Size* cameraSize = l_procam->getCameraSize();    // カメラの大きさ
@@ -782,10 +761,10 @@ bool GeometricCalibration::doCalibration(Mat_<Vec2i>* const _accessMapCam2Pro, c
     // 縦横の縞模様を投影しグレイコードをプロジェクタ，カメラ双方に付与する
     int offset = 0; // 初期ビットの位置
     for (int timeStep = 1; timeStep <= layerSize.width; ++ timeStep, ++ offset) {
-        addSpatialCodeOfProCam(grayCodeMapProjector, grayCodeMapCamera, l_projectionSize, cameraSize, timeStep, offset, Vertical, video);
+        addSpatialCodeOfProCam(grayCodeMapProjector, grayCodeMapCamera, l_projectionSize, cameraSize, timeStep, offset, Vertical);
     }
     for (int timeStep = 1; timeStep <= layerSize.height; ++ timeStep, ++ offset) {
-        addSpatialCodeOfProCam(grayCodeMapProjector, grayCodeMapCamera, l_projectionSize, cameraSize, timeStep, offset, Horizon, video);
+        addSpatialCodeOfProCam(grayCodeMapProjector, grayCodeMapCamera, l_projectionSize, cameraSize, timeStep, offset, Horizon);
     }
     
 	// 使用したウィンドウの削除
@@ -807,15 +786,4 @@ bool GeometricCalibration::doCalibration(Mat_<Vec2i>* const _accessMapCam2Pro, c
     
     delete [] l_accessMapCam2Pro;
     return true;
-}
-
-// アクセスマップを表示して確かめる
-void GeometricCalibration::test_accessMap(void){
-    ProCam* l_procam = getProCam();
-    const Size* prjSize = l_procam->getProjectorSize();
-    const Size* camSize = l_procam->getCameraSize();
-    Mat whiteImg(*camSize, CV_8UC3, Scalar(255, 255, 255)), prjImg(*prjSize, CV_8UC3, Scalar(0, 0, 0));
-    l_procam->convertProjectorCoordinateSystemToCameraOne(&prjImg, whiteImg);
-    MY_IMSHOW(prjImg);
-//    MY_WAIT_KEY();
 }

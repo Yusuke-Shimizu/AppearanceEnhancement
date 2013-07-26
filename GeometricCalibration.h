@@ -67,8 +67,8 @@ public:
     void createBinaryMap(bool *binaryMap, const cv::Size* const mapSize, const unsigned int layerNum, const stripeDirection direction);
     void insertAccessMap(bool* accessMap, const cv::Size* const mapSize, const int bitDepth, const bool* const patternMap, const int offsetBit);
     void test_insertAccessMap(void);
-    void captureProjectionImage(cv::Mat* const captureImage, const cv::Mat* const projectionImage, cv::VideoCapture *videoStream);
-    void addSpatialCodeOfProCam(bool* const spatialCodeProjector, bool* const spatialCodeCamera, const cv::Size* const projectorSize, const cv::Size* const cameraSize, const int patternLayerNum, const int offset, const stripeDirection direction, cv::VideoCapture *videoStream);
+    void captureProjectionImage(cv::Mat* const captureImage, const cv::Mat* const projectionImage);
+    void addSpatialCodeOfProCam(bool* const spatialCodeProjector, bool* const spatialCodeCamera, const cv::Size* const projectorSize, const cv::Size* const cameraSize, const int patternLayerNum, const int offset, const stripeDirection direction);
     void divideCode(bool* const codeX, bool* const codeY, const bool* const originalCode, const int sizeX, const int sizeY);
     void grayCode2binaryCode(bool* const binaryCode, const bool* const grayCode, const int bitNum);
     void test_grayCode2binaryCode(void);
@@ -79,11 +79,9 @@ public:
     void setAccessMap(cv::Point* const c2pMap, const bool* codeMapCamera, const bool* codeMapProjector, const cv::Size* cameraSize, const cv::Size* projectorSize, const cv::Size* const depthSize);
     bool test_setAccessMap(void);
     void getProjectorPoint(cv::Point* const projector, const cv::Point* const camera, const cv::Point* const accessMapC2P, const int cameraWidth);
-    void test_accessMap(const cv::Point* const accessMapCam2Pro, const cv::Size& cameraSize, const cv::Size& projectorSize, const char* _fileName);
     void test_geometricCalibration(cv::Point* const accessMapC2P, cv::VideoCapture *video, const cv::Size* const cameraSize, const cv::Size* const projectorSize);
     void convertArrPt2MatVec(cv::Mat_<cv::Vec2i>* const dst, const cv::Point_<int>* src, const cv::Size& _srcSize);
-    bool doCalibration(cv::Mat_<cv::Vec2i>* const _accessMapCam2Pro, cv::VideoCapture* video);
-    void test_accessMap(void);
+    bool doCalibration(cv::Mat_<cv::Vec2i>* const _accessMapCam2Pro);
 };
 
 #endif /* defined(__cameraBase03__GeometricCalibration__) */

@@ -157,7 +157,7 @@ bool LinearizerOfProjector::setAllCImages(const cv::Mat& _allCImages){
 }
 
 // m_allCImagesにある輝度の画像を設定
-bool LinearizerOfProjector::setAllCImages(const cv::Mat& _CImage, const int _luminance){
+bool LinearizerOfProjector::setCImages(const cv::Mat& _CImage, const int _luminance){
     // set
     return insertMatForDeepDepthMat(&m_allCImages, _CImage, _luminance);
 }
@@ -258,18 +258,41 @@ bool LinearizerOfProjector::saveColorMixingMatrixOfByte(const char* fileName){
     return true;
 }
 
-bool LinearizerOfProjector::saveAllCImages(const char* fileName, const cv::Point& _pt){
+bool LinearizerOfProjector::saveAllC(const char* fileName, const cv::Point& _pt){
     ProCam* l_procam = getProCam();
     const Mat* l_allCImages = getAllCImages();
     l_procam->savePrintProjectorResponse(fileName, _pt, *l_allCImages);
     return true;
 }
 
-///////////////////////////////  load method ///////////////////////////////
-bool LinearizerOfProjector::loadColorMixingMatrix(const char* fileName){
+bool LinearizerOfProjector::saveAllCImages(const char* _fileName){
+    ofstream ofs;
+    ofs.open(_fileName, ios_base::out | ios_base::trunc | ios_base::binary);
+    if (!ofs) {
+        ERROR_PRINT2(_fileName, "is Not Found");
+        exit(-1);
+    }
+
+    const Mat* l_allCImages = getAllCImages();
+    const int rows = l_allCImages->rows, cols = l_allCImages->cols, channels = l_allCImages->channels();
+    
+    ofs.write((char*)&rows, sizeof(int));
+    ofs.write((char*)&cols, sizeof(int));
+
+    for (int y = 0; y < rows; ++ y) {
+        const Vec3b* l_pAllCImages = l_allCImages->ptr<Vec3b>(y);
+        
+        for (int x = 0; x < cols; ++ x) {
+            for (int c = 0; c < channels; ++ c) {
+                ofs.write((char*)&l_pAllCImages[x][c], sizeof(char));
+            }
+        }
+    }
+    
     return true;
 }
 
+///////////////////////////////  load method ///////////////////////////////
 //
 bool LinearizerOfProjector::loadColorMixingMatrixOfByte(const char* fileName){
     // init
@@ -302,6 +325,37 @@ bool LinearizerOfProjector::loadColorMixingMatrixOfByte(const char* fileName){
     return true;
 }
 
+bool LinearizerOfProjector::loadAllCImages(const char* _fileName){
+    // init
+    ifstream ifs(_fileName);
+    if (!ifs) {
+        cerr << _fileName << "is Not Found" << endl;
+        exit(-1);
+    }
+    
+    // get size
+    Size mapSize(0, 0);
+    ifs.read((char*)&mapSize.height, sizeof(int));
+    ifs.read((char*)&mapSize.width, sizeof(int));
+    Mat l_allCImages(mapSize, CV_8UC3);
+    
+    // read
+    const int rows = l_allCImages.rows, cols = l_allCImages.cols;
+    for (int y = 0; y < rows; ++ y) {
+        Vec3b* l_pAllCImages = l_allCImages.ptr<Vec3b>(y);
+        
+        for (int x = 0; x < cols; ++ x) {
+            for (int i = 0; i < 9; ++ i) {
+                ifs.read((char*)&l_pAllCImages[x][i], sizeof(char));
+            }
+        }
+    }
+    
+    // setting
+    setAllCImages(l_allCImages);
+    return true;
+}
+
 ///////////////////////////////  other method ///////////////////////////////
 // プロジェクタの線形化を行うメソッド
 // input / responseOfProjector  : 線形化のルックアップテーブルを入れる配列
@@ -310,7 +364,7 @@ bool LinearizerOfProjector::linearlize(cv::Mat_<cv::Vec3b>* const _responseOfPro
     ///////////////// create V map /////////////////
     // 色変換行列の生成
     cout << "creating Color Mixing Matrix..." << endl;
-#ifdef PRJ_LIN_COLOR_CALC_FLAG
+#ifdef PRJ_LINEAR_CALC_FLAG
     if( !calcColorMixingMatrix() ) return false;
 #else
     if ( !loadColorMixingMatrixOfByte(CMM_MAP_FILE_NAME_BYTE) ) return false;
@@ -329,6 +383,7 @@ bool LinearizerOfProjector::linearlize(cv::Mat_<cv::Vec3b>* const _responseOfPro
     ProCam* l_procam = getProCam();
     l_procam->loadProjectorResponseP2IForByte(PROJECTOR_RESPONSE_P2I_FILE_NAME_BYTE);
     l_procam->loadProjectorResponseForByte(PROJECTOR_RESPONSE_I2P_FILE_NAME_BYTE);
+    loadAllCImages();
 #endif
     cout << "created response function" << endl;
     
@@ -344,18 +399,18 @@ bool LinearizerOfProjector::calcColorMixingMatrix(void){
     
     // init capture image
     uchar depth8x3 = CV_8UC3;
-    cv::Mat black_cap   (*cameraSize, depth8x3, cv::Scalar(0, 0, 0));
-    cv::Mat red_cap     (*cameraSize, depth8x3, cv::Scalar(0, 0, 255));
-    cv::Mat green_cap   (*cameraSize, depth8x3, cv::Scalar(0, 255, 0));
-    cv::Mat blue_cap    (*cameraSize, depth8x3, cv::Scalar(255, 0, 0));
-    cv::Mat white_cap    (*cameraSize, depth8x3, cv::Scalar(255, 255, 255));
+    cv::Mat black_cap   (*cameraSize, depth8x3, cv::Scalar(CV_VEC3B_BLACK));
+    cv::Mat red_cap     (*cameraSize, depth8x3, cv::Scalar(CV_VEC3B_RED));
+    cv::Mat green_cap   (*cameraSize, depth8x3, cv::Scalar(CV_VEC3B_GREEN));
+    cv::Mat blue_cap    (*cameraSize, depth8x3, cv::Scalar(CV_VEC3B_BLUE));
+    cv::Mat white_cap    (*cameraSize, depth8x3, cv::Scalar(CV_VEC3B_WHITE));
 
     // capture from some color light
-    procam->captureFromFlatLight(&black_cap, Vec3b(0, 0, 0), SLEEP_TIME * 2);
-    procam->captureFromFlatLight(&red_cap, Vec3b(0, 0, 255));
-    procam->captureFromFlatLight(&green_cap, Vec3b(0, 255, 0));
-    procam->captureFromFlatLight(&blue_cap, Vec3b(255, 0, 0));
-    procam->captureFromFlatLight(&white_cap, Vec3b(255, 255, 255));
+    procam->captureFromFlatLight(&black_cap, CV_VEC3B_BLACK, SLEEP_TIME * 2);
+    procam->captureFromFlatLight(&red_cap, CV_VEC3B_RED);
+    procam->captureFromFlatLight(&green_cap, CV_VEC3B_GREEN);
+    procam->captureFromFlatLight(&blue_cap, CV_VEC3B_BLUE);
+    procam->captureFromFlatLight(&white_cap, CV_VEC3B_WHITE);
 
     // show image
     imshow("black_cap", black_cap);
@@ -494,10 +549,10 @@ bool LinearizerOfProjector::calcResponseFunction(cv::Mat_<cv::Vec3b>* const _res
         setResponseMap(&l_responseMapP2I, &l_responseMap, camImage, prjLuminance);
         
         // set all C images
-        setAllCImages(camImage, prjLuminance);
+        setCImages(camImage, prjLuminance);
     }
     
-    // interpolation projector response
+    // interpolation projector response P to I
     l_procam->interpolationProjectorResponseP2I(&l_responseMapP2I);
     
     // set and save
@@ -507,6 +562,8 @@ bool LinearizerOfProjector::calcResponseFunction(cv::Mat_<cv::Vec3b>* const _res
     // I2P
     l_procam->setProjectorResponse(l_responseMap);
     l_procam->saveProjectorResponseForByte(PROJECTOR_RESPONSE_I2P_FILE_NAME_BYTE);
+    // all C images
+    saveAllCImages();
     
     // deep copy
     *_responseMap = l_responseMap.clone();          // I2P
