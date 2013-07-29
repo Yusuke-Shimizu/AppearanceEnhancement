@@ -59,6 +59,9 @@ public:
     ///////////////////////////////  load method ///////////////////////////////
     bool loadColorMixingMatrixOfByte(const char* fileName);
     bool loadAllCImages(const char* _fileName = ALL_C_IMAGES_FILE_NAME_BYTE);
+    ///////////////////////////////  show method ///////////////////////////////
+    bool showVMap(void);
+    bool showAllCImages(void);
     ///////////////////////////////  other method ///////////////////////////////
     bool linearlize(cv::Mat_<cv::Vec3b>* const _responseMap, cv::Mat_<cv::Vec3b>* const _responseMapP2I);
     bool calcColorMixingMatrix(void);
@@ -67,7 +70,6 @@ public:
     bool convertCImage2PImage(cv::Mat_<cv::Vec3b>* const _PImageOnCameraDomain, const cv::Mat_<cv::Vec3b>& _CImage);
     bool calcP(cv::Vec3b* const _response, const cv::Vec3b& _C, const cv::Mat& _V);
     bool calcPByVec(cv::Vec3b* const _response, const cv::Vec3b& _C, const Vec9d& _VVec);
-    bool showVMap(void);
     bool doRadiometricCompensation(const cv::Mat& _desiredImage);
     bool doRadiometricCompensation(const cv::Vec3b& _desiredColor);
     bool doRadiometricCompensation(const uchar& _desiredColorNumber);

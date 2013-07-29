@@ -93,19 +93,19 @@ bool LinearizerOfProjector::setResponseMap(cv::Mat_<cv::Vec3b>* const _responseM
     }
     
     // calc P on Camera Space
-    Mat l_PImageOnCameraSpace(*l_camSize, CV_8UC3, Scalar(0, 0, 0));    // カメラ座標系におけるP（=V^{-1}C）
+    Mat l_PImageOnCameraSpace(*l_camSize, CV_8UC3, CV_SCALAR_BLACK);    // カメラ座標系におけるP（=V^{-1}C）
     convertCameraImageToProjectorOne(&l_PImageOnCameraSpace, _CImage);
     MY_IMSHOW(l_PImageOnCameraSpace);
     
     // convert P on Camera Space to Projector Space
-    Mat l_PImageOnProjectorSpace(*l_prjSize, CV_8UC3, Scalar(0, 0, 0));    // カメラ座標系におけるP（=V^{-1}C）
-    l_procam->convertProjectorCoordinateSystemToCameraOne(&l_PImageOnProjectorSpace, l_PImageOnCameraSpace);
+    Mat l_PImageOnProjectorSpace(*l_prjSize, CV_8UC3, CV_SCALAR_BLACK);    // カメラ座標系におけるP（=V^{-1}C）
+    l_procam->convertProjectorDomainToCameraOne(&l_PImageOnProjectorSpace, l_PImageOnCameraSpace);
     MY_IMSHOW(l_PImageOnProjectorSpace);
     
     // create check mat
-    const Mat l_whiteCameraImage(l_camSize->height, l_camSize->width, CV_8UC3, Scalar(255, 255, 255));
-    Mat l_whiteImageOnProjectorDomain(l_prjSize->height, l_prjSize->width, CV_8UC3, Scalar(0, 0, 0));
-    l_procam->convertProjectorCoordinateSystemToCameraOne(&l_whiteImageOnProjectorDomain, l_whiteCameraImage);
+    const Mat l_whiteCameraImage(l_camSize->height, l_camSize->width, CV_8UC3, CV_SCALAR_WHITE);
+    Mat l_whiteImageOnProjectorDomain(l_prjSize->height, l_prjSize->width, CV_8UC3, CV_SCALAR_BLACK);
+    l_procam->convertProjectorDomainToCameraOne(&l_whiteImageOnProjectorDomain, l_whiteCameraImage);
     Vec3b l_nonProjectionColor(0, 0, 0);
     
     // setting
@@ -119,7 +119,8 @@ bool LinearizerOfProjector::setResponseMap(cv::Mat_<cv::Vec3b>* const _responseM
         for (int x = 0; x < PCols; ++ x) {
             // 投影しない箇所の設定を飛ばす
             if (l_checkMap[x] == l_nonProjectionColor) {
-                l_pResponseMapP2I[x + 255] = Vec3b(0, 0, 0);
+                l_pResponseMapP2I[x + 255] = CV_VEC3B_BLACK;
+                l_pResponseMapI2P[x + 255] = CV_VEC3B_BLACK;
                 continue;
             }
             
@@ -202,7 +203,7 @@ bool LinearizerOfProjector::initAllCImages(void){
     const Size* camSize = l_procam->getCameraSize();
     const Size allImgSize(camSize->width * 256, camSize->height);
     
-    m_allCImages = Mat(allImgSize, CV_8UC3, Scalar(0, 0, 0));
+    m_allCImages = Mat(allImgSize, CV_8UC3, CV_SCALAR_BLACK);
     return true;
 }
 
@@ -356,6 +357,47 @@ bool LinearizerOfProjector::loadAllCImages(const char* _fileName){
     return true;
 }
 
+///////////////////////////////  show method ///////////////////////////////
+
+// V mapの視覚化
+bool LinearizerOfProjector::showVMap(void){
+    // init
+    const Mat_<Vec9d>* l_cmmm = getColorMixMatMap();
+    int rows = l_cmmm->rows, cols = l_cmmm->cols;
+    Mat_<Vec3d> l_VRed(rows, cols), l_VGreen(rows, cols), l_VBlue(rows, cols);
+    if (isContinuous(*l_cmmm, l_VRed, l_VGreen, l_VBlue)) {
+        cols *= rows;
+        rows = 1;
+    }
+    
+    // create V images
+    for (int y = 0; y < rows; ++ y) {
+        const Vec9d* p_cmmm = l_cmmm->ptr<Vec9d>(y);
+        Vec3d* p_VRed = l_VRed.ptr<Vec3d>(y);
+        Vec3d* p_VGreen = l_VGreen.ptr<Vec3d>(y);
+        Vec3d* p_VBlue = l_VBlue.ptr<Vec3d>(y);
+        
+        for (int x = 0; x < cols; ++ x) {
+            p_VRed[x] = Vec3d(p_cmmm[x][2], p_cmmm[x][1], p_cmmm[x][0]);
+            p_VGreen[x] = Vec3d(p_cmmm[x][5], p_cmmm[x][4], p_cmmm[x][3]);
+            p_VBlue[x] = Vec3d(p_cmmm[x][8], p_cmmm[x][7], p_cmmm[x][6]);
+        }
+    }
+    
+    // show
+    MY_IMSHOW(l_VRed);
+    MY_IMSHOW(l_VGreen);
+    MY_IMSHOW(l_VBlue);
+    return true;
+}
+
+//
+bool LinearizerOfProjector::showAllCImages(void){
+//    const Mat* l_allCImages = getAllCImages();
+    
+    return true;
+}
+
 ///////////////////////////////  other method ///////////////////////////////
 // プロジェクタの線形化を行うメソッド
 // input / responseOfProjector  : 線形化のルックアップテーブルを入れる配列
@@ -399,18 +441,18 @@ bool LinearizerOfProjector::calcColorMixingMatrix(void){
     
     // init capture image
     uchar depth8x3 = CV_8UC3;
-    cv::Mat black_cap   (*cameraSize, depth8x3, cv::Scalar(CV_VEC3B_BLACK));
-    cv::Mat red_cap     (*cameraSize, depth8x3, cv::Scalar(CV_VEC3B_RED));
-    cv::Mat green_cap   (*cameraSize, depth8x3, cv::Scalar(CV_VEC3B_GREEN));
-    cv::Mat blue_cap    (*cameraSize, depth8x3, cv::Scalar(CV_VEC3B_BLUE));
-    cv::Mat white_cap    (*cameraSize, depth8x3, cv::Scalar(CV_VEC3B_WHITE));
+    cv::Mat black_cap   (*cameraSize, depth8x3, CV_SCALAR_BLACK);
+    cv::Mat red_cap     (*cameraSize, depth8x3, CV_SCALAR_BLACK);
+    cv::Mat green_cap   (*cameraSize, depth8x3, CV_SCALAR_BLACK);
+    cv::Mat blue_cap    (*cameraSize, depth8x3, CV_SCALAR_BLACK);
+    cv::Mat white_cap    (*cameraSize, depth8x3, CV_SCALAR_BLACK);
 
     // capture from some color light
-    procam->captureFromFlatLight(&black_cap, CV_VEC3B_BLACK, SLEEP_TIME * 2);
-    procam->captureFromFlatLight(&red_cap, CV_VEC3B_RED);
-    procam->captureFromFlatLight(&green_cap, CV_VEC3B_GREEN);
-    procam->captureFromFlatLight(&blue_cap, CV_VEC3B_BLUE);
-    procam->captureFromFlatLight(&white_cap, CV_VEC3B_WHITE);
+    procam->captureFromFlatLightOnProjectorDomain(&black_cap, CV_VEC3B_BLACK, SLEEP_TIME * 2);
+    procam->captureFromFlatLightOnProjectorDomain(&red_cap, CV_VEC3B_RED);
+    procam->captureFromFlatLightOnProjectorDomain(&green_cap, CV_VEC3B_GREEN);
+    procam->captureFromFlatLightOnProjectorDomain(&blue_cap, CV_VEC3B_BLUE);
+    procam->captureFromFlatLightOnProjectorDomain(&white_cap, CV_VEC3B_WHITE);
 
     // show image
     imshow("black_cap", black_cap);
@@ -436,11 +478,6 @@ bool LinearizerOfProjector::calcColorMixingMatrix(void){
 //    imshow("black_cap2", black_cap);
 //    imshow("white_cap2", white_cap);
 //    imshow("diffWtoB_cap", diffWhiteAndBlack);
-    black_cap.release();
-    red_cap.release();
-    green_cap.release();
-    blue_cap.release();
-    white_cap.release();
 
     // show difference image
 //    imshow("diffRedAndBlack", diffRedAndBlack);
@@ -536,12 +573,12 @@ bool LinearizerOfProjector::calcResponseFunction(cv::Mat_<cv::Vec3b>* const _res
     // scanning all luminance[0-255] of projector
     int prjLuminance = 0;
     _print(prjLuminance);
-    l_procam->captureFromFlatGrayLight(&camImage, prjLuminance, SLEEP_TIME * 2);
+    l_procam->captureFromFlatGrayLightOnProjectorDomain(&camImage, prjLuminance, SLEEP_TIME * 2);
     for (prjLuminance = 0; prjLuminance < 256; prjLuminance += PROJECTION_LUMINANCE_STEP) {
         _print(prjLuminance);
 
         // capture from projection image
-        l_procam->captureFromFlatGrayLight(&camImage, prjLuminance);
+        l_procam->captureFromFlatGrayLightOnProjectorDomain(&camImage, prjLuminance);
         MY_IMSHOW(camImage);
         waitKey(1);
         
@@ -645,38 +682,6 @@ bool LinearizerOfProjector::calcPByVec(cv::Vec3b* const _response, const cv::Vec
     return calcP(_response, _C, l_V);
 }
 
-// V mapの視覚化
-bool LinearizerOfProjector::showVMap(void){
-    // init
-    const Mat_<Vec9d>* l_cmmm = getColorMixMatMap();
-    int rows = l_cmmm->rows, cols = l_cmmm->cols;
-    Mat_<Vec3d> l_VRed(rows, cols), l_VGreen(rows, cols), l_VBlue(rows, cols);
-    if (isContinuous(*l_cmmm, l_VRed, l_VGreen, l_VBlue)) {
-        cols *= rows;
-        rows = 1;
-    }
-    
-    // create V images
-    for (int y = 0; y < rows; ++ y) {
-        const Vec9d* p_cmmm = l_cmmm->ptr<Vec9d>(y);
-        Vec3d* p_VRed = l_VRed.ptr<Vec3d>(y);
-        Vec3d* p_VGreen = l_VGreen.ptr<Vec3d>(y);
-        Vec3d* p_VBlue = l_VBlue.ptr<Vec3d>(y);
-        
-        for (int x = 0; x < cols; ++ x) {
-            p_VRed[x] = Vec3d(p_cmmm[x][2], p_cmmm[x][1], p_cmmm[x][0]);
-            p_VGreen[x] = Vec3d(p_cmmm[x][5], p_cmmm[x][4], p_cmmm[x][3]);
-            p_VBlue[x] = Vec3d(p_cmmm[x][8], p_cmmm[x][7], p_cmmm[x][6]);
-        }
-    }
-    
-    // show
-    MY_IMSHOW(l_VRed);
-    MY_IMSHOW(l_VGreen);
-    MY_IMSHOW(l_VBlue);
-    return true;
-}
-
 // 光学補正を行う
 // input / _desiredImage    : このような見た目にして欲しい画像
 bool LinearizerOfProjector::doRadiometricCompensation(const cv::Mat& _desiredImage){
@@ -685,25 +690,24 @@ bool LinearizerOfProjector::doRadiometricCompensation(const cv::Mat& _desiredIma
 
     // P = V^{-1}C
     const Size* l_camSize = l_procam->getCameraSize();
-    Mat l_projectionImageOnCameraSpace(*l_camSize, CV_8UC3, Scalar(0, 0, 0));
+    Mat l_projectionImageOnCameraSpace(*l_camSize, CV_8UC3, CV_SCALAR_BLACK);
     convertCameraImageToProjectorOne(&l_projectionImageOnCameraSpace, _desiredImage);
 
     // camera coordinate system -> projector coordinate system
     const Size* l_prjSize = l_procam->getProjectorSize();
-    Mat l_projectionImageOnProjectorSpace(*l_prjSize, CV_8UC3, Scalar(0, 0, 0));
-    l_procam->convertProjectorCoordinateSystemToCameraOne(&l_projectionImageOnProjectorSpace, l_projectionImageOnCameraSpace);
+    Mat l_projectionImageOnProjectorSpace(*l_prjSize, CV_8UC3, CV_SCALAR_BLACK);
+    l_procam->convertProjectorDomainToCameraOne(&l_projectionImageOnProjectorSpace, l_projectionImageOnCameraSpace);
 
     // non linear -> linear
-    Mat l_LProjectionImage(*l_prjSize, CV_8UC3, Scalar(0, 0, 0));
-//    l_procam->convertNonLinearImageToLinearOne(&l_LProjectionImage, l_projectionImageOnProjectorSpace);
+    Mat l_LProjectionImage(*l_prjSize, CV_8UC3, CV_SCALAR_BLACK);
     l_procam->convertPtoI(&l_LProjectionImage, l_projectionImageOnProjectorSpace);
     
     // projection
-    Mat l_cameraImage(*l_camSize, CV_8UC3, Scalar(0, 0, 0));
+    Mat l_cameraImage(*l_camSize, CV_8UC3, CV_SCALAR_BLACK);
     l_procam->captureFromLight(&l_cameraImage, l_LProjectionImage);
 
     // projection normaly desired image
-    Mat l_cameraImageFromDesiredImageProjection(*l_camSize, CV_8UC3, Scalar(0, 0, 0));
+    Mat l_cameraImageFromDesiredImageProjection(*l_camSize, CV_8UC3, CV_SCALAR_BLACK);
     l_procam->captureFromLightOnProjectorDomain(&l_cameraImageFromDesiredImageProjection, _desiredImage);
     
     // calc difference
@@ -721,9 +725,7 @@ bool LinearizerOfProjector::doRadiometricCompensation(const cv::Mat& _desiredIma
     imshow("I", l_LProjectionImage);
     imshow("C", l_cameraImage);
     imshow("C when projection desired C", l_cameraImageFromDesiredImageProjection);
-    waitKey(5);
-
-//    MY_WAIT_KEY(CV_BUTTON_ESC);
+    waitKey(30);
     
     return true;
 }
@@ -757,7 +759,7 @@ bool LinearizerOfProjector::convertCameraImageToProjectorOne(cv::Mat* const _prj
     }
     
     // scanning all pixel
-    Mat l_prjImg(_prjImg->rows, _prjImg->cols, CV_8UC3, Scalar(0, 0, 0));
+    Mat l_prjImg(_prjImg->rows, _prjImg->cols, CV_8UC3, CV_SCALAR_BLACK);
     int rows = _camImg.rows, cols = _camImg.cols;
     if (isContinuous(*_prjImg, _camImg)) {
         cols *= rows;

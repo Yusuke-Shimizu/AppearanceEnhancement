@@ -26,6 +26,5 @@ int main(int argc, const char * argv[])
     Size prjSize(PRJ_SIZE);
     ProCam procam(prjSize);
     procam.allCalibration();
-//    test_getAvgOfDiffMat2();
     return 0;
 }

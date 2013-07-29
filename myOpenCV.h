@@ -55,6 +55,11 @@ const cv::Vec3b CV_VEC3B_GREEN(0, 255, 0);
 const cv::Vec3b CV_VEC3B_BLUE(255, 0, 0);
 const cv::Vec3b CV_VEC3B_BLACK(0, 0, 0);
 const cv::Vec3b CV_VEC3B_WHITE(255, 255, 255);
+const cv::Scalar CV_SCALAR_RED(CV_VEC3B_RED);
+const cv::Scalar CV_SCALAR_GREEN(CV_VEC3B_GREEN);
+const cv::Scalar CV_SCALAR_BLUE(CV_VEC3B_BLUE);
+const cv::Scalar CV_SCALAR_BLACK(CV_VEC3B_BLACK);
+const cv::Scalar CV_SCALAR_WHITE(CV_VEC3B_WHITE);
 
 typedef cv::Vec<double, 9> Vec9d;
 
@@ -107,7 +112,6 @@ void setColor(cv::Mat* const _mat, const double& _red, const double& _green, con
 void setColor(cv::Mat* const _mat, const double& _luminance);
 bool setColor(cv::Mat* const _dst, const cv::Mat& _src);
 bool setVecColor(cv::Vec3b* const _color, const char _luminance, const ColorName _cName);
-//bool setFlatImage(cv::Mat* const _image, );
 void setPoint(cv::Point* const _p, const int _x, const int _y);
 ///////////////////////////////  get method ///////////////////////////////
 bool getPoint(int* const _x, int* const _y, const cv::Point& _p);

@@ -21,25 +21,21 @@ using namespace cv;
 ///////////////////////////////  constructor ///////////////////////////////
 // コンストラクタ
 ProCam::ProCam(void)
-    : m_accessMapCam2Pro(NULL), m_cameraResponse(NULL)
 {
     init();
 }
 
 ProCam::ProCam(const cv::Size& projectorSize)
-    : m_accessMapCam2Pro(NULL), m_cameraResponse(NULL)
 {
     init(projectorSize);
 }
 
 ProCam::ProCam(const int _width, const int _height)
-    : m_accessMapCam2Pro(NULL), m_cameraResponse(NULL)
 {
     init(_width, _height);
 }
 
 ProCam::ProCam(const int _size)
-    : m_accessMapCam2Pro(NULL), m_cameraResponse(NULL)
 {
     init(_size);
 }
@@ -48,8 +44,8 @@ ProCam::ProCam(const int _size)
 // デストラクタ
 ProCam::~ProCam(void){
     cout << "deleting ProCam (" << this <<")" << endl;
-    delete [] m_accessMapCam2Pro;
-    delete [] m_cameraResponse;
+//    delete [] m_accessMapCam2Pro;
+//    delete [] m_cameraResponse;
 //    m_video.release();
     destroyWindow(WINDOW_NAME);     // 投影に使用したウィンドウを削除
     cout << "ProCam is deleted (" << this <<")" << endl;
@@ -62,19 +58,13 @@ bool ProCam::init(const cv::Size& projectorSize){
     // カメラの初期化
     if ( !initVideoCapture() ) return false;
     if ( !initCameraSize() ) return false;
-//    if ( !initCameraResponseSize() ) return false;
-//    if ( !initCameraResponse(getCameraResponseSize()) ) return false;
     
     // プロジェクタの初期化
     if ( !initProjectorSize(projectorSize) ) return false;
-//    cv::Size* cameraSize = getCameraSize();
-//    if ( !initProjectorResponseSize(*cameraSize) ) return false;
-//    if ( !initProjectorResponseSize() ) return false;
-    if ( !initProjectorResponse() ) return false;
+    if ( !initProjectorResponseI2P() ) return false;
     if ( !initProjectorResponseP2I() ) return false;
     
     // アクセスマップの初期化
-    if ( !initAccessMapCam2Pro() ) return false;
     if ( !initAccessMapCam2Prj() ) return false;
     
     return true;
@@ -116,28 +106,12 @@ bool ProCam::initVideoCapture(void){
     m_video.open(0);
     if( !m_video.isOpened() ){
         std::cerr << "ERROR : camera is not opened !!" << std::endl;
-        return false;
+        exit(-1);
     }
     return true;
 }
 
 // アクセスマップの初期化
-bool ProCam::initAccessMapCam2Pro(void){
-    // 実際のカメラのサイズを取得
-    const cv::Size* cameraSize = getCameraSize();
-//    getCameraSize(&cameraSize);
-    
-    // init
-    m_accessMapCam2Pro = new cv::Point[cameraSize->area()];
-    for (int y = 0; y < cameraSize->height; ++ y) {
-        for (int x = 0; x < cameraSize->width; ++ x) {
-            int ptr = y * cameraSize->width + x;
-            *(m_accessMapCam2Pro + ptr) = cv::Size(0, 0);
-        }
-    }
-    
-    return true;
-}
 bool ProCam::initAccessMapCam2Prj(void){
     cv::Size* camSize = getCameraSize();
     m_accessMapCam2Prj = Mat::zeros(*camSize, CV_16SC1);
@@ -160,14 +134,14 @@ bool ProCam::initCameraResponse(const int camResSize){
 
 // プロジェクタ応答特性の初期化
 // return   : 成功したかどうか
-bool ProCam::initProjectorResponse(void){
+bool ProCam::initProjectorResponseI2P(void){
     // init
     const cv::Size* prjSize = getProjectorSize();
     const cv::Size prjResSize(prjSize->width * 256, prjSize->height);
     
     // set projector response
     m_projectorResponseI2P = cv::Mat_<cv::Vec3b>(prjResSize);
-    initProjectorResponseP2I(&m_projectorResponseI2P);
+    initProjectorResponse(&m_projectorResponseI2P);
     return true;
 }
 
@@ -178,21 +152,21 @@ bool ProCam::initProjectorResponseP2I(void){
     
     // set projector response
     m_projectorResponseP2I = cv::Mat_<cv::Vec3b>(prjResSize);
-    initProjectorResponseP2I(&m_projectorResponseP2I);
+    initProjectorResponse(&m_projectorResponseP2I);
     return true;
 }
 
-bool ProCam::initProjectorResponseP2I(cv::Mat* const _prjResP2I){
-    int rows = _prjResP2I->rows, cols = _prjResP2I->cols;
+bool ProCam::initProjectorResponse(cv::Mat* const _prjRes){
+    int rows = _prjRes->rows, cols = _prjRes->cols;
     for (int y = 0; y < rows; ++ y) {
-        Vec3b* l_pPrjResP2I = _prjResP2I->ptr<Vec3b>(y);
+        Vec3b* l_pPrjResP2I = _prjRes->ptr<Vec3b>(y);
         
         for (int x = 0; x < cols / 256; ++ x) {
             for (int i = 0; i < 256; ++ i) {
                 l_pPrjResP2I[x * 256 + i] = Vec3b(INIT_RES_NUM, INIT_RES_NUM, INIT_RES_NUM);
             }
-            l_pPrjResP2I[x * 256 + 0] = Vec3b(0, 0, 0);
-            l_pPrjResP2I[x * 256 + 255] = Vec3b(255, 255, 255);
+            l_pPrjResP2I[x * 256 + 0] = CV_VEC3B_BLACK;
+            l_pPrjResP2I[x * 256 + 255] = CV_VEC3B_WHITE;
         }
     }
     return true;
@@ -211,34 +185,7 @@ bool ProCam::setProjectorSize(const cv::Size& projectorSize){
     return true;
 }
 
-// m_accessMapCam2Proの設定
-// input / accessMapCam2Pro   : セッティングしたいアクセスマップデータ
-// input / mapSize            : アクセスマップの大きさ
-bool ProCam::setAccessMapCam2Pro(const cv::Point* const accessMapCam2Pro, const cv::Size& mapSize){
-    // setting
-    for (int y = 0; y < mapSize.height; ++ y) {
-        for (int x = 0; x < mapSize.width; ++ x) {
-            int ptr = y * mapSize.width + x;
-            *(m_accessMapCam2Pro + ptr) = *(accessMapCam2Pro + ptr);
-        }
-    }
-    
-    return true;
-}
-// 上のアクセスマップを自動で用いる関数
-bool ProCam::setAccessMapCam2Pro(const cv::Point* const accessMapCam2Pro){
-    // set projector size
-    const Size* cameraSize = getCameraSize();
-    
-    // setting
-    if ( !setAccessMapCam2Pro(accessMapCam2Pro, *cameraSize)) {
-        cerr << "error of setting access map camera to projector" << endl;
-        ERROR_PRINT(cameraSize);
-        return false;
-    }
-    
-    return true;
-}
+
 bool ProCam::setAccessMapCam2Prj(const cv::Mat_<cv::Vec2i>& _accessMapCam2Prj){
     // error
     if (!isEqualSizeAndType(_accessMapCam2Prj, m_accessMapCam2Prj)) {
@@ -313,10 +260,13 @@ cv::Size* ProCam::getProjectorSize(void){
 // return       : 成功したかどうか
 bool ProCam::getCaptureImage(cv::Mat* const _image){
     VideoCapture* l_video = getVideoCapture();
+#ifdef LINUX
     Mat l_bayerImage;
     *l_video >> l_bayerImage;
-//    *image = tmp;
     cv::cvtColor(l_bayerImage, *_image, CV_BayerBG2RGB);
+#else
+    *l_video >> *_image;
+#endif
     return true;
 }
 
@@ -327,28 +277,6 @@ cv::VideoCapture* ProCam::getVideoCapture(void){
 }
 
 // m_accessMapCam2Proの取得
-// output / accessMapCam2Pro    : 取得したアクセスマップを格納する変数
-// input / mapSize              : アクセスマップの大きさ
-bool ProCam::getAccessMapCam2Pro(cv::Point* const accessMapCam2Pro, const cv::Size& mapSize){
-    // get
-    for (int y = 0; y < mapSize.height; ++ y) {
-        for (int x = 0; x < mapSize.width; ++ x) {
-            int ptr = y * mapSize.width + x;
-            *(accessMapCam2Pro + ptr) = *(m_accessMapCam2Pro + ptr);
-        }
-    }
-    
-    return true;
-}
-bool ProCam::getAccessMapCam2Pro(cv::Point* const accessMapCam2Pro){
-    // 実際のカメラのサイズを取得
-    const cv::Size* cameraSize = getCameraSize();
-    
-    // get
-    getAccessMapCam2Pro(accessMapCam2Pro, *cameraSize);
-    
-    return true;
-}
 const cv::Mat_<cv::Vec2i>* ProCam::getAccessMapCam2Prj(void){
     return &m_accessMapCam2Prj;
 }
@@ -617,7 +545,7 @@ bool ProCam::allCalibration(void){
     }
 
     // linearized projector
-    if ( !linearlizeOfProjector() ) {
+    if ( !linearizeOfProjector() ) {
         cerr << "linearized error of projector" << endl;
         exit(-1);
     }
@@ -653,23 +581,16 @@ bool ProCam::geometricCalibration(void){
     return true;
 }
 
-// 光学キャリブレーションを行う
-bool ProCam::colorCalibration(void){
-    cout << "color calibration start!" << endl;
-    cout << "color calibration finish!" << endl;
-    return true;
-}
-
 // プロジェクタの線形化を行う
 // return   : 成功したかどうか
-bool ProCam::linearlizeOfProjector(void){
+bool ProCam::linearizeOfProjector(void){
     // init
     const Mat_<Vec3b>* l_prjRes = getProjectorResponseI2P();
     int rows = l_prjRes->rows, cols = l_prjRes->cols;
     Mat_<Vec3b> l_prjResponseI2P(rows, cols);
     Mat_<Vec3b> l_prjResponseP2I(rows, cols);
-    initProjectorResponseP2I(&l_prjResponseI2P);
-    initProjectorResponseP2I(&l_prjResponseP2I);
+    initProjectorResponse(&l_prjResponseI2P);
+    initProjectorResponse(&l_prjResponseP2I);
     
     // get projector response
     LinearizerOfProjector linearPrj(this);
@@ -704,12 +625,22 @@ bool ProCam::linearlizeOfProjector(void){
     return true;
 }
 
+// 光学キャリブレーションを行う
+bool ProCam::colorCalibration(void){
+    cout << "color calibration start!" << endl;
+    
+    
+    
+    cout << "color calibration finish!" << endl;
+    return true;
+}
+
 ///////////////////////////////  convert method ///////////////////////////////
 
 // 幾何変換テーブルを用いて，カメラ座標系からプロジェクタ座標系に変換する
 // output / _psImg  : プロジェクタ座標系に投影した画像
 // input / _csImg   : カメラ座標系の画像
-bool ProCam::convertProjectorCoordinateSystemToCameraOne(cv::Mat* const _psImg, const cv::Mat&  _csImg){
+bool ProCam::convertProjectorDomainToCameraOne(cv::Mat* const _psImg, const cv::Mat&  _csImg){
     // error processing
     const Mat_<Vec2i>* l_accessMapC2P = getAccessMapCam2Prj();              // カメラ空間からプロジェクタ空間への変換テーブル
     if ( !isEqualSize(*l_accessMapC2P, _csImg) ) {
@@ -740,8 +671,6 @@ bool ProCam::convertProjectorCoordinateSystemToCameraOne(cv::Mat* const _psImg, 
         for (int x = 0; x < cols; ++ x) {
             Point prjPoint = Point(l_pAccessMapC2P[x]); // projector coordinate system
             l_psImg.at<Vec3b>(prjPoint) = l_pCsImg[x];  // set projector image
-            //            Point camPoint(x, y);
-            //            _print2(camPoint, prjPoint);
         }
     }
     
@@ -828,10 +757,45 @@ bool ProCam::convertPtoI(cv::Mat* const _I, const cv::Mat&  _P){
 bool ProCam::showAccessMapCam2Prj(void){
     const Size* prjSize = getProjectorSize();
     const Size* camSize = getCameraSize();
-    Mat whiteImg(*camSize, CV_8UC3, Scalar(255, 255, 255)), prjImg(*prjSize, CV_8UC3, Scalar(0, 0, 0));
-    convertProjectorCoordinateSystemToCameraOne(&prjImg, whiteImg);
-    imshow("access map", prjImg);
-    MY_IMSHOW(whiteImg);
+    bool flag = true;
+    Point pt(camSize->height / 2, camSize->width / 2);
+    VideoCapture* l_video = getVideoCapture();
+    Mat l_capImage(*camSize, CV_8UC3);
+
+    while (flag) {
+        // get capture
+        *l_video >> l_capImage;
+        l_capImage.at<Vec3b>(pt) = CV_VEC3B_RED;
+        MY_IMSHOW(l_capImage);
+
+        // 
+        Mat whiteImg(*camSize, CV_8UC3, Scalar(255, 255, 255)), prjImg(*prjSize, CV_8UC3, Scalar(0, 0, 0));
+        whiteImg.at<Vec3b>(pt) = CV_VEC3B_BLUE;
+        convertProjectorDomainToCameraOne(&prjImg, whiteImg);
+        imshow("access map", prjImg);
+        
+        int pushKey = waitKey(30);
+        switch (pushKey) {
+            case (CV_BUTTON_ESC):
+                flag = false;
+                break;
+            case (CV_BUTTON_UP):
+                pt.y -= 10;
+                break;
+            case (CV_BUTTON_LEFT):
+                pt.x -= 10;
+                break;
+            case (CV_BUTTON_DOWN):
+                pt.y += 10;
+                break;
+            case (CV_BUTTON_RIGHT):
+                pt.x += 10;
+                break;
+                
+            default:
+                break;
+        }
+    }
 
     return true;
 }
@@ -951,7 +915,7 @@ bool ProCam::captureFromLightOnProjectorDomain(cv::Mat* const captureImage, cons
     
     const Size* l_prjSize = getProjectorSize();
     Mat l_projectionImageOnProjectorSpace(*l_prjSize, CV_8UC3, Scalar(0, 0, 0));
-    convertProjectorCoordinateSystemToCameraOne(&l_projectionImageOnProjectorSpace, projectionImage);
+    convertProjectorDomainToCameraOne(&l_projectionImageOnProjectorSpace, projectionImage);
     return captureFromLight(captureImage, l_projectionImageOnProjectorSpace, _waitTimeNum);
 }
 bool ProCam::captureFromFlatLightOnProjectorDomain(cv::Mat* const _captureImage, const cv::Vec3b& _projectionColor, const int _waitTimeNum){

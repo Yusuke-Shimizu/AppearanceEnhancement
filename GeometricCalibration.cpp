@@ -25,6 +25,59 @@ bool GeometricCalibration::setProCam(ProCam* procam){
     return true;
 }
 
+// カメラからプロジェクタへのアクセスマップの設定を行う
+// *c2pMap              : 代入するアクセスマップ
+// *codeMapCamera       : カメラのコードマップ
+// *codeMapProjector    : プロジェクタのコードマップ (いらない)
+// *cameraSize          : カメラ画像の大きさ
+// *projectorSize       : プロジェクタ画像の大きさ
+// *depthSize           : X,Y座標のビット深度
+void GeometricCalibration::setAccessMap(Point* const c2pMap, const bool* codeMapCamera, const bool* codeMapProjector, const Size* cameraSize, const Size* projectorSize, const Size* const depthSize){
+    // カメラマップの全画素探索
+    for (int cy = 0; cy < cameraSize->height; ++ cy) {
+        for (int cx = 0; cx < cameraSize->width; ++ cx) {
+            // init
+            int cameraPos = cx + cy * cameraSize->width;    // カメラの位置
+            bool *grayCodeX = new bool[depthSize->width];// グレイコードのX座標
+            bool *grayCodeY = new bool[depthSize->height];// グレイコードのY座標
+            for (int i = 0; i < depthSize->width; ++ i) {
+                grayCodeX[i] = 0;
+            }
+            for (int i = 0; i < depthSize->height; ++ i) {
+                grayCodeY[i] = 0;
+            }
+            
+            // カメラの空間コードからxyそれぞれのコード値を分離 maybe ok
+            divideCode(grayCodeX, grayCodeY, codeMapCamera + cameraPos * (depthSize->width + depthSize->height), depthSize->width, depthSize->height);
+            
+            // 座標値を代入 ok
+            int px = getPositionFromGrayCode(grayCodeX, depthSize->width);
+            int py = getPositionFromGrayCode(grayCodeY, depthSize->height);
+            
+            // error
+            if(px >= projectorSize->width){
+                //                cout << "X value of projector is out of bound (border : " << projectorSize->width << ")" << endl;
+                //                ERROR_PRINT(px);
+                px = py = 0;
+                //return;
+            }else if(py >= projectorSize->height){
+                //                cout << "Y value of projector is out of bound (border : " << projectorSize->height << ")" << endl;
+                //                ERROR_PRINT(py);
+                px = py = 0;
+                //return;
+            }
+            
+            // set
+            setPoint(c2pMap + cameraPos, px, py);
+            
+            // free
+            delete [] grayCodeX;
+            delete [] grayCodeY;
+        }
+    }
+	cout << "---created access map---" << endl;
+}
+
 ///////////////////////////////  get method ///////////////////////////////
 ProCam* GeometricCalibration::getProCam(void){
     return m_procam;
@@ -336,10 +389,14 @@ void GeometricCalibration::test_insertAccessMap(void){
     // init
     const Size size(10, 4);
     const int depth = 4;
-    bool* access = (bool*)malloc(sizeof(bool) * size.width * size.height * depth);
-    memset(access, 0, sizeof(bool) * size.width * size.height * depth);
-    bool* pattern = (bool*)malloc(sizeof(bool) * size.width * size.height);
-    memset(pattern, 1, sizeof(bool) * size.width * size.height);
+    bool* access = new bool[size.width * size.height * depth];
+    bool* pattern = new bool[size.width * size.height];
+    for (int i = 0; i < size.width * size.height * depth; ++ i) {
+        access[i] = 0;
+    }
+    for (int i = 0; i < size.width * size.height; ++ i) {
+        pattern[i] = 1;
+    }
     pattern[1 + 2 * size.width] = 0;
     pattern[2 + 2 * size.width] = 0;
     
@@ -353,8 +410,8 @@ void GeometricCalibration::test_insertAccessMap(void){
      printAccessMap(access, &size, depth);
      */
     // free
-    free(access);
-    free(pattern);
+    delete [] access;
+    delete [] pattern;
 }
 
 // 入力された投影像を投影・撮影を行い，撮影像を出力する
@@ -370,14 +427,14 @@ int num = 0;
 // patternLayerNum  : 投影パターンの層番号
 // offsetBit        : 追加するビットの位置
 // direction        : 縞の方向
-// camera           : カメラのストリーム
 void GeometricCalibration::addSpatialCodeOfProCam(bool* const spatialCodeProjector, bool* const spatialCodeCamera, const Size* const projectorSize, const Size* const cameraSize, const int patternLayerNum, const int offset, const stripeDirection direction){
     // init
-    Mat projectionPosiImage = cv::Mat::zeros(*projectorSize, CV_8UC3);  // ポジ画像
+    Mat projectionPosiImage(*projectorSize, CV_8UC3, Scalar(0, 0, 0));  // ポジ画像
+    ProCam* l_procam = getProCam();
     
     // 投影用バイナリマップを作成
-    bool *binaryMapProjector = (bool*)malloc(sizeof(bool) * projectorSize->width * projectorSize->height);      // プロジェクタのアクセスマップ
-    bool *binaryMapCamera = (bool*)malloc(sizeof(bool) * cameraSize->width * cameraSize->height);      // カメラのアクセスマップ
+    bool *binaryMapProjector = new bool[projectorSize->width * projectorSize->height];  // プロジェクタのアクセスマップ
+    bool *binaryMapCamera = new bool[cameraSize->width * cameraSize->height];           // カメラのアクセスマップ
     createBinaryMap(binaryMapProjector, projectorSize, patternLayerNum, direction);
     
     // バイナリマップから投影画像を生成
@@ -385,14 +442,12 @@ void GeometricCalibration::addSpatialCodeOfProCam(bool* const spatialCodeProject
     
     // projection and shot posi image
     // posi
-    Mat posiImage(*cameraSize, CV_8UC3), negaImage(*cameraSize, CV_8UC3);
+    Mat posiImage(*cameraSize, CV_8UC3, CV_SCALAR_BLACK), negaImage(*cameraSize, CV_8UC3, CV_SCALAR_BLACK);
     waitKey(SLEEP_TIME);
-    captureProjectionImage(&posiImage, &projectionPosiImage);
+    l_procam->captureFromLight(&posiImage, projectionPosiImage);
     // nega
     Mat projectionNegaImage = ~projectionPosiImage;     // ネガ画像
-    captureProjectionImage(&negaImage, &projectionNegaImage);
-    projectionPosiImage.release();  // free
-    projectionNegaImage.release();  // free
+    l_procam->captureFromLight(&negaImage, projectionNegaImage);
     
     // カラー画像からグレー画像へ変換
     cvtColor(posiImage, posiImage, CV_BGR2GRAY);
@@ -402,8 +457,6 @@ void GeometricCalibration::addSpatialCodeOfProCam(bool* const spatialCodeProject
 	Mat posiImage16bit, negaImage16bit;
     posiImage.convertTo(posiImage16bit, CV_16SC1);
     negaImage.convertTo(negaImage16bit, CV_16SC1);
-    posiImage.release();    // free
-    negaImage.release();    // free
     
     // ポジネガ撮影像の差分 ok
     Mat diffPosiNega16s = posiImage16bit - negaImage16bit;
@@ -422,7 +475,6 @@ void GeometricCalibration::addSpatialCodeOfProCam(bool* const spatialCodeProject
     ostringstream oss;
     oss << DIFF_FILE_FOLDER_NAME << "diffImage" << (num++) << ".png";
     imwrite(oss.str().c_str(), diffPosiNega8u);
-//    cout << "write diffImage.png" << endl;
     
     // プロジェクタとカメラのアクセスマップの生成
     const Size layerSize(calcBitCodeNumber(projectorSize->width), calcBitCodeNumber(projectorSize->height));  // コード層の数
@@ -430,12 +482,9 @@ void GeometricCalibration::addSpatialCodeOfProCam(bool* const spatialCodeProject
     insertAccessMap(spatialCodeProjector, projectorSize, accessBitNum, binaryMapProjector, offset); // プロジェクタの空間コードを追加
     insertAccessMap(spatialCodeCamera, cameraSize, accessBitNum, binaryMapCamera, offset);  // カメラの空間コードを追加
     
-    //printAccessMap(spatialCodeProjector, projectorSize, accessBitNum);
-    //cout << "------" << endl;
-    
-    // free
-    free(binaryMapProjector);
-    free(binaryMapCamera);
+    // delete
+    delete [] binaryMapProjector;
+    delete [] binaryMapCamera;
 }
 
 // コードを分割して代入する
@@ -526,13 +575,15 @@ void GeometricCalibration::test_grayCode2binaryCode_binary2decimal(void){
 // グレイコードから座標値を取得（インバースグレイコード？）
 int GeometricCalibration::getPositionFromGrayCode(const bool* const grayCode, const int depth){
     // バイナリコードを生成
-    bool* binaryCode = (bool*)malloc(sizeof(bool) * depth); // 純二進コードを入れる配列
-    memset(binaryCode, 0, sizeof(bool) * depth);
+    bool* binaryCode = new bool[depth];     // 純二進コードを入れる配列
+    for (int i = 0; i < depth; ++ i) {
+        binaryCode[i] = 0;
+    }
     grayCode2binaryCode(binaryCode, grayCode, depth);
     
     // バイナリコードから数字を生成
     int binaryNum = binary2decimal(binaryCode, depth);
-    free(binaryCode);
+    delete [] binaryCode;
     
     return binaryNum;
 }
@@ -581,62 +632,6 @@ void GeometricCalibration::test_getPositionFromGrayCode(void){
 		printCurrentPattern((in4 + 4 * i), 4);
 		_print(out4[i]);
 	}
-}
-
-// カメラからプロジェクタへのアクセスマップの設定を行う
-// *c2pMap              : 代入するアクセスマップ
-// *codeMapCamera       : カメラのコードマップ
-// *codeMapProjector    : プロジェクタのコードマップ (いらない)
-// *cameraSize          : カメラ画像の大きさ
-// *projectorSize       : プロジェクタ画像の大きさ
-// *depthSize           : X,Y座標のビット深度
-void GeometricCalibration::setAccessMap(Point* const c2pMap, const bool* codeMapCamera, const bool* codeMapProjector, const Size* cameraSize, const Size* projectorSize, const Size* const depthSize){
-    // カメラマップの全画素探索
-    for (int cy = 0; cy < cameraSize->height; ++ cy) {
-        for (int cx = 0; cx < cameraSize->width; ++ cx) {
-            // init
-            int cameraPos = cx + cy * cameraSize->width;    // カメラの位置
-            bool *grayCodeX = (bool*)malloc(sizeof(bool) * depthSize->width);// グレイコードのX座標
-            bool *grayCodeY = (bool*)malloc(sizeof(bool) * depthSize->height);// グレイコードのY座標
-            memset(grayCodeX, 0, sizeof(bool) * depthSize->width);
-            memset(grayCodeY, 0, sizeof(bool) * depthSize->height);
-            
-            // カメラの空間コードからxyそれぞれのコード値を分離 maybe ok
-            divideCode(grayCodeX, grayCodeY, codeMapCamera + cameraPos * (depthSize->width + depthSize->height), depthSize->width, depthSize->height);
-            
-            // 座標値を代入 ok
-            int px = getPositionFromGrayCode(grayCodeX, depthSize->width);
-            int py = getPositionFromGrayCode(grayCodeY, depthSize->height);
-            
-            // error
-            if(px >= projectorSize->width){
-//                cout << "X value of projector is out of bound (border : " << projectorSize->width << ")" << endl;
-//                ERROR_PRINT(px);
-                px = py = 0;
-                //return;
-            }else if(py >= projectorSize->height){
-//                cout << "Y value of projector is out of bound (border : " << projectorSize->height << ")" << endl;
-//                ERROR_PRINT(py);
-                px = py = 0;
-                //return;
-            }
-            
-            // set
-            setPoint(c2pMap + cameraPos, px, py);
-            
-            // free
-            free(grayCodeX);
-            free(grayCodeY);
-        }
-    }
-	cout << "---created access map---" << endl;
-}
-
-// 上のテスト
-bool GeometricCalibration::test_setAccessMap(void){
-    
-    
-    return true;
 }
 
 // カメラ座標からプロジェクタ座標を取得する
@@ -753,10 +748,14 @@ bool GeometricCalibration::doCalibration(Mat_<Vec2i>* const _accessMapCam2Pro){
     const int pixelNumCamera = cameraSize->width * cameraSize->height;        // 全画素数
     
     // 空間コード画像（大きさ：(縦層+横層)*全画素数）
-    bool *grayCodeMapProjector = (bool*)malloc(sizeof(bool) * accessBitNum * pixelNumProjector);// プロジェクタのグレイコードマップ
-    bool *grayCodeMapCamera = (bool*)malloc(sizeof(bool) * accessBitNum * pixelNumCamera);      // カメラのグレイコードマップ
-    memset(grayCodeMapProjector, 0, sizeof(bool) * accessBitNum * pixelNumProjector);
-    memset(grayCodeMapCamera, 0, sizeof(bool) * accessBitNum * pixelNumCamera);
+    bool *grayCodeMapProjector = new bool[accessBitNum * pixelNumProjector];// プロジェクタのグレイコードマップ
+    bool *grayCodeMapCamera = new bool[accessBitNum * pixelNumCamera];      // カメラのグレイコードマップ
+    for (int i = 0; i < accessBitNum * pixelNumProjector; ++ i) {
+        grayCodeMapProjector[i] = 0;
+    }
+    for (int i = 0; i < accessBitNum * pixelNumCamera; ++ i) {
+        grayCodeMapCamera[i] = 0;
+    }
     
     // 縦横の縞模様を投影しグレイコードをプロジェクタ，カメラ双方に付与する
     int offset = 0; // 初期ビットの位置
@@ -778,8 +777,8 @@ bool GeometricCalibration::doCalibration(Mat_<Vec2i>* const _accessMapCam2Pro){
     setAccessMap(l_accessMapCam2Pro, grayCodeMapCamera, grayCodeMapProjector, cameraSize, l_projectionSize, &layerSize);
     
     // 空間コード画像の解放
-	free(grayCodeMapProjector);
-	free(grayCodeMapCamera);
+    delete [] grayCodeMapProjector;
+    delete [] grayCodeMapCamera;
     
     // Point[] -> Mat_<Vec2i>
     convertArrPt2MatVec(_accessMapCam2Pro, l_accessMapCam2Pro, *cameraSize);

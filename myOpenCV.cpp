@@ -709,7 +709,7 @@ void test_getAvgOfDiffMat(void){
     _print3(diff, m1, m5);
 }
 
-// 行列の差の絶対値の平均を求める
+// 行列の差の平均を求める
 bool getAvgOfDiffMat2(cv::Vec3d* const diff, const cv::Mat& m1, const cv::Mat& m2){
     // error processing
     if ( !isEqualSizeAndType(m1, m2) ) return false;
@@ -914,7 +914,6 @@ bool normalizeByAnyColorChannel(cv::Mat* const image, const ColorName _cName){
 // 画像の平均色を取得
 bool calcAverageOfImage(cv::Vec3b* const _aveColor, const cv::Mat& image){
     // setting
-    
     int rows = image.rows, cols = image.cols;
     if (image.isContinuous()) {
         cols *= rows;
@@ -1003,7 +1002,7 @@ void on_mouse (int event, int x, int y, int flags, void *param = NULL) {
 //    cvShowImage ("Image", img);
 }
 
-// 深いデプスのMatにあるレイヤーの画像を挿入
+// 次元が深いMatにある次元に画像を挿入
 bool insertMatForDeepDepthMat(cv::Mat* const _deepDepthMat, const cv::Mat& _oneLayerMat, const int _depth, const int _maxDepth){
     // error handle
     if (_deepDepthMat->rows != _oneLayerMat.rows || _deepDepthMat->cols / _maxDepth != _oneLayerMat.cols) {

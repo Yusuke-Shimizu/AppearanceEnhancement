@@ -46,6 +46,7 @@ public:
     ///////////////////////////////  destructor ///////////////////////////////
     ///////////////////////////////  set method ///////////////////////////////
     bool setProCam(ProCam* procam);
+    void setAccessMap(cv::Point* const c2pMap, const bool* codeMapCamera, const bool* codeMapProjector, const cv::Size* cameraSize, const cv::Size* projectorSize, const cv::Size* const depthSize);
     ///////////////////////////////  get method ///////////////////////////////
     ProCam* getProCam(void);
     ///////////////////////////////  print method ///////////////////////////////
@@ -76,8 +77,6 @@ public:
     void test_grayCode2binaryCode_binary2decimal(void);
     int getPositionFromGrayCode(const bool* const grayCode, const int depth);
     void test_getPositionFromGrayCode(void);
-    void setAccessMap(cv::Point* const c2pMap, const bool* codeMapCamera, const bool* codeMapProjector, const cv::Size* cameraSize, const cv::Size* projectorSize, const cv::Size* const depthSize);
-    bool test_setAccessMap(void);
     void getProjectorPoint(cv::Point* const projector, const cv::Point* const camera, const cv::Point* const accessMapC2P, const int cameraWidth);
     void test_geometricCalibration(cv::Point* const accessMapC2P, cv::VideoCapture *video, const cv::Size* const cameraSize, const cv::Size* const projectorSize);
     void convertArrPt2MatVec(cv::Mat_<cv::Vec2i>* const dst, const cv::Point_<int>* src, const cv::Size& _srcSize);

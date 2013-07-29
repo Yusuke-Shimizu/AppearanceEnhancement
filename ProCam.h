@@ -13,7 +13,7 @@
 #include "myOpenCV.h"
 #include "common.h"
 
-//#define GEO_CAL_CALC_FLAG       // 幾何変換を計算するフラグ
+#define GEO_CAL_CALC_FLAG       // 幾何変換を計算するフラグ
 //#define PRJ_LINEAR_CALC_FLAG    // 線形化変換を計算するフラグ
 
 // 定義
@@ -74,7 +74,6 @@ private:
     cv::Size m_cameraSize;              // カメラ画像の大きさ ok
     cv::Size m_projectorSize;           // プロジェクタ画像の大きさ ok
     cv::VideoCapture m_video;           // カメラ映像のストリーム ok
-    cv::Point* m_accessMapCam2Pro;      // カメラからプロジェクタへの位置マップ (Mat_<Vec2i>に変えたい。。。)
     cv::Mat_<cv::Vec2i> m_accessMapCam2Prj; // カメラからプロジェクタへの位置マップ
     cv::Mat m_ColorTransMatCam2Pro;     // カメラ色空間からプロジェクタ色空間への変換行列
     double* m_cameraResponse;           // カメラの応答特性[0-1]->[0-1]
@@ -98,17 +97,14 @@ public:
     bool initCameraSize(void);
     bool initProjectorSize(const cv::Size& projectorSize);
     bool initVideoCapture(void);
-    bool initAccessMapCam2Pro(void);
     bool initAccessMapCam2Prj(void);
     bool initCameraResponse(const int camResSize);
-    bool initProjectorResponse(void);
+    bool initProjectorResponseI2P(void);
     bool initProjectorResponseP2I(void);
-    bool initProjectorResponseP2I(cv::Mat* const _prjResP2I);
+    bool initProjectorResponse(cv::Mat* const _prjResP2I);
     ///////////////////////////////  set method ///////////////////////////////
     bool setCameraSize(const cv::Size& cameraSize);
     bool setProjectorSize(const cv::Size& projectorSize);
-    bool setAccessMapCam2Pro(const cv::Point* const accessMapCam2Pro, const cv::Size& mapSize);
-    bool setAccessMapCam2Pro(const cv::Point* const accessMapCam2Pro);
     bool setAccessMapCam2Prj(const cv::Mat_<cv::Vec2i>& _accessMapCam2Prj);
     bool setCameraResponse(const double* const camRes, const int camResSize);
     bool setProjectorResponse(const cv::Mat_<cv::Vec3b>& _response);
@@ -119,8 +115,6 @@ public:
     cv::Size* getProjectorSize(void);
     bool getCaptureImage(cv::Mat* const _image);
     cv::VideoCapture* getVideoCapture(void);
-    bool getAccessMapCam2Pro(cv::Point* const accessMapCam2Pro, const cv::Size& mapSize);
-    bool getAccessMapCam2Pro(cv::Point* const accessMapCam2Pro);
     const cv::Mat_<cv::Vec2i>* getAccessMapCam2Prj(void);
     const cv::Mat_<cv::Vec3b>* getProjectorResponseI2P(void);
     const cv::Mat_<cv::Vec3b>* getProjectorResponseP2I(void);
@@ -142,10 +136,10 @@ public:
     ///////////////////////////////  calibration method ///////////////////////////////
     bool allCalibration(void);
     bool geometricCalibration(void);
+    bool linearizeOfProjector(void);
     bool colorCalibration(void);
-    bool linearlizeOfProjector(void);
     ///////////////////////////////  convert method ///////////////////////////////
-    bool convertProjectorCoordinateSystemToCameraOne(cv::Mat* const _psImg, const cv::Mat&  _csImg);
+    bool convertProjectorDomainToCameraOne(cv::Mat* const _psImg, const cv::Mat&  _csImg);
     bool convertNonLinearImageToLinearOne(cv::Mat* const _linearImg, const cv::Mat&  _nonLinearImg);
     bool convertPtoI(cv::Mat* const _I, const cv::Mat&  _P);
 //    bool convertCameraImageToProjectorOne(cv::Mat* const _prjImg, const cv::Mat&  _camImg);
