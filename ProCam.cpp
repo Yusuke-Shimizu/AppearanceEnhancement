@@ -594,7 +594,7 @@ bool ProCam::linearizeOfProjector(void){
     
     // get projector response
     LinearizerOfProjector linearPrj(this);
-    if ( !linearPrj.linearlize(&l_prjResponseI2P, &l_prjResponseP2I) ) return false;    // 引数消してもいいかも
+    if ( !linearPrj.doLinearlize(&l_prjResponseI2P, &l_prjResponseP2I) ) return false;    // 引数消してもいいかも
     
     // show
     showProjectorResponseP2I();
@@ -759,21 +759,24 @@ bool ProCam::showAccessMapCam2Prj(void){
     const Size* camSize = getCameraSize();
     bool flag = true;
     Point pt(camSize->height / 2, camSize->width / 2);
-    VideoCapture* l_video = getVideoCapture();
     Mat l_capImage(*camSize, CV_8UC3);
 
     while (flag) {
-        // get capture
-        *l_video >> l_capImage;
-        l_capImage.at<Vec3b>(pt) = CV_VEC3B_RED;
+        // init point
+        Point l_startPt(pt.x - 1, pt.y - 1), l_endPt(pt.x + 1, pt.y + 1);
+        
+        // create projection image
+        Mat whiteImg(*camSize, CV_8UC3, Scalar(255, 255, 255)), prjImg(*prjSize, CV_8UC3, Scalar(0, 0, 0));
+        cv::rectangle(whiteImg, l_startPt, l_endPt, CV_SCALAR_BLUE, -1, CV_AA);
+        
+        // capture
+        captureFromLightOnProjectorDomain(&l_capImage, whiteImg);
+
+        // add color for capture image
+        cv::rectangle(l_capImage, cv::Point(pt.x - 1,pt.y - 1), cv::Point(pt.x + 1, pt.y + 1), CV_SCALAR_RED, -1, CV_AA);
+
         MY_IMSHOW(l_capImage);
 
-        // 
-        Mat whiteImg(*camSize, CV_8UC3, Scalar(255, 255, 255)), prjImg(*prjSize, CV_8UC3, Scalar(0, 0, 0));
-        whiteImg.at<Vec3b>(pt) = CV_VEC3B_BLUE;
-        convertProjectorDomainToCameraOne(&prjImg, whiteImg);
-        imshow("access map", prjImg);
-        
         int pushKey = waitKey(30);
         switch (pushKey) {
             case (CV_BUTTON_ESC):
@@ -868,6 +871,29 @@ bool ProCam::printProjectorResponse(const cv::Point& _pt, const cv::Mat& _prjRes
     }
     
     return true;
+}
+
+// videoCaptureのプロパティ
+void ProCam::printVideoPropaty(void){
+    VideoCapture* l_video = getVideoCapture();
+    std::cout << "CV_CAP_PROP_POS_MSEC = " << l_video->get(CV_CAP_PROP_POS_MSEC) << std::endl;
+    std::cout << "CV_CAP_PROP_POS_FRAMES = " << l_video->get(CV_CAP_PROP_POS_FRAMES) << std::endl;
+    std::cout << "CV_CAP_PROP_POS_AVI_RATIO = " << l_video->get(CV_CAP_PROP_POS_AVI_RATIO) << std::endl;
+    std::cout << "CV_CAP_PROP_FRAME_WIDTH = " << l_video->get(CV_CAP_PROP_FRAME_WIDTH) << std::endl;
+    std::cout << "CV_CAP_PROP_FRAME_HEIGHT = " << l_video->get(CV_CAP_PROP_FRAME_HEIGHT) << std::endl;
+    std::cout << "CV_CAP_PROP_FPS = " << l_video->get(CV_CAP_PROP_FPS) << std::endl;
+    std::cout << "CV_CAP_PROP_FOURCC = " << l_video->get(CV_CAP_PROP_FOURCC) << std::endl;
+    std::cout << "CV_CAP_PROP_FRAME_COUNT = " << l_video->get(CV_CAP_PROP_FRAME_COUNT) << std::endl;
+    std::cout << "CV_CAP_PROP_FORMAT = " << l_video->get(CV_CAP_PROP_FORMAT) << std::endl;
+    std::cout << "CV_CAP_PROP_MODE = " << l_video->get(CV_CAP_PROP_MODE) << std::endl;
+    std::cout << "CV_CAP_PROP_BRIGHTNESS = " << l_video->get(CV_CAP_PROP_BRIGHTNESS) << std::endl;
+    std::cout << "CV_CAP_PROP_CONTRAST = " << l_video->get(CV_CAP_PROP_CONTRAST) << std::endl;
+    std::cout << "CV_CAP_PROP_SATURATION = " << l_video->get(CV_CAP_PROP_SATURATION) << std::endl;
+    std::cout << "CV_CAP_PROP_HUE = " << l_video->get(CV_CAP_PROP_HUE) << std::endl;
+    std::cout << "CV_CAP_PROP_GAIN = " << l_video->get(CV_CAP_PROP_GAIN) << std::endl;
+    std::cout << "CV_CAP_PROP_EXPOSURE = " << l_video->get(CV_CAP_PROP_EXPOSURE) << std::endl;
+    std::cout << "CV_CAP_PROP_CONVERT_RGB = " << l_video->get(CV_CAP_PROP_CONVERT_RGB) << std::endl;
+    std::cout << "CV_CAP_PROP_RECTIFICATION = " << l_video->get(CV_CAP_PROP_RECTIFICATION) << std::endl;
 }
 
 ///////////////////////////////  capture from light method ///////////////////////////////

@@ -128,9 +128,11 @@ bool LinearizerOfProjector::setResponseMap(cv::Mat_<cv::Vec3b>* const _responseM
             for (int ch = 0; ch < PCh; ++ ch) {
                 // setting P2I
                 const int responseIndex = x * 256 + l_pPImageOnPS[x][ch];   // l_pResponseMapP2Iのインデックス
-                l_pResponseMapP2I[responseIndex][ch] = _INum;
+                if (l_pPImageOnPS[x][ch] == 255 || l_pResponseMapP2I[responseIndex][ch] == 0) { // 文字が被り，別の値で変更をしないようにする
+                    l_pResponseMapP2I[responseIndex][ch] = _INum;
+                }
 
-                // setting P2I
+                // setting I2P
                 const int responseIndexI2P = x * 256 + _INum;   // l_pResponseMapI2Pのインデックス
                 l_pResponseMapI2P[responseIndexI2P][ch] = l_pPImageOnPS[x][ch];
             }
@@ -402,7 +404,7 @@ bool LinearizerOfProjector::showAllCImages(void){
 // プロジェクタの線形化を行うメソッド
 // input / responseOfProjector  : 線形化のルックアップテーブルを入れる配列
 // return   : 成功したかどうか
-bool LinearizerOfProjector::linearlize(cv::Mat_<cv::Vec3b>* const _responseOfProjector, cv::Mat_<cv::Vec3b>* const _responseMapP2I){
+bool LinearizerOfProjector::doLinearlize(cv::Mat_<cv::Vec3b>* const _responseOfProjector, cv::Mat_<cv::Vec3b>* const _responseMapP2I){
     ///////////////// create V map /////////////////
     // 色変換行列の生成
     cout << "creating Color Mixing Matrix..." << endl;
@@ -491,6 +493,76 @@ bool LinearizerOfProjector::calcColorMixingMatrix(void){
 //    imshow("diffRedAndBlack2", diffRedAndBlack);
 //    imshow("diffGreenAndBlack2", diffGreenAndBlack);
 //    imshow("diffBlueAndBlack2", diffBlueAndBlack);
+    
+    // create V map
+    createVMap(diffRedAndBlack, diffGreenAndBlack, diffBlueAndBlack);
+    
+    // save
+    cout << "saving Color Mixing Matrix..." << endl;
+    if ( !saveColorMixingMatrixOfByte(CMM_MAP_FILE_NAME_BYTE) ) return false;
+    cout << "saved Color Mixing Matrix" << endl;
+    
+    return true;
+}
+
+// より正確な色変換行列を取得する
+bool LinearizerOfProjector::calcMoreDetailColorMixingMatrix(void){
+    // init
+    ProCam *procam = getProCam();
+    Size *cameraSize = procam->getCameraSize();
+    
+    // init capture image
+    uchar depth8x3 = CV_8UC3;
+    cv::Mat black_cap   (*cameraSize, depth8x3, CV_SCALAR_BLACK);
+    cv::Mat red_cap     (*cameraSize, depth8x3, CV_SCALAR_BLACK);
+    cv::Mat green_cap   (*cameraSize, depth8x3, CV_SCALAR_BLACK);
+    cv::Mat blue_cap    (*cameraSize, depth8x3, CV_SCALAR_BLACK);
+    cv::Mat white_cap    (*cameraSize, depth8x3, CV_SCALAR_BLACK);
+    
+    // capture from some color light
+    procam->captureFromFlatLightOnProjectorDomain(&black_cap, CV_VEC3B_BLACK, SLEEP_TIME * 2);
+    procam->captureFromFlatLightOnProjectorDomain(&red_cap, CV_VEC3B_RED);
+    procam->captureFromFlatLightOnProjectorDomain(&green_cap, CV_VEC3B_GREEN);
+    procam->captureFromFlatLightOnProjectorDomain(&blue_cap, CV_VEC3B_BLUE);
+    procam->captureFromFlatLightOnProjectorDomain(&white_cap, CV_VEC3B_WHITE);
+    
+    // show image
+    imshow("black_cap", black_cap);
+    imshow("red_cap", red_cap);
+    imshow("green_cap", green_cap);
+    imshow("blue_cap", blue_cap);
+    imshow("white_cap", white_cap);
+    
+    // translate bit depth (uchar[0-255] -> double[0-1])
+    uchar depth64x3 = CV_64FC3;
+    double rate = 1.0 / 255.0;
+    black_cap.convertTo(black_cap, depth64x3, rate);
+    red_cap.convertTo(red_cap, depth64x3, rate);
+    green_cap.convertTo(green_cap, depth64x3, rate);
+    blue_cap.convertTo(blue_cap, depth64x3, rate);
+    white_cap.convertTo(white_cap, depth64x3, rate);
+    
+    // calc difference[-1-1]
+    Mat diffRedAndBlack = red_cap - black_cap;
+    Mat diffGreenAndBlack = green_cap - black_cap;
+    Mat diffBlueAndBlack = blue_cap - black_cap;
+    Mat diffWhiteAndBlack = white_cap - black_cap;
+    //    imshow("black_cap2", black_cap);
+    //    imshow("white_cap2", white_cap);
+    //    imshow("diffWtoB_cap", diffWhiteAndBlack);
+    
+    // show difference image
+    //    imshow("diffRedAndBlack", diffRedAndBlack);
+    //    imshow("diffGreenAndBlack", diffGreenAndBlack);
+    //    imshow("diffBlueAndBlack", diffBlueAndBlack);
+    
+    // image divided by any color element
+    normalizeByAnyColorChannel(&diffRedAndBlack, CV_RED);
+    normalizeByAnyColorChannel(&diffGreenAndBlack, CV_GREEN);
+    normalizeByAnyColorChannel(&diffBlueAndBlack, CV_BLUE);
+    //    imshow("diffRedAndBlack2", diffRedAndBlack);
+    //    imshow("diffGreenAndBlack2", diffGreenAndBlack);
+    //    imshow("diffBlueAndBlack2", diffBlueAndBlack);
     
     // create V map
     createVMap(diffRedAndBlack, diffGreenAndBlack, diffBlueAndBlack);
@@ -717,6 +789,9 @@ bool LinearizerOfProjector::doRadiometricCompensation(const cv::Mat& _desiredIma
 //    _print2(l_diffC, l_diffPDC);
     int index = (int)_desiredImage.at<Vec3b>(0,0)[0];
     _print_gnuplot7(cout, index, l_diffC[2], l_diffC[1], l_diffC[0], l_diffPDC[2], l_diffPDC[1], l_diffPDC[0]);
+    Vec3b l_aveC, l_avePDC;
+    calcAverageOfImage(&l_aveC, l_cameraImage);
+    calcAverageOfImage(&l_avePDC, l_cameraImageFromDesiredImageProjection);
     
     // show images
     imshow("desired C", _desiredImage);

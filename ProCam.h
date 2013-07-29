@@ -152,6 +152,7 @@ public:
     bool printProjectorResponseI2P(const cv::Point& _pt);
     bool printProjectorResponseP2I(const cv::Point& _pt);
     bool printProjectorResponse(const cv::Point& _pt, const cv::Mat& _prjRes);
+    void printVideoPropaty(void);
     ///////////////////////////////  capture from light method ///////////////////////////////
     bool captureFromLight(cv::Mat* const _captureImage, const cv::Mat& _projectionImage, const int _waitTimeNum = SLEEP_TIME);
     bool captureFromFlatLight(cv::Mat* const _captureImage, const cv::Vec3b& _projectionColor, const int _waitTimeNum = SLEEP_TIME);
