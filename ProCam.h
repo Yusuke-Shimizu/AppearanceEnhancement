@@ -11,10 +11,14 @@
 
 #include "LinearizerOfProjector.h"
 #include "myOpenCV.h"
+#include "myDc1394.h"
 #include "common.h"
 
 #define GEO_CAL_CALC_FLAG       // 幾何変換を計算するフラグ
 //#define PRJ_LINEAR_CALC_FLAG    // 線形化変換を計算するフラグ
+
+//#define BAYER_FLAG
+#define LIB_DC1394_FLAG
 
 // 定義
 const cv::Size VGA_SIZE(640, 480);
@@ -60,7 +64,7 @@ const cv::Point POSITION_OF_PROJECTION_IMAGE(LINUX_PROJECTOR_DISPLAY_POS);
 #define WINDOW_NAME "projection image"
 
 // スリープ時間(ms)
-const int SLEEP_TIME = 20;
+const int SLEEP_TIME = 50;
 const int CAPTURE_NUM = 10;
 
 const uchar INIT_RES_NUM = 0;   // 応答特性の初期値
@@ -71,6 +75,7 @@ class LinearizerOfProjector;
 
 class ProCam{
 private:
+    DCam m_dcam;                        // カメラ情報
     cv::Size m_cameraSize;              // カメラ画像の大きさ ok
     cv::Size m_projectorSize;           // プロジェクタ画像の大きさ ok
     cv::VideoCapture m_video;           // カメラ映像のストリーム ok
@@ -94,7 +99,10 @@ public:
     bool init(const int _width, const int _height);
     bool init(const int _size);
     bool init(void);
+    bool initCamera(void);
+    bool initDCam(void);
     bool initCameraSize(void);
+    bool initCameraSizeOfDCam1394(void);
     bool initProjectorSize(const cv::Size& projectorSize);
     bool initVideoCapture(void);
     bool initAccessMapCam2Prj(void);
@@ -110,6 +118,7 @@ public:
     bool setProjectorResponse(const cv::Mat_<cv::Vec3b>& _response);
     bool setProjectorResponseP2I(const cv::Mat_<cv::Vec3b>& _response);
     ///////////////////////////////  get method ///////////////////////////////
+    DCam getDCam(void);
     cv::Size* getCameraSize(void);
     int getPixelsOfCamera(void);
     cv::Size* getProjectorSize(void);

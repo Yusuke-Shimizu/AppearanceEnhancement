@@ -408,11 +408,11 @@ bool LinearizerOfProjector::doLinearlize(cv::Mat_<cv::Vec3b>* const _responseOfP
     ///////////////// create V map /////////////////
     // 色変換行列の生成
     cout << "creating Color Mixing Matrix..." << endl;
-#ifdef PRJ_LINEAR_CALC_FLAG
+//#ifdef PRJ_LINEAR_CALC_FLAG
     if( !calcColorMixingMatrix() ) return false;
-#else
-    if ( !loadColorMixingMatrixOfByte(CMM_MAP_FILE_NAME_BYTE) ) return false;
-#endif
+//#else
+//    if ( !loadColorMixingMatrixOfByte(CMM_MAP_FILE_NAME_BYTE) ) return false;
+//#endif
     cout << "created Color Mixing Matrix" << endl;
     
     // show V map
@@ -421,14 +421,14 @@ bool LinearizerOfProjector::doLinearlize(cv::Mat_<cv::Vec3b>* const _responseOfP
     ///////////////// create projector response function /////////////////
     // プロジェクタの応答特性を計算
     cout << "creating response function..." << endl;
-#ifdef PRJ_LINEAR_CALC_FLAG
+//#ifdef PRJ_LINEAR_CALC_FLAG
     if ( !calcResponseFunction(_responseOfProjector, _responseMapP2I)) return false;
-#else
-    ProCam* l_procam = getProCam();
-    l_procam->loadProjectorResponseP2IForByte(PROJECTOR_RESPONSE_P2I_FILE_NAME_BYTE);
-    l_procam->loadProjectorResponseForByte(PROJECTOR_RESPONSE_I2P_FILE_NAME_BYTE);
-    loadAllCImages();
-#endif
+//#else
+//    ProCam* l_procam = getProCam();
+//    l_procam->loadProjectorResponseP2IForByte(PROJECTOR_RESPONSE_P2I_FILE_NAME_BYTE);
+//    l_procam->loadProjectorResponseForByte(PROJECTOR_RESPONSE_I2P_FILE_NAME_BYTE);
+//    loadAllCImages();
+//#endif
     cout << "created response function" << endl;
     
     cout << "linealize is finish" << endl;
@@ -527,11 +527,11 @@ bool LinearizerOfProjector::calcMoreDetailColorMixingMatrix(void){
     procam->captureFromFlatLightOnProjectorDomain(&white_cap, CV_VEC3B_WHITE);
     
     // show image
-    imshow("black_cap", black_cap);
-    imshow("red_cap", red_cap);
-    imshow("green_cap", green_cap);
-    imshow("blue_cap", blue_cap);
-    imshow("white_cap", white_cap);
+    MY_IMSHOW(black_cap);
+    MY_IMSHOW(red_cap);
+    MY_IMSHOW(green_cap);
+    MY_IMSHOW(blue_cap);
+    MY_IMSHOW(white_cap);
     
     // translate bit depth (uchar[0-255] -> double[0-1])
     uchar depth64x3 = CV_64FC3;
@@ -774,13 +774,14 @@ bool LinearizerOfProjector::doRadiometricCompensation(const cv::Mat& _desiredIma
     Mat l_LProjectionImage(*l_prjSize, CV_8UC3, CV_SCALAR_BLACK);
     l_procam->convertPtoI(&l_LProjectionImage, l_projectionImageOnProjectorSpace);
     
-    // projection
-    Mat l_cameraImage(*l_camSize, CV_8UC3, CV_SCALAR_BLACK);
-    l_procam->captureFromLight(&l_cameraImage, l_LProjectionImage);
-
-    // projection normaly desired image
+    
+    // project desired image
     Mat l_cameraImageFromDesiredImageProjection(*l_camSize, CV_8UC3, CV_SCALAR_BLACK);
     l_procam->captureFromLightOnProjectorDomain(&l_cameraImageFromDesiredImageProjection, _desiredImage);
+
+    // project compensated image
+    Mat l_cameraImage(*l_camSize, CV_8UC3, CV_SCALAR_BLACK);
+    l_procam->captureFromLight(&l_cameraImage, l_LProjectionImage);
     
     // calc difference
     Vec3d l_diffC(0.0, 0.0, 0.0), l_diffPDC(0.0, 0.0, 0.0);
@@ -792,6 +793,7 @@ bool LinearizerOfProjector::doRadiometricCompensation(const cv::Mat& _desiredIma
     Vec3b l_aveC, l_avePDC;
     calcAverageOfImage(&l_aveC, l_cameraImage);
     calcAverageOfImage(&l_avePDC, l_cameraImageFromDesiredImageProjection);
+    _print2(l_avePDC, l_aveC);
     
     // show images
     imshow("desired C", _desiredImage);

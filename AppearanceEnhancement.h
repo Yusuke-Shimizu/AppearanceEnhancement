@@ -13,6 +13,9 @@
 #include "ProCam.h"
 #include "myOpenCV.h"
 
+const double NOISE_RANGE = 0.01;
+//#define NOISE_RANGE 0.05
+
 class ProCam;
 
 class AppearanceEnhancement{

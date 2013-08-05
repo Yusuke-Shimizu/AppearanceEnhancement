@@ -929,7 +929,6 @@ bool calcAverageOfImage(cv::Vec3b* const _aveColor, const cv::Mat& image){
         }
     }
     sum /= rows * cols;
-    _print(sum);
     *_aveColor = (cv::Vec3b)sum;
     
     return true;

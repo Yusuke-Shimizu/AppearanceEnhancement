@@ -44,10 +44,10 @@ ProCam::ProCam(const int _size)
 // デストラクタ
 ProCam::~ProCam(void){
     cout << "deleting ProCam (" << this <<")" << endl;
-//    delete [] m_accessMapCam2Pro;
-//    delete [] m_cameraResponse;
-//    m_video.release();
-    destroyWindow(WINDOW_NAME);     // 投影に使用したウィンドウを削除
+//    destroyWindow(WINDOW_NAME);     // 投影に使用したウィンドウを削除
+    destroyAllWindows();    // ウィンドウの全削除
+    DCam_stop_capture(m_dcam);
+    DCam_delete(&m_dcam);
     cout << "ProCam is deleted (" << this <<")" << endl;
 }
 
@@ -56,8 +56,7 @@ ProCam::~ProCam(void){
 // ProCamクラスの初期化
 bool ProCam::init(const cv::Size& projectorSize){
     // カメラの初期化
-    if ( !initVideoCapture() ) return false;
-    if ( !initCameraSize() ) return false;
+    if ( !initCamera() ) return false;
     
     // プロジェクタの初期化
     if ( !initProjectorSize(projectorSize) ) return false;
@@ -76,6 +75,27 @@ bool ProCam::init(const int _width, const int _height){
 bool ProCam::init(const int _size) { return init(_size, _size); }
 bool ProCam::init(void) { return init(100); }
 
+// カメラの初期化
+bool ProCam::initCamera(void){
+//    if ( !initVideoCapture() ) return false;
+//    if ( !initCameraSize() ) return false;
+    if ( !initDCam() ) return false;
+    if ( !initCameraSizeOfDCam1394() ) return false;
+    return true;
+}
+
+// m_dcamの初期化
+bool ProCam::initDCam(void){
+    const CameraConfig config = config_dragonfly_vga_color;
+    const int cameraNumber = 0;
+    
+    // DCamの設定
+    m_dcam = DCam_new(config, cameraNumber);
+    DCam_start_capture(m_dcam);
+
+    return true;
+}
+
 // m_cameraSizeの初期化
 // return   : 成功したかどうか
 bool ProCam::initCameraSize(void){
@@ -90,6 +110,15 @@ bool ProCam::initCameraSize(void){
     if( !setCameraSize(camSize) ) return false;
     cout << "camera size is " << camSize << endl;
     
+    return true;
+}
+bool ProCam::initCameraSizeOfDCam1394(void){
+    DCam l_dcam = getDCam();
+    const Size camSize(l_dcam->frame->size[0], l_dcam->frame->size[1]);
+    
+    // setting
+    if( !setCameraSize(camSize) ) return false;
+    cout << "camera size is " << camSize << endl;
     return true;
 }
 
@@ -234,6 +263,11 @@ bool ProCam::setProjectorResponseP2I(const cv::Mat_<cv::Vec3b>& _response){
 }
 
 ///////////////////////////////  get method ///////////////////////////////
+// m_dcamの取得
+DCam ProCam::getDCam(void){
+    return m_dcam;
+}
+
 // m_cameraSizeの取得
 //bool ProCam::getCameraSize(cv::Size* const cameraSize){
 //    *cameraSize = m_cameraSize;
@@ -259,13 +293,18 @@ cv::Size* ProCam::getProjectorSize(void){
 // output/image : 取得した画像を入れる行列
 // return       : 成功したかどうか
 bool ProCam::getCaptureImage(cv::Mat* const _image){
+#ifdef LIB_DC1394_FLAG  // libdc1394を用いる場合
+    DCam l_dcam = getDCam();
+    captureCVImage(_image, l_dcam);
+#else
     VideoCapture* l_video = getVideoCapture();
-#ifdef LINUX
+#ifdef BAYER_FLAG       // カメラ入力がbayer配列の場合
     Mat l_bayerImage;
     *l_video >> l_bayerImage;
     cv::cvtColor(l_bayerImage, *_image, CV_BayerBG2RGB);
-#else
+#else                   // OpenCVで処理出来る場合
     *l_video >> *_image;
+#endif
 #endif
     return true;
 }
@@ -594,7 +633,14 @@ bool ProCam::linearizeOfProjector(void){
     
     // get projector response
     LinearizerOfProjector linearPrj(this);
+#ifdef PRJ_LINEAR_CALC_FLAG
     if ( !linearPrj.doLinearlize(&l_prjResponseI2P, &l_prjResponseP2I) ) return false;    // 引数消してもいいかも
+#else
+    linearPrj.loadColorMixingMatrixOfByte(CMM_MAP_FILE_NAME_BYTE);
+    loadProjectorResponseP2IForByte(PROJECTOR_RESPONSE_P2I_FILE_NAME_BYTE);
+    loadProjectorResponseForByte(PROJECTOR_RESPONSE_I2P_FILE_NAME_BYTE);
+    linearPrj.loadAllCImages();
+#endif
     
     // show
     showProjectorResponseP2I();
@@ -945,8 +991,8 @@ bool ProCam::captureFromLightOnProjectorDomain(cv::Mat* const captureImage, cons
     return captureFromLight(captureImage, l_projectionImageOnProjectorSpace, _waitTimeNum);
 }
 bool ProCam::captureFromFlatLightOnProjectorDomain(cv::Mat* const _captureImage, const cv::Vec3b& _projectionColor, const int _waitTimeNum){
-    const Size* l_prjSize = getProjectorSize();
-    const Mat l_projectionImage(*l_prjSize, CV_8UC3, Scalar(_projectionColor));
+    const Size* l_camSize = getCameraSize();    // カメラサイズの取得
+    const Mat l_projectionImage(*l_camSize, CV_8UC3, Scalar(_projectionColor)); // 投影画像
     return captureFromLightOnProjectorDomain(_captureImage, l_projectionImage, _waitTimeNum);
 }
 bool ProCam::captureFromFlatGrayLightOnProjectorDomain(cv::Mat* const _captureImage, const uchar _projectionNumber, const int _waitTimeNum){
