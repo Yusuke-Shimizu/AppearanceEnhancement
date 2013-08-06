@@ -174,8 +174,8 @@ inline void MY_WAIT_KEY(void){
 inline void MY_WAIT_KEY(const int key){
     while(true){
         std::cout << "push " << key << " key" << std::endl;
-        int pushKey = cv::waitKey(0);
-        _print(pushKey);
+        char pushKey = cv::waitKey(0);
+        std::cout << (int)pushKey << std::endl;
         if (pushKey == key) break;
     }
 }

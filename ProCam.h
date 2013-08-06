@@ -139,6 +139,7 @@ public:
     void getImageProjectorResponseP2I(cv::Mat* const _responseImage, const cv::Mat& _responseMap, const int _index);
     void getImageProjectorResponseP2I(cv::Mat* const _responseImage, const int _index);
     const cv::Mat_<Vec9d>* getV(void);
+    void getNextProjectionImage(cv::Mat* const _P, const cv::Mat& _C);
     ///////////////////////////////  save method ///////////////////////////////
 //    bool saveAccessMapCam2Pro(void);
     bool saveAccessMapCam2Prj(void);

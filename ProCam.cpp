@@ -450,6 +450,11 @@ const cv::Mat_<Vec9d>* ProCam::getV(void){
     return &m_V;
 }
 
+//
+void getNextProjectionImage(cv::Mat* const _P, const cv::Mat& _C){
+    
+}
+
 ///////////////////////////////  save method ///////////////////////////////
 bool ProCam::saveAccessMapCam2Prj(void){
     // init
@@ -755,7 +760,7 @@ bool ProCam::linearizeOfProjector(void){
     int prjLum = 100;
     linearPrj.doRadiometricCompensation(prjLum);
     bool loopFlag = true;
-    while (true) {
+    while (loopFlag) {
         linearPrj.doRadiometricCompensation(prjLum);
 //        prjLum += 1;    //1 or 10
 
@@ -1096,9 +1101,9 @@ void ProCam::showV(void){
         Vec3d* p_VBlue = l_VBlue.ptr<Vec3d>(y);
         
         for (int x = 0; x < cols; ++ x) {
-            p_VRed[x] = Vec3d(p_cmmm[x][2], p_cmmm[x][1], p_cmmm[x][0]);
-            p_VGreen[x] = Vec3d(p_cmmm[x][5], p_cmmm[x][4], p_cmmm[x][3]);
-            p_VBlue[x] = Vec3d(p_cmmm[x][8], p_cmmm[x][7], p_cmmm[x][6]);
+            p_VBlue[x] = Vec3d(p_cmmm[x][0], p_cmmm[x][1], p_cmmm[x][2]);
+            p_VGreen[x] = Vec3d(p_cmmm[x][3], p_cmmm[x][4], p_cmmm[x][5]);
+            p_VRed[x] = Vec3d(p_cmmm[x][6], p_cmmm[x][7], p_cmmm[x][8]);
         }
     }
     
@@ -1203,7 +1208,7 @@ bool ProCam::captureFromLinearLightOnProjectorDomain(cv::Mat* const _captureImag
     convertProjectorDomainToCameraOne(&l_projectionImageOnProjectorSpace, _projectionImage);
     
     // linearize
-    Mat l_linearProjectionImage(_projectionImage.rows, _projectionImage.cols, CV_8UC3, Scalar(0, 0, 0));    // プロジェクタ強度の線形化を行った後の投影像
+    Mat l_linearProjectionImage(l_projectionImageOnProjectorSpace.rows, l_projectionImageOnProjectorSpace.cols, CV_8UC3, Scalar(0, 0, 0));    // プロジェクタ強度の線形化を行った後の投影像
     
     // non linear image -> linear one
     // Pointの値を変えて，線形化LUTの参照ポイントを変更可能
@@ -1311,22 +1316,24 @@ bool ProCam::checkCameraLinearity(void){
 }
 
 bool ProCam::doRadiometricCompensation(const cv::Mat& _desiredImage, const int _waitTimeNum){
+    cout << "対象となる紙をセットして下さい．" << endl;
+    cout << "セット出来ましたらESCボタンを押して下さい．" << endl;
+    MY_WAIT_KEY(CV_BUTTON_ESC);
+
     // 色変換行列(V)を計算
     colorCalibration();
     showV();
     
-    cout << "対象となる紙をセットして下さい．" << endl;
-    cout << "セット出来ましたらESCボタンを押して下さい．" << endl;
-    MY_WAIT_KEY(CV_BUTTON_ESC);
-    
     // 環境光(F)を計算
-    
-    
-    // P = V^{-1}C
-    // 色空間をカメラ空間からプロジェクタ空間へ変換
     const Size* l_camSize = getCameraSize();
+    const Mat whiteImage(*l_camSize, CV_8UC3, CV_SCALAR_WHITE);
+    Mat l_C(*l_camSize, CV_8UC3, CV_SCALAR_WHITE);
+    captureFromLinearLightOnProjectorDomain(&l_C, whiteImage);
+    setF(whiteImage);
+    
+    // 投影画像を計算する
     Mat l_projectionImageOnCameraSpace(*l_camSize, CV_8UC3, CV_SCALAR_BLACK);
-    convertColorSpaceOfCameraToProjector(&l_projectionImageOnCameraSpace, _desiredImage);
+    getNextProjectionImage(&l_projectionImageOnCameraSpace, l_C);
 
     // project desired image
     Mat l_cameraImageFromDesiredImageProjection(*l_camSize, CV_8UC3, CV_SCALAR_BLACK);
