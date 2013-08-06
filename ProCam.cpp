@@ -291,6 +291,41 @@ bool ProCam::setProjectorResponseP2I(const cv::Mat_<cv::Vec3b>& _response){
     return true;
 }
 
+// Vのセッティング
+bool ProCam::setV(const cv::Mat& _diffBB, const cv::Mat& _diffGB, const cv::Mat& _diffRB){
+    // error handle
+    if (!isEqualSize(_diffBB, _diffGB, _diffRB, m_V)) {
+        cerr << "size is different" << endl;
+        _print_mat_propaty(_diffBB);
+        _print_mat_propaty(_diffGB);
+        _print_mat_propaty(_diffRB);
+        _print_mat_propaty(m_V);
+        exit(-1);
+    }
+    
+    // setting
+    int rows = _diffBB.rows, cols = _diffBB.cols;
+    if (isContinuous(_diffBB, _diffGB, _diffRB, m_V)) {
+        cols *= rows;
+        rows = 1;
+    }
+    Mat l_V(3, 3, CV_64FC1);
+    
+    // scanning all pixel
+    for (int y = 0; y < rows; ++ y) {
+        const Vec3d* l_pDiffBB = _diffBB.ptr<Vec3d>(y);
+        const Vec3d* l_pDiffGB = _diffGB.ptr<Vec3d>(y);
+        const Vec3d* l_pDiffRB = _diffRB.ptr<Vec3d>(y);
+        Vec9d* l_pV = m_V.ptr<Vec9d>(y);
+        
+        for (int x = 0; x < cols; ++ x) {
+//            V.at<double>(0, 0) = (l_pDiffBB[x])[0];
+        }
+    }
+    
+    return true;
+}
+
 ///////////////////////////////  get method ///////////////////////////////
 // m_dcamの取得
 DCam ProCam::getDCam(void){
@@ -347,6 +382,12 @@ cv::VideoCapture* ProCam::getVideoCapture(void){
 // m_accessMapCam2Proの取得
 const cv::Mat_<cv::Vec2i>* ProCam::getAccessMapCam2Prj(void){
     return &m_accessMapCam2Prj;
+}
+
+// カメラ座標値からプロジェクタ座標値を取得
+void ProCam::getPointOnPrjDomainFromPointOnCamDomain(cv::Point* const _prjPoint, const cv::Point& _camPoint){
+    const Mat_<Vec2i>* l_accessMapCam2Prj = getAccessMapCam2Prj();
+    *_prjPoint = Point(l_accessMapCam2Prj->at<Vec2i>(_camPoint));
 }
 
 const cv::Mat_<cv::Vec3b>* ProCam::getProjectorResponseI2P(void){
@@ -754,19 +795,9 @@ bool ProCam::colorCalibration(void){
     Mat diffGreenAndBlack = green_cap - black_cap;
     Mat diffBlueAndBlack = blue_cap - black_cap;
     
-    // image divided by any color element
-    normalizeByAnyColorChannel(&diffRedAndBlack, CV_RED);
-    normalizeByAnyColorChannel(&diffGreenAndBlack, CV_GREEN);
-    normalizeByAnyColorChannel(&diffBlueAndBlack, CV_BLUE);
+    // set V
+    setV(diffBlueAndBlack, diffGreenAndBlack, diffRedAndBlack);
     
-//    // create V map
-//    createVMap(diffRedAndBlack, diffGreenAndBlack, diffBlueAndBlack);
-//    
-//    // save
-//    cout << "saving Color Mixing Matrix..." << endl;
-//    if ( !saveColorMixingMatrixOfByte(CMM_MAP_FILE_NAME_BYTE) ) return false;
-//    cout << "saved Color Mixing Matrix" << endl;
-//    
     cout << "color calibration finish!" << endl;
     return true;
 }
@@ -1107,7 +1138,10 @@ bool ProCam::captureFromLinearLightOnProjectorDomain(cv::Mat* const _captureImag
     
     // non linear image -> linear one
     // Pointの値を変えて，線形化LUTの参照ポイントを変更可能
-    convertPtoIBySomePoint(&l_linearProjectionImage, _projectionImage, Point(_projectionImage.cols * 0.4, _projectionImage.rows * 0.4));
+    const Size* l_camSize = getCameraSize();
+    Point l_referencePoint(0, 0);
+    getPointOnPrjDomainFromPointOnCamDomain(&l_referencePoint, Point(l_camSize->width / 2, l_camSize->height / 2));
+    convertPtoIBySomePoint(&l_linearProjectionImage, _projectionImage, l_referencePoint);
     
     // 幾何変換後に投影
     return captureFromLightOnProjectorDomain(_captureImage, l_linearProjectionImage, _waitTimeNum);

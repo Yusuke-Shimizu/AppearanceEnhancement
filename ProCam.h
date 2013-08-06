@@ -85,6 +85,7 @@ private:
     cv::Mat_<cv::Vec3b> m_projectorResponseI2P;    // プロジェクタの応答特性[0-255]
     cv::Mat_<cv::Vec3b> m_projectorResponseP2I;    // プロジェクタの応答特性のインバース[0-255]
     
+    // こっちはBGR色空間にしてる
     cv::Mat_<Vec9d> m_V;     // 全カメラ画素分のV（プロジェクタからカメラへの色変換行列）
     
     ProCam(const ProCam& _procam);      // コピーコンストラクタ隠し（プログラムで１つしか存在しない為）
@@ -120,6 +121,7 @@ public:
     bool setCameraResponse(const double* const camRes, const int camResSize);
     bool setProjectorResponse(const cv::Mat_<cv::Vec3b>& _response);
     bool setProjectorResponseP2I(const cv::Mat_<cv::Vec3b>& _response);
+    bool setV(const cv::Mat& _diffBB, const cv::Mat& _diffGB, const cv::Mat& _diffRB);
     ///////////////////////////////  get method ///////////////////////////////
     DCam getDCam(void);
     cv::Size* getCameraSize(void);
@@ -128,6 +130,7 @@ public:
     bool getCaptureImage(cv::Mat* const _image);
     cv::VideoCapture* getVideoCapture(void);
     const cv::Mat_<cv::Vec2i>* getAccessMapCam2Prj(void);
+    void getPointOnPrjDomainFromPointOnCamDomain(cv::Point* const _prjPoint, const cv::Point& _camPoint);
     const cv::Mat_<cv::Vec3b>* getProjectorResponseI2P(void);
     const cv::Mat_<cv::Vec3b>* getProjectorResponseP2I(void);
     void getImageProjectorResponseP2I(cv::Mat* const _responseImage, const cv::Mat& _responseMap, const int _index);

@@ -28,6 +28,7 @@ private:
     ProCam* m_procam;
 //    cv::Mat** m_aColorMixingMatrix;  // 全カメラ画素分のC=VPのV, プロジェクタからカメラへの色変換行列
 //    std::vector<cv::Mat> m_aColorMixingMatrix;  // 全カメラ画素分のC=VPのV, プロジェクタからカメラへの色変換行列
+    // こいつはRGB色空間
     cv::Mat_<Vec9d> m_colorMixingMatrixMap;     // 全カメラ画素分のC=VPのV, プロジェクタからカメラへの色変換行列（サイズ：カメラと同じ）
     cv::Mat m_allCImages;                       // ０から２５５を投影し撮影したものを全て格納している場所
     
