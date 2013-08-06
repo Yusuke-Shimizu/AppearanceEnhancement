@@ -746,16 +746,6 @@ bool LinearizerOfProjector::doRadiometricCompensation(const cv::Mat& _desiredIma
     const Size* l_camSize = l_procam->getCameraSize();
     Mat l_projectionImageOnCameraSpace(*l_camSize, CV_8UC3, CV_SCALAR_BLACK);
     convertCameraImageToProjectorOne(&l_projectionImageOnCameraSpace, _desiredImage);
-
-    // camera coordinate system -> projector coordinate system
-//    const Size* l_prjSize = l_procam->getProjectorSize();
-//    Mat l_projectionImageOnProjectorSpace(*l_prjSize, CV_8UC3, CV_SCALAR_BLACK);
-//    l_procam->convertProjectorDomainToCameraOne(&l_projectionImageOnProjectorSpace, l_projectionImageOnCameraSpace);
-//
-//    // non linear -> linear
-//    Mat l_LProjectionImage(*l_prjSize, CV_8UC3, CV_SCALAR_BLACK);
-//    l_procam->convertPtoI(&l_LProjectionImage, l_projectionImageOnProjectorSpace);
-    
     
     // project desired image
     Mat l_cameraImageFromDesiredImageProjection(*l_camSize, CV_8UC3, CV_SCALAR_BLACK);
@@ -763,7 +753,6 @@ bool LinearizerOfProjector::doRadiometricCompensation(const cv::Mat& _desiredIma
 
     // project compensated image
     Mat l_cameraImage(*l_camSize, CV_8UC3, CV_SCALAR_BLACK);
-//    l_procam->captureFromLight(&l_cameraImage, l_LProjectionImage, _waitTimeNum);
     l_procam->captureFromLinearLightOnProjectorDomain(&l_cameraImage, l_projectionImageOnCameraSpace, _waitTimeNum);
     
     // calc difference

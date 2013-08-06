@@ -19,5 +19,7 @@ int main(int argc, const char * argv[])
     Size prjSize(PRJ_SIZE);
     ProCam procam(prjSize);
     procam.allCalibration();
+    
+    procam.doRadiometricCompensation(100);
     return 0;
 }

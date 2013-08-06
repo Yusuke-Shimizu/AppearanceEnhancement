@@ -87,6 +87,7 @@ private:
     
     // こっちはBGR色空間にしてる
     cv::Mat_<Vec9d> m_V;     // 全カメラ画素分のV（プロジェクタからカメラへの色変換行列）
+    cv::Mat m_F;             // 環境光の全画素分
     
     ProCam(const ProCam& _procam);      // コピーコンストラクタ隠し（プログラムで１つしか存在しない為）
 public:
@@ -114,6 +115,7 @@ public:
     bool initProjectorResponseP2I(void);
     bool initProjectorResponse(cv::Mat* const _prjResP2I);
     bool initV(void);
+    void initF(void);
     ///////////////////////////////  set method ///////////////////////////////
     bool setCameraSize(const cv::Size& cameraSize);
     bool setProjectorSize(const cv::Size& projectorSize);
@@ -122,6 +124,7 @@ public:
     bool setProjectorResponse(const cv::Mat_<cv::Vec3b>& _response);
     bool setProjectorResponseP2I(const cv::Mat_<cv::Vec3b>& _response);
     bool setV(const cv::Mat& _diffBB, const cv::Mat& _diffGB, const cv::Mat& _diffRB);
+    void setF(const cv::Mat& _P);
     ///////////////////////////////  get method ///////////////////////////////
     DCam getDCam(void);
     cv::Size* getCameraSize(void);
@@ -135,6 +138,7 @@ public:
     const cv::Mat_<cv::Vec3b>* getProjectorResponseP2I(void);
     void getImageProjectorResponseP2I(cv::Mat* const _responseImage, const cv::Mat& _responseMap, const int _index);
     void getImageProjectorResponseP2I(cv::Mat* const _responseImage, const int _index);
+    const cv::Mat_<Vec9d>* getV(void);
     ///////////////////////////////  save method ///////////////////////////////
 //    bool saveAccessMapCam2Pro(void);
     bool saveAccessMapCam2Prj(void);
@@ -159,11 +163,13 @@ public:
     bool convertPtoI(cv::Mat* const _I, const cv::Mat&  _P);
     bool convertPtoIBySomePoint(cv::Mat* const _I, const cv::Mat&  _P, const cv::Point& _point);
 //    bool convertCameraImageToProjectorOne(cv::Mat* const _prjImg, const cv::Mat&  _camImg);
+    void convertColorSpaceOfCameraToProjector(cv::Mat* const _imageOnPrj, const cv::Mat& _imageOnCam);
     ///////////////////////////////  show method ///////////////////////////////
     bool showAccessMapCam2Prj(void);
     bool showProjectorResponseI2P(void);
     bool showProjectorResponseP2I(void);
     bool showProjectorResponse(const cv::Mat& _prjRes);
+    void showV(void);
     ///////////////////////////////  print method ///////////////////////////////
     bool printProjectorResponseI2P(const cv::Point& _pt);
     bool printProjectorResponseP2I(const cv::Point& _pt);
@@ -182,6 +188,9 @@ public:
     bool interpolationProjectorResponseP2I(cv::Mat* const _prjRes);
     bool test_interpolationProjectorResponseP2I(void);
     bool checkCameraLinearity(void);
+    bool doRadiometricCompensation(const cv::Mat& _desiredImage, const int _waitTimeNum = SLEEP_TIME);
+    bool doRadiometricCompensation(const cv::Vec3b& _desiredColor, const int _waitTimeNum = SLEEP_TIME);
+    bool doRadiometricCompensation(const uchar& _desiredColorNumber, const int _waitTimeNum = SLEEP_TIME);
 };
 
 #endif /* defined(__cameraBase03__ProCam__) */
