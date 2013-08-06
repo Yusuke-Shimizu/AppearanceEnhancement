@@ -8,11 +8,7 @@
 
 #include <iostream>
 #include "ProCam.h"
-#include "GeometricCalibration.h"
-#include "myOpenCV.h"
-#include "myMath.hpp"
 #include "common.h"
-#include "AppearanceEnhancement.h"
 
 using namespace cv;
 

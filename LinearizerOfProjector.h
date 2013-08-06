@@ -71,9 +71,9 @@ public:
     bool convertCImage2PImage(cv::Mat_<cv::Vec3b>* const _PImageOnCameraDomain, const cv::Mat_<cv::Vec3b>& _CImage);
     bool calcP(cv::Vec3b* const _response, const cv::Vec3b& _C, const cv::Mat& _V);
     bool calcPByVec(cv::Vec3b* const _response, const cv::Vec3b& _C, const Vec9d& _VVec);
-    bool doRadiometricCompensation(const cv::Mat& _desiredImage);
-    bool doRadiometricCompensation(const cv::Vec3b& _desiredColor);
-    bool doRadiometricCompensation(const uchar& _desiredColorNumber);
+    bool doRadiometricCompensation(const cv::Mat& _desiredImage, const int _waitTimeNum = SLEEP_TIME);
+    bool doRadiometricCompensation(const cv::Vec3b& _desiredColor, const int _waitTimeNum = SLEEP_TIME);
+    bool doRadiometricCompensation(const uchar& _desiredColorNumber, const int _waitTimeNum = SLEEP_TIME);
     bool convertCameraImageToProjectorOne(cv::Mat* const _prjImg, const cv::Mat&  _camImg);
 };
 

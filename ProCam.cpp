@@ -66,6 +66,9 @@ bool ProCam::init(const cv::Size& projectorSize){
     // アクセスマップの初期化
     if ( !initAccessMapCam2Prj() ) return false;
     
+    // Vの初期化
+    initV();
+    
     return true;
 }
 bool ProCam::init(const int _width, const int _height){
@@ -77,10 +80,13 @@ bool ProCam::init(void) { return init(100); }
 
 // カメラの初期化
 bool ProCam::initCamera(void){
-//    if ( !initVideoCapture() ) return false;
-//    if ( !initCameraSize() ) return false;
+#ifdef LIB_DC1394_FLAG
     if ( !initDCam() ) return false;
     if ( !initCameraSizeOfDCam1394() ) return false;
+#else
+    if ( !initVideoCapture() ) return false;
+    if ( !initCameraSize() ) return false;
+#endif
     return true;
 }
 
@@ -113,8 +119,11 @@ bool ProCam::initCameraSize(void){
     return true;
 }
 bool ProCam::initCameraSizeOfDCam1394(void){
+    // カメラサイズの取得
     DCam l_dcam = getDCam();
-    const Size camSize(l_dcam->frame->size[0], l_dcam->frame->size[1]);
+    unsigned int l_width = 0, l_height = 0;
+    dc1394_get_image_size_from_video_mode(l_dcam->camera, DC1394_VIDEO_MODE_640x480_RGB8, &l_width, &l_height);
+    const Size camSize(l_width, l_height);
     
     // setting
     if( !setCameraSize(camSize) ) return false;
@@ -196,6 +205,26 @@ bool ProCam::initProjectorResponse(cv::Mat* const _prjRes){
             }
             l_pPrjResP2I[x * 256 + 0] = CV_VEC3B_BLACK;
             l_pPrjResP2I[x * 256 + 255] = CV_VEC3B_WHITE;
+        }
+    }
+    return true;
+}
+
+// Vの初期化
+bool ProCam::initV(void){
+    // init
+    const Vec9d l_initV(0.0, 0.0, 0.0,
+                        0.0, 0.0, 0.0,
+                        0.0, 0.0, 0.0);
+    const Size *l_camSize = getCameraSize();
+    
+    // initialize
+    m_V = Mat_<Vec9d>(*l_camSize);
+    const int rows = l_camSize->height, cols = l_camSize->width;
+    for (int y = 0; y < rows; ++ y) {
+        Vec9d* p_cmmm = m_V.ptr<Vec9d>(y);
+        for (int x = 0; x < cols; ++ x) {
+            p_cmmm[x] = l_initV;
         }
     }
     return true;
@@ -656,16 +685,30 @@ bool ProCam::linearizeOfProjector(void){
 
     // test
     cout << "do radiometric compensation" << endl;
-    int prjLum = 0;
+    int prjLum = 100;
     linearPrj.doRadiometricCompensation(prjLum);
+    bool loopFlag = true;
     while (true) {
         linearPrj.doRadiometricCompensation(prjLum);
-        prjLum += 1;    //1 or 10
+//        prjLum += 1;    //1 or 10
+
+        int key = waitKey(-1);
+        switch (key) {
+            case CV_BUTTON_ESC:
+                loopFlag = !loopFlag;
+                break;
+            case CV_BUTTON_RIGHT:
+                prjLum += 10;
+            case CV_BUTTON_LEFT:
+                prjLum -= 10;
+            default:
+                break;
+        }
         if (prjLum >= 256) {
             prjLum = 0;
-            break;
+        } else if (prjLum < 0) {
+            prjLum = 255;
         }
-        if (waitKey(5) == CV_BUTTON_ESC) break;
     }
     cout << "did radiometric compensation" << endl;
     return true;
@@ -675,8 +718,55 @@ bool ProCam::linearizeOfProjector(void){
 bool ProCam::colorCalibration(void){
     cout << "color calibration start!" << endl;
     
+    // init
+    Size *cameraSize = getCameraSize();
     
+    // init capture image
+    uchar depth8x3 = CV_8UC3;
+    cv::Mat black_cap   (*cameraSize, depth8x3, CV_SCALAR_BLACK);
+    cv::Mat red_cap     (*cameraSize, depth8x3, CV_SCALAR_BLACK);
+    cv::Mat green_cap   (*cameraSize, depth8x3, CV_SCALAR_BLACK);
+    cv::Mat blue_cap    (*cameraSize, depth8x3, CV_SCALAR_BLACK);
     
+    // capture from some color light
+    captureFromLinearFlatLightOnProjectorDomain(&black_cap, CV_VEC3B_BLACK, SLEEP_TIME * 5);
+    captureFromLinearFlatLightOnProjectorDomain(&red_cap, CV_VEC3B_RED);
+    captureFromLinearFlatLightOnProjectorDomain(&green_cap, CV_VEC3B_GREEN);
+    captureFromLinearFlatLightOnProjectorDomain(&blue_cap, CV_VEC3B_BLUE);
+    
+    // show image
+    imshow("black_cap", black_cap);
+    imshow("red_cap", red_cap);
+    imshow("green_cap", green_cap);
+    imshow("blue_cap", blue_cap);
+    waitKey(30);
+    
+    // translate bit depth (uchar[0-255] -> double[0-1])
+    uchar depth64x3 = CV_64FC3;
+    double rate = 1.0 / 255.0;
+    black_cap.convertTo(black_cap, depth64x3, rate);
+    red_cap.convertTo(red_cap, depth64x3, rate);
+    green_cap.convertTo(green_cap, depth64x3, rate);
+    blue_cap.convertTo(blue_cap, depth64x3, rate);
+    
+    // calc difference[-1-1]
+    Mat diffRedAndBlack = red_cap - black_cap;
+    Mat diffGreenAndBlack = green_cap - black_cap;
+    Mat diffBlueAndBlack = blue_cap - black_cap;
+    
+    // image divided by any color element
+    normalizeByAnyColorChannel(&diffRedAndBlack, CV_RED);
+    normalizeByAnyColorChannel(&diffGreenAndBlack, CV_GREEN);
+    normalizeByAnyColorChannel(&diffBlueAndBlack, CV_BLUE);
+    
+//    // create V map
+//    createVMap(diffRedAndBlack, diffGreenAndBlack, diffBlueAndBlack);
+//    
+//    // save
+//    cout << "saving Color Mixing Matrix..." << endl;
+//    if ( !saveColorMixingMatrixOfByte(CMM_MAP_FILE_NAME_BYTE) ) return false;
+//    cout << "saved Color Mixing Matrix" << endl;
+//    
     cout << "color calibration finish!" << endl;
     return true;
 }
@@ -797,6 +887,36 @@ bool ProCam::convertPtoI(cv::Mat* const _I, const cv::Mat&  _P){
     return true;
 }
 
+
+// PからIに変換する
+bool ProCam::convertPtoIBySomePoint(cv::Mat* const _I, const cv::Mat&  _P, const cv::Point& _point){
+    // error processing
+    if (!isEqualSizeAndType(*_I, _P)) {
+        cerr << "different size or type" << endl;
+        _print_mat_propaty(*_I);
+        _print_mat_propaty(_P);
+        exit(-1);
+    }
+    
+    // scanning all pixel
+    const Mat* l_transP2I = getProjectorResponseP2I();
+    const int rows = _I->rows, cols = _I->cols, ch = _I->channels();
+    for (int y = 0; y < rows; ++ y) {
+        Vec3b* l_pI = _I->ptr<Vec3b>(y);
+        const Vec3b* l_pP = _P.ptr<Vec3b>(y);
+        
+        for (int x = 0; x < cols; ++ x) {
+            for (int c = 0; c < ch; ++ c) {
+                // convert
+                const Point l_P2IPoint(_point.x * 256 + (int)l_pP[x][c], _point.y);
+                l_pI[x][c] = (l_transP2I->at<Vec3b>(l_P2IPoint))[c];
+            }
+        }
+    }
+    
+    return true;
+}
+
 ///////////////////////////////  show method ///////////////////////////////
 
 // アクセスマップの表示
@@ -807,6 +927,7 @@ bool ProCam::showAccessMapCam2Prj(void){
     Point pt(camSize->height / 2, camSize->width / 2);
     Mat l_capImage(*camSize, CV_8UC3);
 
+    cout << "show access map" << endl;
     while (flag) {
         // init point
         Point l_startPt(pt.x - 1, pt.y - 1), l_endPt(pt.x + 1, pt.y + 1);
@@ -823,7 +944,7 @@ bool ProCam::showAccessMapCam2Prj(void){
 
         MY_IMSHOW(l_capImage);
 
-        int pushKey = waitKey(30);
+        int pushKey = waitKey(-1);
         switch (pushKey) {
             case (CV_BUTTON_ESC):
                 flag = false;
@@ -845,6 +966,7 @@ bool ProCam::showAccessMapCam2Prj(void){
                 break;
         }
     }
+    cout << "finish show access map" << endl;
 
     return true;
 }
@@ -919,29 +1041,6 @@ bool ProCam::printProjectorResponse(const cv::Point& _pt, const cv::Mat& _prjRes
     return true;
 }
 
-// videoCaptureのプロパティ
-void ProCam::printVideoPropaty(void){
-    VideoCapture* l_video = getVideoCapture();
-    std::cout << "CV_CAP_PROP_POS_MSEC = " << l_video->get(CV_CAP_PROP_POS_MSEC) << std::endl;
-    std::cout << "CV_CAP_PROP_POS_FRAMES = " << l_video->get(CV_CAP_PROP_POS_FRAMES) << std::endl;
-    std::cout << "CV_CAP_PROP_POS_AVI_RATIO = " << l_video->get(CV_CAP_PROP_POS_AVI_RATIO) << std::endl;
-    std::cout << "CV_CAP_PROP_FRAME_WIDTH = " << l_video->get(CV_CAP_PROP_FRAME_WIDTH) << std::endl;
-    std::cout << "CV_CAP_PROP_FRAME_HEIGHT = " << l_video->get(CV_CAP_PROP_FRAME_HEIGHT) << std::endl;
-    std::cout << "CV_CAP_PROP_FPS = " << l_video->get(CV_CAP_PROP_FPS) << std::endl;
-    std::cout << "CV_CAP_PROP_FOURCC = " << l_video->get(CV_CAP_PROP_FOURCC) << std::endl;
-    std::cout << "CV_CAP_PROP_FRAME_COUNT = " << l_video->get(CV_CAP_PROP_FRAME_COUNT) << std::endl;
-    std::cout << "CV_CAP_PROP_FORMAT = " << l_video->get(CV_CAP_PROP_FORMAT) << std::endl;
-    std::cout << "CV_CAP_PROP_MODE = " << l_video->get(CV_CAP_PROP_MODE) << std::endl;
-    std::cout << "CV_CAP_PROP_BRIGHTNESS = " << l_video->get(CV_CAP_PROP_BRIGHTNESS) << std::endl;
-    std::cout << "CV_CAP_PROP_CONTRAST = " << l_video->get(CV_CAP_PROP_CONTRAST) << std::endl;
-    std::cout << "CV_CAP_PROP_SATURATION = " << l_video->get(CV_CAP_PROP_SATURATION) << std::endl;
-    std::cout << "CV_CAP_PROP_HUE = " << l_video->get(CV_CAP_PROP_HUE) << std::endl;
-    std::cout << "CV_CAP_PROP_GAIN = " << l_video->get(CV_CAP_PROP_GAIN) << std::endl;
-    std::cout << "CV_CAP_PROP_EXPOSURE = " << l_video->get(CV_CAP_PROP_EXPOSURE) << std::endl;
-    std::cout << "CV_CAP_PROP_CONVERT_RGB = " << l_video->get(CV_CAP_PROP_CONVERT_RGB) << std::endl;
-    std::cout << "CV_CAP_PROP_RECTIFICATION = " << l_video->get(CV_CAP_PROP_RECTIFICATION) << std::endl;
-}
-
 ///////////////////////////////  capture from light method ///////////////////////////////
 
 // output / captureImage    : 撮影した画像を代入する場所
@@ -954,7 +1053,7 @@ bool ProCam::captureFromLight(cv::Mat* const captureImage, const cv::Mat& projec
     cv::waitKey(_waitTimeNum);
     
     // N回撮影する
-    cv::Mat image;
+    cv::Mat image(captureImage->rows, captureImage->cols, CV_8UC3);
     for (int i = 0; i < CAPTURE_NUM; ++ i) {
         getCaptureImage(&image);
     }
@@ -975,6 +1074,7 @@ bool ProCam::captureFromFlatGrayLight(cv::Mat* const captureImage, const uchar& 
     return captureFromFlatLight(captureImage, l_projectionColor, _waitTimeNum);
 }
 
+// 幾何変換を行ったものを投影・撮影
 bool ProCam::captureFromLightOnProjectorDomain(cv::Mat* const captureImage, const cv::Mat& projectionImage, const int _waitTimeNum){
     // error processing
     const Size* l_camSize = getCameraSize();
@@ -1001,14 +1101,25 @@ bool ProCam::captureFromFlatGrayLightOnProjectorDomain(cv::Mat* const _captureIm
 }
 
 // 線形化したプロジェクタを用いて投影・撮影を行う
-bool ProCam::captureFromLinearLight(cv::Mat* const captureImage, const cv::Mat& projectionImage, const int _waitTimeNum){
+bool ProCam::captureFromLinearLightOnProjectorDomain(cv::Mat* const _captureImage, const cv::Mat& _projectionImage, const int _waitTimeNum){
     // init lineared projection image
-    Mat l_linearProjectionImage(projectionImage.rows, projectionImage.cols, CV_8UC3, Scalar(0, 0, 0));    // プロジェクタ強度の線形化を行った後の投影像
+    Mat l_linearProjectionImage(_projectionImage.rows, _projectionImage.cols, CV_8UC3, Scalar(0, 0, 0));    // プロジェクタ強度の線形化を行った後の投影像
     
     // non linear image -> linear one
-    convertNonLinearImageToLinearOne(&l_linearProjectionImage, projectionImage);
+    // Pointの値を変えて，線形化LUTの参照ポイントを変更可能
+    convertPtoIBySomePoint(&l_linearProjectionImage, _projectionImage, Point(_projectionImage.cols * 0.4, _projectionImage.rows * 0.4));
     
-    return captureFromLight(captureImage, l_linearProjectionImage, _waitTimeNum);
+    // 幾何変換後に投影
+    return captureFromLightOnProjectorDomain(_captureImage, l_linearProjectionImage, _waitTimeNum);
+}
+bool ProCam::captureFromLinearFlatLightOnProjectorDomain(cv::Mat* const _captureImage, const cv::Vec3b& _projectionColor, const int _waitTimeNum){
+    const Size* l_camSize = getCameraSize();    // カメラサイズの取得
+    const Mat l_projectionImage(*l_camSize, CV_8UC3, Scalar(_projectionColor)); // 投影画像
+    return captureFromLinearLightOnProjectorDomain(_captureImage, l_projectionImage, _waitTimeNum);
+}
+bool ProCam::captureFromLinearFlatGrayLightOnProjectorDomain(cv::Mat* const _captureImage, const uchar _projectionNumber, const int _waitTimeNum){
+    const Vec3b l_projectionColor(_projectionNumber, _projectionNumber, _projectionNumber);
+    return captureFromLinearFlatLightOnProjectorDomain(_captureImage, l_projectionColor, _waitTimeNum);
 }
 
 ///////////////////////////////  other method ///////////////////////////////

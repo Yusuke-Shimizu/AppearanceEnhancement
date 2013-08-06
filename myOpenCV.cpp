@@ -279,6 +279,28 @@ void printOpenCVVersion(void) {
     std::cout << "OpenCV >= 2.0.0: " << (OPENCV_VERSION_CODE>=OPENCV_VERSION(2,0,0)?"true":"false") << std::endl;
 }
 
+// videoCaptureのプロパティ
+void printVideoPropaty(cv::VideoCapture& _video){
+    std::cout << "CV_CAP_PROP_POS_MSEC = " << _video.get(CV_CAP_PROP_POS_MSEC) << std::endl;
+    std::cout << "CV_CAP_PROP_POS_FRAMES = " << _video.get(CV_CAP_PROP_POS_FRAMES) << std::endl;
+    std::cout << "CV_CAP_PROP_POS_AVI_RATIO = " << _video.get(CV_CAP_PROP_POS_AVI_RATIO) << std::endl;
+    std::cout << "CV_CAP_PROP_FRAME_WIDTH = " << _video.get(CV_CAP_PROP_FRAME_WIDTH) << std::endl;
+    std::cout << "CV_CAP_PROP_FRAME_HEIGHT = " << _video.get(CV_CAP_PROP_FRAME_HEIGHT) << std::endl;
+    std::cout << "CV_CAP_PROP_FPS = " << _video.get(CV_CAP_PROP_FPS) << std::endl;
+    std::cout << "CV_CAP_PROP_FOURCC = " << _video.get(CV_CAP_PROP_FOURCC) << std::endl;
+    std::cout << "CV_CAP_PROP_FRAME_COUNT = " << _video.get(CV_CAP_PROP_FRAME_COUNT) << std::endl;
+    std::cout << "CV_CAP_PROP_FORMAT = " << _video.get(CV_CAP_PROP_FORMAT) << std::endl;
+    std::cout << "CV_CAP_PROP_MODE = " << _video.get(CV_CAP_PROP_MODE) << std::endl;
+    std::cout << "CV_CAP_PROP_BRIGHTNESS = " << _video.get(CV_CAP_PROP_BRIGHTNESS) << std::endl;
+    std::cout << "CV_CAP_PROP_CONTRAST = " << _video.get(CV_CAP_PROP_CONTRAST) << std::endl;
+    std::cout << "CV_CAP_PROP_SATURATION = " << _video.get(CV_CAP_PROP_SATURATION) << std::endl;
+    std::cout << "CV_CAP_PROP_HUE = " << _video.get(CV_CAP_PROP_HUE) << std::endl;
+    std::cout << "CV_CAP_PROP_GAIN = " << _video.get(CV_CAP_PROP_GAIN) << std::endl;
+    std::cout << "CV_CAP_PROP_EXPOSURE = " << _video.get(CV_CAP_PROP_EXPOSURE) << std::endl;
+    std::cout << "CV_CAP_PROP_CONVERT_RGB = " << _video.get(CV_CAP_PROP_CONVERT_RGB) << std::endl;
+    std::cout << "CV_CAP_PROP_RECTIFICATION = " << _video.get(CV_CAP_PROP_RECTIFICATION) << std::endl;
+}
+
 ///////////////////////////////  init method ///////////////////////////////
 // Pointの初期化
 void initPoint(cv::Point* const p, const int size){

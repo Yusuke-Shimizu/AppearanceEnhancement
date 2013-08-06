@@ -122,6 +122,7 @@ const cv::Vec3d* getPixelNumd(const cv::Mat& _image, const cv::Point& _point);
 ///////////////////////////////  print method ///////////////////////////////
 void printMatPropaty(const cv::Mat& m1);
 void printOpenCVVersion(void);
+void printVideoPropaty(cv::VideoCapture& _video);
 ///////////////////////////////  init method ///////////////////////////////
 void initPoint(cv::Point* const p, const int size);
 void initMat(cv::Mat* const _aMat, const int _size);

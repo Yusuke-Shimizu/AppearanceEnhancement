@@ -9,16 +9,20 @@
 #ifndef __cameraBase03__ProCam__
 #define __cameraBase03__ProCam__
 
+// スリープ時間(ms)
+const int SLEEP_TIME = 50;
+const int CAPTURE_NUM = 10;
+
 #include "LinearizerOfProjector.h"
 #include "myOpenCV.h"
 #include "myDc1394.h"
 #include "common.h"
 
 #define GEO_CAL_CALC_FLAG       // 幾何変換を計算するフラグ
-//#define PRJ_LINEAR_CALC_FLAG    // 線形化変換を計算するフラグ
+#define PRJ_LINEAR_CALC_FLAG    // 線形化変換を計算するフラグ
 
 //#define BAYER_FLAG
-#define LIB_DC1394_FLAG
+//#define LIB_DC1394_FLAG
 
 // 定義
 const cv::Size VGA_SIZE(640, 480);
@@ -63,10 +67,6 @@ const cv::Point POSITION_OF_PROJECTION_IMAGE(LINUX_PROJECTOR_DISPLAY_POS);
 #define PROJECTOR_ALL_C_IMAGES_FILE_NAME "calibrationData/allCImages.dat"
 #define WINDOW_NAME "projection image"
 
-// スリープ時間(ms)
-const int SLEEP_TIME = 50;
-const int CAPTURE_NUM = 10;
-
 const uchar INIT_RES_NUM = 0;   // 応答特性の初期値
 
 // 先攻宣言
@@ -84,6 +84,8 @@ private:
     double* m_cameraResponse;           // カメラの応答特性[0-1]->[0-1]
     cv::Mat_<cv::Vec3b> m_projectorResponseI2P;    // プロジェクタの応答特性[0-255]
     cv::Mat_<cv::Vec3b> m_projectorResponseP2I;    // プロジェクタの応答特性のインバース[0-255]
+    
+    cv::Mat_<Vec9d> m_V;     // 全カメラ画素分のV（プロジェクタからカメラへの色変換行列）
     
     ProCam(const ProCam& _procam);      // コピーコンストラクタ隠し（プログラムで１つしか存在しない為）
 public:
@@ -110,6 +112,7 @@ public:
     bool initProjectorResponseI2P(void);
     bool initProjectorResponseP2I(void);
     bool initProjectorResponse(cv::Mat* const _prjResP2I);
+    bool initV(void);
     ///////////////////////////////  set method ///////////////////////////////
     bool setCameraSize(const cv::Size& cameraSize);
     bool setProjectorSize(const cv::Size& projectorSize);
@@ -151,6 +154,7 @@ public:
     bool convertProjectorDomainToCameraOne(cv::Mat* const _psImg, const cv::Mat&  _csImg);
     bool convertNonLinearImageToLinearOne(cv::Mat* const _linearImg, const cv::Mat&  _nonLinearImg);
     bool convertPtoI(cv::Mat* const _I, const cv::Mat&  _P);
+    bool convertPtoIBySomePoint(cv::Mat* const _I, const cv::Mat&  _P, const cv::Point& _point);
 //    bool convertCameraImageToProjectorOne(cv::Mat* const _prjImg, const cv::Mat&  _camImg);
     ///////////////////////////////  show method ///////////////////////////////
     bool showAccessMapCam2Prj(void);
@@ -161,7 +165,6 @@ public:
     bool printProjectorResponseI2P(const cv::Point& _pt);
     bool printProjectorResponseP2I(const cv::Point& _pt);
     bool printProjectorResponse(const cv::Point& _pt, const cv::Mat& _prjRes);
-    void printVideoPropaty(void);
     ///////////////////////////////  capture from light method ///////////////////////////////
     bool captureFromLight(cv::Mat* const _captureImage, const cv::Mat& _projectionImage, const int _waitTimeNum = SLEEP_TIME);
     bool captureFromFlatLight(cv::Mat* const _captureImage, const cv::Vec3b& _projectionColor, const int _waitTimeNum = SLEEP_TIME);
@@ -169,7 +172,9 @@ public:
     bool captureFromLightOnProjectorDomain(cv::Mat* const _captureImage, const cv::Mat& _projectionImage, const int _waitTimeNum = SLEEP_TIME);
     bool captureFromFlatLightOnProjectorDomain(cv::Mat* const _captureImage, const cv::Vec3b& _projectionColor, const int _waitTimeNum = SLEEP_TIME);
     bool captureFromFlatGrayLightOnProjectorDomain(cv::Mat* const _captureImage, const uchar _projectionNumber, const int _waitTimeNum = SLEEP_TIME);
-    bool captureFromLinearLight(cv::Mat* const _captureImage, const cv::Mat& _projectionImage, const int _waitTimeNum = SLEEP_TIME);
+    bool captureFromLinearLightOnProjectorDomain(cv::Mat* const _captureImage, const cv::Mat& _projectionImage, const int _waitTimeNum = SLEEP_TIME);
+    bool captureFromLinearFlatLightOnProjectorDomain(cv::Mat* const _captureImage, const cv::Vec3b& _projectionColor, const int _waitTimeNum = SLEEP_TIME);
+    bool captureFromLinearFlatGrayLightOnProjectorDomain(cv::Mat* const _captureImage, const uchar _projectionNumber, const int _waitTimeNum = SLEEP_TIME);
     ///////////////////////////////  other method ///////////////////////////////
     bool interpolationProjectorResponseP2I(cv::Mat* const _prjRes);
     bool test_interpolationProjectorResponseP2I(void);

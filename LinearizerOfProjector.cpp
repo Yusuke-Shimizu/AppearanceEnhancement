@@ -185,7 +185,9 @@ const cv::Mat* LinearizerOfProjector::getAllCImages(void){
 // cmmMapの初期化
 bool LinearizerOfProjector::initColorMixingMatrixMap(const cv::Size& _cameraSize){
     // init
-    const Vec9d l_initV(0, 0, 0, 0, 0, 0, 0, 0, 0);
+    const Vec9d l_initV(0.0, 0.0, 0.0,
+                        0.0, 0.0, 0.0,
+                        0.0, 0.0, 0.0);
     
     // initialize
     m_colorMixingMatrixMap = Mat_<Vec9d>(_cameraSize);
@@ -408,11 +410,7 @@ bool LinearizerOfProjector::doLinearlize(cv::Mat_<cv::Vec3b>* const _responseOfP
     ///////////////// create V map /////////////////
     // 色変換行列の生成
     cout << "creating Color Mixing Matrix..." << endl;
-//#ifdef PRJ_LINEAR_CALC_FLAG
     if( !calcColorMixingMatrix() ) return false;
-//#else
-//    if ( !loadColorMixingMatrixOfByte(CMM_MAP_FILE_NAME_BYTE) ) return false;
-//#endif
     cout << "created Color Mixing Matrix" << endl;
     
     // show V map
@@ -421,14 +419,7 @@ bool LinearizerOfProjector::doLinearlize(cv::Mat_<cv::Vec3b>* const _responseOfP
     ///////////////// create projector response function /////////////////
     // プロジェクタの応答特性を計算
     cout << "creating response function..." << endl;
-//#ifdef PRJ_LINEAR_CALC_FLAG
     if ( !calcResponseFunction(_responseOfProjector, _responseMapP2I)) return false;
-//#else
-//    ProCam* l_procam = getProCam();
-//    l_procam->loadProjectorResponseP2IForByte(PROJECTOR_RESPONSE_P2I_FILE_NAME_BYTE);
-//    l_procam->loadProjectorResponseForByte(PROJECTOR_RESPONSE_I2P_FILE_NAME_BYTE);
-//    loadAllCImages();
-//#endif
     cout << "created response function" << endl;
     
     cout << "linealize is finish" << endl;
@@ -450,7 +441,7 @@ bool LinearizerOfProjector::calcColorMixingMatrix(void){
     cv::Mat white_cap    (*cameraSize, depth8x3, CV_SCALAR_BLACK);
 
     // capture from some color light
-    procam->captureFromFlatLightOnProjectorDomain(&black_cap, CV_VEC3B_BLACK, SLEEP_TIME * 2);
+    procam->captureFromFlatLightOnProjectorDomain(&black_cap, CV_VEC3B_BLACK, SLEEP_TIME * 5);
     procam->captureFromFlatLightOnProjectorDomain(&red_cap, CV_VEC3B_RED);
     procam->captureFromFlatLightOnProjectorDomain(&green_cap, CV_VEC3B_GREEN);
     procam->captureFromFlatLightOnProjectorDomain(&blue_cap, CV_VEC3B_BLUE);
@@ -462,6 +453,7 @@ bool LinearizerOfProjector::calcColorMixingMatrix(void){
     imshow("green_cap", green_cap);
     imshow("blue_cap", blue_cap);
     imshow("white_cap", white_cap);
+    waitKey(30);
     
     // translate bit depth (uchar[0-255] -> double[0-1])
     uchar depth64x3 = CV_64FC3;
@@ -477,22 +469,11 @@ bool LinearizerOfProjector::calcColorMixingMatrix(void){
     Mat diffGreenAndBlack = green_cap - black_cap;
     Mat diffBlueAndBlack = blue_cap - black_cap;
     Mat diffWhiteAndBlack = white_cap - black_cap;
-//    imshow("black_cap2", black_cap);
-//    imshow("white_cap2", white_cap);
-//    imshow("diffWtoB_cap", diffWhiteAndBlack);
-
-    // show difference image
-//    imshow("diffRedAndBlack", diffRedAndBlack);
-//    imshow("diffGreenAndBlack", diffGreenAndBlack);
-//    imshow("diffBlueAndBlack", diffBlueAndBlack);
     
     // image divided by any color element
     normalizeByAnyColorChannel(&diffRedAndBlack, CV_RED);
     normalizeByAnyColorChannel(&diffGreenAndBlack, CV_GREEN);
     normalizeByAnyColorChannel(&diffBlueAndBlack, CV_BLUE);
-//    imshow("diffRedAndBlack2", diffRedAndBlack);
-//    imshow("diffGreenAndBlack2", diffGreenAndBlack);
-//    imshow("diffBlueAndBlack2", diffBlueAndBlack);
     
     // create V map
     createVMap(diffRedAndBlack, diffGreenAndBlack, diffBlueAndBlack);
@@ -756,50 +737,51 @@ bool LinearizerOfProjector::calcPByVec(cv::Vec3b* const _response, const cv::Vec
 
 // 光学補正を行う
 // input / _desiredImage    : このような見た目にして欲しい画像
-bool LinearizerOfProjector::doRadiometricCompensation(const cv::Mat& _desiredImage){
+bool LinearizerOfProjector::doRadiometricCompensation(const cv::Mat& _desiredImage, const int _waitTimeNum){
     // init
     ProCam* l_procam = getProCam();
 
     // P = V^{-1}C
+    // 色空間をカメラ空間からプロジェクタ空間へ変換
     const Size* l_camSize = l_procam->getCameraSize();
     Mat l_projectionImageOnCameraSpace(*l_camSize, CV_8UC3, CV_SCALAR_BLACK);
     convertCameraImageToProjectorOne(&l_projectionImageOnCameraSpace, _desiredImage);
 
     // camera coordinate system -> projector coordinate system
-    const Size* l_prjSize = l_procam->getProjectorSize();
-    Mat l_projectionImageOnProjectorSpace(*l_prjSize, CV_8UC3, CV_SCALAR_BLACK);
-    l_procam->convertProjectorDomainToCameraOne(&l_projectionImageOnProjectorSpace, l_projectionImageOnCameraSpace);
-
-    // non linear -> linear
-    Mat l_LProjectionImage(*l_prjSize, CV_8UC3, CV_SCALAR_BLACK);
-    l_procam->convertPtoI(&l_LProjectionImage, l_projectionImageOnProjectorSpace);
+//    const Size* l_prjSize = l_procam->getProjectorSize();
+//    Mat l_projectionImageOnProjectorSpace(*l_prjSize, CV_8UC3, CV_SCALAR_BLACK);
+//    l_procam->convertProjectorDomainToCameraOne(&l_projectionImageOnProjectorSpace, l_projectionImageOnCameraSpace);
+//
+//    // non linear -> linear
+//    Mat l_LProjectionImage(*l_prjSize, CV_8UC3, CV_SCALAR_BLACK);
+//    l_procam->convertPtoI(&l_LProjectionImage, l_projectionImageOnProjectorSpace);
     
     
     // project desired image
     Mat l_cameraImageFromDesiredImageProjection(*l_camSize, CV_8UC3, CV_SCALAR_BLACK);
-    l_procam->captureFromLightOnProjectorDomain(&l_cameraImageFromDesiredImageProjection, _desiredImage);
+    l_procam->captureFromLightOnProjectorDomain(&l_cameraImageFromDesiredImageProjection, _desiredImage, _waitTimeNum);
 
     // project compensated image
     Mat l_cameraImage(*l_camSize, CV_8UC3, CV_SCALAR_BLACK);
-    l_procam->captureFromLight(&l_cameraImage, l_LProjectionImage);
+//    l_procam->captureFromLight(&l_cameraImage, l_LProjectionImage, _waitTimeNum);
+    l_procam->captureFromLinearLightOnProjectorDomain(&l_cameraImage, l_projectionImageOnCameraSpace, _waitTimeNum);
     
     // calc difference
     Vec3d l_diffC(0.0, 0.0, 0.0), l_diffPDC(0.0, 0.0, 0.0);
     getAvgOfDiffMat2(&l_diffC, _desiredImage, l_cameraImage);
     getAvgOfDiffMat2(&l_diffPDC, _desiredImage, l_cameraImageFromDesiredImageProjection);
-//    _print2(l_diffC, l_diffPDC);
     int index = (int)_desiredImage.at<Vec3b>(0,0)[0];
     _print_gnuplot7(cout, index, l_diffC[2], l_diffC[1], l_diffC[0], l_diffPDC[2], l_diffPDC[1], l_diffPDC[0]);
     Vec3b l_aveC, l_avePDC;
     calcAverageOfImage(&l_aveC, l_cameraImage);
     calcAverageOfImage(&l_avePDC, l_cameraImageFromDesiredImageProjection);
-    _print2(l_avePDC, l_aveC);
+    _print3(index, l_avePDC, l_aveC);
     
     // show images
     imshow("desired C", _desiredImage);
     imshow("P on Camera Domain", l_projectionImageOnCameraSpace);
-    imshow("P on Projector Domain", l_projectionImageOnProjectorSpace);
-    imshow("I", l_LProjectionImage);
+//    imshow("P on Projector Domain", l_projectionImageOnProjectorSpace);
+//    imshow("I", l_LProjectionImage);
     imshow("C", l_cameraImage);
     imshow("C when projection desired C", l_cameraImageFromDesiredImageProjection);
     waitKey(30);
@@ -807,15 +789,15 @@ bool LinearizerOfProjector::doRadiometricCompensation(const cv::Mat& _desiredIma
     return true;
 }
 
-bool LinearizerOfProjector::doRadiometricCompensation(const cv::Vec3b& _desiredColor){
+bool LinearizerOfProjector::doRadiometricCompensation(const cv::Vec3b& _desiredColor, const int _waitTimeNum){
     ProCam* l_procam = getProCam();
     const Size* l_camSize = l_procam->getCameraSize();
     const Scalar l_color(_desiredColor);
     Mat l_image(*l_camSize, CV_8UC3, l_color);
-    return doRadiometricCompensation(l_image);
+    return doRadiometricCompensation(l_image, _waitTimeNum);
 }
-bool LinearizerOfProjector::doRadiometricCompensation(const uchar& _desiredColorNumber){
-    return doRadiometricCompensation(Vec3b(_desiredColorNumber, _desiredColorNumber, _desiredColorNumber));
+bool LinearizerOfProjector::doRadiometricCompensation(const uchar& _desiredColorNumber, const int _waitTimeNum){
+    return doRadiometricCompensation(Vec3b(_desiredColorNumber, _desiredColorNumber, _desiredColorNumber), _waitTimeNum);
 }
 
 // P = V^{-1} * C を計算して，CからPを算出する
