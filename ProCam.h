@@ -124,7 +124,7 @@ public:
     bool setProjectorResponse(const cv::Mat_<cv::Vec3b>& _response);
     bool setProjectorResponseP2I(const cv::Mat_<cv::Vec3b>& _response);
     bool setV(const cv::Mat& _diffBB, const cv::Mat& _diffGB, const cv::Mat& _diffRB);
-    void setF(const cv::Mat& _P);
+    void setF(const cv::Mat& _P, const cv::Mat& _C);
     ///////////////////////////////  get method ///////////////////////////////
     DCam getDCam(void);
     cv::Size* getCameraSize(void);
@@ -139,6 +139,7 @@ public:
     void getImageProjectorResponseP2I(cv::Mat* const _responseImage, const cv::Mat& _responseMap, const int _index);
     void getImageProjectorResponseP2I(cv::Mat* const _responseImage, const int _index);
     const cv::Mat_<Vec9d>* getV(void);
+    const cv::Mat* getF(void);
     void getNextProjectionImage(cv::Mat* const _P, const cv::Mat& _C);
     ///////////////////////////////  save method ///////////////////////////////
 //    bool saveAccessMapCam2Pro(void);

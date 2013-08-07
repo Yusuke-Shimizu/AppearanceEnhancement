@@ -448,7 +448,7 @@ bool convertRGBtoBGR(cv::Vec3b* const _bgr, const cv::Vec3b& _rgb){
 }
 
 // Vec9d -> Mat(3x3)
-bool convertVecToMat(cv::Mat_<double>* const _dst, const Vec9d& _src){
+bool convertVecToMat(cv::Mat* const _dst, const Vec9d& _src){
     // error processing
     Mat m3x3(3, 3, CV_64FC1);
     if ( !isEqualSizeAndType(*_dst, m3x3) ) {

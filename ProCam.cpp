@@ -343,8 +343,48 @@ bool ProCam::setV(const cv::Mat& _diffBB, const cv::Mat& _diffGB, const cv::Mat&
 
 // m_Fの設定
 // F = C - VP
-void ProCam::setF(const cv::Mat& _P){
+void ProCam::setF(const cv::Mat& _P, const cv::Mat& _C){
+    const Mat_<Vec9d>* l_V = getV();
     
+    // error handle
+    if (!isEqualSize(_P, _C, *l_V) ) {
+        cerr << "different size" << endl;
+        _print_mat_propaty(_P);
+        _print_mat_propaty(_C);
+        _print_mat_propaty(*l_V);
+        exit(-1);
+    }
+    
+    //
+    int rows = _P.rows, cols = _P.cols;
+    if (isContinuous(_P, _C, *l_V, m_F)) {
+        cols *= rows;
+        rows = 1;
+    }
+    Mat l_matP(3, 1, CV_64FC1), l_matC(3, 1, CV_64FC1), l_matV(3, 3, CV_64FC1), l_matF(3, 1, CV_64FC1);
+    for (int y = 0; y < rows; ++ y) {
+        // init pointer
+        const Vec3b* l_pP = _P.ptr<Vec3b>(y);
+        const Vec3b* l_pC = _C.ptr<Vec3b>(y);
+        const Vec9d* l_pV = l_V->ptr<Vec9d>(y);
+        Vec3b* l_pF = m_F.ptr<Vec3b>(y);
+        
+        for (int x = 0; x < cols; ++ x) {
+            // Vec3b(d) -> Mat_<double>
+            Vec3d tmp = Vec3d(l_pP[x]);
+            l_matP = Mat(tmp);
+            tmp = Vec3d(l_pC[x]);
+            l_matC = Mat(tmp);
+            convertVecToMat(&l_matV, l_pV[x]);
+            
+            // calculation (F = C - VP)
+            l_matF = l_matC - l_matV * l_matP;
+            
+            // Mat -> Vec3b
+            tmp = Vec3d(l_matF);
+            l_pF[x] = Vec3b(tmp);
+        }
+    }
 }
 
 ///////////////////////////////  get method ///////////////////////////////
@@ -450,9 +490,57 @@ const cv::Mat_<Vec9d>* ProCam::getV(void){
     return &m_V;
 }
 
-//
-void getNextProjectionImage(cv::Mat* const _P, const cv::Mat& _C){
+const cv::Mat* ProCam::getF(void){
+    return &m_F;
+}
+
+// P = V^{-1} * (A^{-1} * C - F)
+void ProCam::getNextProjectionImage(cv::Mat* const _P, const cv::Mat& _C){
+    const Mat *l_V = getV(), *l_F = getF();
+    // error handle
+    if (!isEqualSizeAndType(*_P, _C, *l_F)) {
+        cerr << "different size or type" << endl;
+        _print_mat_propaty(*_P);
+        _print_mat_propaty(_C);
+        _print_mat_propaty(*l_F);
+        exit(-1);
+    } else if (!isEqualSize(*l_F, *l_V)) {
+        cerr << "different size" << endl;
+        _print_mat_propaty(*l_F);
+        _print_mat_propaty(*l_V);
+        exit(-1);
+    }
     
+    //
+    int rows = _P->rows, cols = _P->cols;
+    if (isContinuous(*_P, _C, *l_F, *l_V)) {
+        cols *= rows;
+        rows = 1;
+    }
+    Mat l_matP(3, 1, CV_64FC1), l_matC(3, 1, CV_64FC1), l_matF(3, 1, CV_64FC1), l_matV(3, 3, CV_64FC1);
+    for (int y = 0; y < rows; ++ y) {
+        // init pointer
+        Vec3b* l_pP = _P->ptr<Vec3b>(y);
+        const Vec3b* l_pC = _C.ptr<Vec3b>(y);
+        const Vec3b* l_pF = l_F->ptr<Vec3b>(y);
+        const Vec9d* l_pV = l_V->ptr<Vec9d>(y);
+        
+        for (int x = 0; x < cols; ++ x) {
+            // Vec -> Mat
+            Vec3d tmp = Vec3d(l_pC[x]);
+            l_matC = Mat(tmp);
+            tmp = Vec3d(l_pF[x]);
+            l_matF = Mat(tmp);
+            convertVecToMat(&l_matV, l_pV[x]);
+            
+            // calculation (P = V^{-1} * (A^{-1} * C - F))
+            l_matP = l_matV.inv() * (l_matC - l_matF);
+            
+            // Mat -> Vec
+            tmp = Vec3d(l_matP);
+            l_pP[x] = Vec3b(tmp);
+        }
+    }
 }
 
 ///////////////////////////////  save method ///////////////////////////////
@@ -1329,7 +1417,7 @@ bool ProCam::doRadiometricCompensation(const cv::Mat& _desiredImage, const int _
     const Mat whiteImage(*l_camSize, CV_8UC3, CV_SCALAR_WHITE);
     Mat l_C(*l_camSize, CV_8UC3, CV_SCALAR_WHITE);
     captureFromLinearLightOnProjectorDomain(&l_C, whiteImage);
-    setF(whiteImage);
+    setF(whiteImage, l_C);
     
     // 投影画像を計算する
     Mat l_projectionImageOnCameraSpace(*l_camSize, CV_8UC3, CV_SCALAR_BLACK);
