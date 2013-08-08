@@ -349,6 +349,7 @@ void ProCam::setF(const cv::Mat& _P){
     const Mat_<Vec9d>* l_V = getV();
     const Size* l_camSize = getCameraSize();
     Mat l_C(*l_camSize, CV_8UC3, CV_SCALAR_BLACK);
+    Mat l_VP(*l_camSize, CV_8UC3, CV_SCALAR_BLACK);
     
     // error handle
     if (!isEqualSize(_P, l_C, *l_V) ) {
@@ -364,7 +365,7 @@ void ProCam::setF(const cv::Mat& _P){
     
     // get F
     int rows = _P.rows, cols = _P.cols;
-    if (isContinuous(_P, l_C, *l_V, m_F)) {
+    if (isContinuous(_P, l_C, *l_V, m_F, l_VP)) {
         cols *= rows;
         rows = 1;
     }
@@ -375,23 +376,25 @@ void ProCam::setF(const cv::Mat& _P){
         const Vec3b* l_pC = l_C.ptr<Vec3b>(y);
         const Vec9d* l_pV = l_V->ptr<Vec9d>(y);
         Vec3b* l_pF = m_F.ptr<Vec3b>(y);
+        Vec3b* l_pVP = l_VP.ptr<Vec3b>(y);
         
         for (int x = 0; x < cols; ++ x) {
             // Vec3b(d) -> Mat_<double>
-            Vec3d tmp = Vec3d(l_pP[x]);
-            l_matP = Mat(tmp);
-            tmp = Vec3d(l_pC[x]);
-            l_matC = Mat(tmp);
+            l_matP = Mat(Vec3d(l_pP[x]));
+            l_matC = Mat(Vec3d(l_pC[x]));
             convertVecToMat(&l_matV, l_pV[x]);
             
             // calculation (F = C - VP)
-            l_matF = l_matC - l_matV * l_matP;
+            Mat tmp = l_matV * l_matP;
+            l_matF = l_matC - tmp;
             
             // Mat -> Vec3b
-            tmp = Vec3d(l_matF);
-            l_pF[x] = Vec3b(tmp);
+            l_pF[x] = Vec3b(Vec3d(l_matF));
+            l_pVP[x] = Vec3b(tmp);
         }
     }
+    MY_IMSHOW(l_VP);
+    waitKey(30);
 }
 
 ///////////////////////////////  get method ///////////////////////////////
