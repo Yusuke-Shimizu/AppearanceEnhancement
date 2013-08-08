@@ -45,9 +45,11 @@ ProCam::ProCam(const int _size)
 ProCam::~ProCam(void){
     cout << "deleting ProCam (" << this <<")" << endl;
 //    destroyWindow(WINDOW_NAME);     // 投影に使用したウィンドウを削除
-    destroyAllWindows();    // ウィンドウの全削除
+    destroyAllWindows();    // ウィンドウの全削除]
+#ifdef LIB_DC1394_FLAG
     DCam_stop_capture(m_dcam);
     DCam_delete(&m_dcam);
+#endif
     cout << "ProCam is deleted (" << this <<")" << endl;
 }
 
@@ -927,6 +929,83 @@ bool ProCam::colorCalibration(void){
     cout << "color calibration finish!" << endl;
     return true;
 }
+bool ProCam::colorCalibration2(cv::Mat_<Vec12d>* const _V){
+    cout << "color calibration start!" << endl;
+    
+    // init
+    Size *cameraSize = getCameraSize();
+    
+    // init capture image
+    uchar depth8x3 = CV_8UC3;
+    cv::Mat black_cap   (*cameraSize, depth8x3, CV_SCALAR_BLACK);
+    cv::Mat blue_cap    (*cameraSize, depth8x3, CV_SCALAR_BLACK);
+    cv::Mat green_cap   (*cameraSize, depth8x3, CV_SCALAR_BLACK);
+    cv::Mat red_cap     (*cameraSize, depth8x3, CV_SCALAR_BLACK);
+    
+    // capture from some color light
+    captureFromLinearFlatLightOnProjectorDomain(&black_cap, CV_VEC3B_BLACK, SLEEP_TIME * 5);
+    captureFromLinearFlatLightOnProjectorDomain(&blue_cap, CV_VEC3B_BLUE);
+    captureFromLinearFlatLightOnProjectorDomain(&green_cap, CV_VEC3B_GREEN);
+    captureFromLinearFlatLightOnProjectorDomain(&red_cap, CV_VEC3B_RED);
+    
+    // show image
+    imshow("black_cap", black_cap);
+    imshow("blue_cap", blue_cap);
+    imshow("green_cap", green_cap);
+    imshow("red_cap", red_cap);
+    waitKey(30);
+    
+    //
+    const Mat l_PV1 = (Mat_<double>(4, 1) << CV_VEC3B_BLACK[0],CV_VEC3B_BLUE[0],CV_VEC3B_GREEN[0],CV_VEC3B_RED[0]);
+    const Mat l_PV2 = (Mat_<double>(4, 1) << CV_VEC3B_BLACK[1],CV_VEC3B_BLUE[1],CV_VEC3B_GREEN[1],CV_VEC3B_RED[1]);
+    const Mat l_PV3 = (Mat_<double>(4, 1) << CV_VEC3B_BLACK[2],CV_VEC3B_BLUE[2],CV_VEC3B_GREEN[2],CV_VEC3B_RED[2]);
+    Mat l_K1(4, 1, CV_64FC1), l_K2(4, 1, CV_64FC1), l_K3(4, 1, CV_64FC1);
+    Mat l_CK(4, 4, CV_64FC1), l_PK(4, 1, CV_64FC1);
+    
+    // set V
+    int rows = black_cap.rows, cols = black_cap.cols;
+    if (isContinuous(black_cap, red_cap, green_cap, blue_cap, *_V)) {
+        cols *= rows;
+        rows = 1;
+    }
+    for (int y = 0; y < rows; ++ y) {
+        // init pointer
+        Vec12d* l_pV = _V->ptr<Vec12d>(y);
+        const Vec3b* l_pBlack = black_cap.ptr<Vec3b>(y);
+        const Vec3b* l_pBlue = blue_cap.ptr<Vec3b>(y);
+        const Vec3b* l_pGreen = green_cap.ptr<Vec3b>(y);
+        const Vec3b* l_pRed = red_cap.ptr<Vec3b>(y);
+        
+        for (int x = 0; x < cols; ++ x) {
+            // set l_CK
+            for (int i = 0; i < 4; ++ i) {
+                l_CK.at<double>(i, 3) = 1;
+            }
+            for (int i = 0; i < 3; ++ i) {
+                l_CK.at<double>(0, i) = l_pBlack[x][i];
+                l_CK.at<double>(1, i) = l_pBlue[x][i];
+                l_CK.at<double>(2, i) = l_pGreen[x][i];
+                l_CK.at<double>(3, i) = l_pRed[x][i];
+            }
+            Mat l_invCK = l_CK.inv();
+            
+            // calc
+            l_K1 = l_invCK * l_PV1;
+            l_K2 = l_invCK * l_PV2;
+            l_K3 = l_invCK * l_PV3;
+            
+            // set
+            for (int i = 0; i < 4; ++ i) {
+                l_pV[x][i + 0] = l_K1.at<double>(i, 0);
+                l_pV[x][i + 4] = l_K2.at<double>(i, 0);
+                l_pV[x][i + 8] = l_K3.at<double>(i, 0);
+            }
+        }
+    }
+    
+    cout << "color calibration finish!" << endl;
+    return true;
+}
 
 ///////////////////////////////  convert method ///////////////////////////////
 
@@ -1461,6 +1540,7 @@ bool ProCam::doRadiometricCompensation(const cv::Vec3b& _desiredColor, const int
     const Size* l_camSize = getCameraSize();
     const Scalar l_color(_desiredColor);
     Mat l_image(*l_camSize, CV_8UC3, l_color);
+//    return doRadiometricCompensation(l_image, _waitTimeNum);
     return doRadiometricCompensation(l_image, _waitTimeNum);
 }
 bool ProCam::doRadiometricCompensation(const uchar& _desiredColorNumber, const int _waitTimeNum){
@@ -1470,3 +1550,97 @@ bool ProCam::doRadiometricCompensation(const char* _fileName, const int _waitTim
     Mat l_image = imread(_fileName, 1);
     return doRadiometricCompensation(l_image);
 }
+
+
+// yoshidaらの手法
+bool ProCam::doRadiometricCompensation2(const cv::Mat& _desiredImage, const int _waitTimeNum){
+    cout << "対象となる紙をセットして下さい．" << endl;
+    cout << "セット出来ましたらESCボタンを押して下さい．" << endl;
+    MY_WAIT_KEY(CV_BUTTON_ESC);
+    
+    // 色変換行列(V)を計算
+    const Size* l_camSize = getCameraSize();
+    Mat_<Vec12d> l_K(*l_camSize);
+    colorCalibration2(&l_K);
+    
+    // 投影画像を計算する
+    Mat l_projectionImageOnCameraSpace(*l_camSize, CV_8UC3, CV_SCALAR_BLACK);
+    //    getNextProjectionImage(&l_projectionImageOnCameraSpace, _desiredImage);
+    getProjectionImage(&l_projectionImageOnCameraSpace, _desiredImage, l_K);
+    
+    // project desired image
+    Mat l_cameraImageFromDesiredImageProjection(*l_camSize, CV_8UC3, CV_SCALAR_BLACK);
+    captureFromLightOnProjectorDomain(&l_cameraImageFromDesiredImageProjection, _desiredImage, _waitTimeNum);
+    
+    // project compensated image
+    Mat l_cameraImage(*l_camSize, CV_8UC3, CV_SCALAR_BLACK);
+    captureFromLinearLightOnProjectorDomain(&l_cameraImage, l_projectionImageOnCameraSpace, _waitTimeNum);
+    
+    // calc difference
+    Vec3d l_diffC(0.0, 0.0, 0.0), l_diffPDC(0.0, 0.0, 0.0);
+    getAvgOfDiffMat2(&l_diffC, _desiredImage, l_cameraImage);
+    getAvgOfDiffMat2(&l_diffPDC, _desiredImage, l_cameraImageFromDesiredImageProjection);
+    int index = (int)_desiredImage.at<Vec3b>(0,0)[0];
+    _print_gnuplot7(cout, index, l_diffC[2], l_diffC[1], l_diffC[0], l_diffPDC[2], l_diffPDC[1], l_diffPDC[0]);
+    Vec3b l_aveC, l_avePDC;
+    calcAverageOfImage(&l_aveC, l_cameraImage);
+    calcAverageOfImage(&l_avePDC, l_cameraImageFromDesiredImageProjection);
+    _print3(index, l_avePDC, l_aveC);
+    
+    // show images
+    imshow("desired C", _desiredImage);
+    imshow("P on Camera Domain", l_projectionImageOnCameraSpace);
+    imshow("C", l_cameraImage);
+    imshow("C when projection desired C", l_cameraImageFromDesiredImageProjection);
+    waitKey(30);
+    
+    return true;
+}
+
+// P = KC
+void ProCam::getProjectionImage(cv::Mat* const _P, const cv::Mat& _desireC, const cv::Mat_<Vec12d>& _K){
+    // error handle
+    if (!isEqualSize(*_P, _desireC, _K)) {
+        cerr << "different size" << endl;
+        _print_mat_propaty(*_P);
+        _print_mat_propaty(_desireC);
+        _print_mat_propaty(_K);
+        exit(-1);
+    }
+    
+    //
+    int rows = _P->rows, cols = _P->cols;
+    if (isContinuous(*_P, _desireC, _K)) {
+        cols *= rows;
+        rows = 1;
+    }
+    for (int y = 0; y < rows; ++ y) {
+        // init pointer
+        Vec3b* l_pP = _P->ptr<Vec3b>(y);
+        const Vec3b* l_pDesireC = _desireC.ptr<Vec3b>(y);
+        const Vec12d* l_pK = _K.ptr<Vec12d>(y);
+        
+        for (int x = 0; x < cols; ++ x) {
+            // vec -> mat
+            Mat l_matP(3, 1, CV_64FC1), l_matC(4, 1, CV_64FC1), l_matK(3, 4, CV_64FC1);
+            // set C
+            for (int i = 0; i < 3; ++ i) {
+                l_matC.at<double>(i, 0) = (double)(l_pDesireC[x][i]);
+            }
+            l_matC.at<double>(3, 0) = 1.0;
+            // set K
+            for (int ly = 0; ly < 3; ++ ly) {
+                for (int lx = 0; lx < 4; ++ lx) {
+                    l_matK.at<double>(ly, lx) = l_pK[x][lx + ly * 4];
+                }
+            }
+            
+            // calc
+            l_matP = l_matK * l_matC;
+            
+            // mat -> vec
+            l_pP[x] = Vec3b(l_matP);
+        }
+    }
+}
+

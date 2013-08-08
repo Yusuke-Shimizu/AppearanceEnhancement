@@ -159,6 +159,7 @@ public:
     bool geometricCalibration(void);
     bool linearizeOfProjector(void);
     bool colorCalibration(void);
+    bool colorCalibration2(cv::Mat_<Vec12d>* const _V);
     ///////////////////////////////  convert method ///////////////////////////////
     bool convertProjectorDomainToCameraOne(cv::Mat* const _psImg, const cv::Mat&  _csImg);
     bool convertNonLinearImageToLinearOne(cv::Mat* const _linearImg, const cv::Mat&  _nonLinearImg);
@@ -194,6 +195,8 @@ public:
     bool doRadiometricCompensation(const cv::Vec3b& _desiredColor, const int _waitTimeNum = SLEEP_TIME);
     bool doRadiometricCompensation(const uchar& _desiredColorNumber, const int _waitTimeNum = SLEEP_TIME);
     bool doRadiometricCompensation(const char* _fileName, const int _waitTimeNum = SLEEP_TIME);
+    bool doRadiometricCompensation2(const cv::Mat& _desiredImage, const int _waitTimeNum = SLEEP_TIME);
+    void getProjectionImage(cv::Mat* const _P, const cv::Mat& _desireC, const cv::Mat_<Vec12d>& _K);
 };
 
 #endif /* defined(__cameraBase03__ProCam__) */

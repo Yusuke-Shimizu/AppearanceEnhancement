@@ -62,6 +62,7 @@ const cv::Scalar CV_SCALAR_BLACK(CV_VEC3B_BLACK);
 const cv::Scalar CV_SCALAR_WHITE(CV_VEC3B_WHITE);
 
 typedef cv::Vec<double, 9> Vec9d;
+typedef cv::Vec<double, 12> Vec12d;
 
 enum ColorName{CV_RED = 2, CV_GREEN = 1, CV_BLUE = 0};
 
