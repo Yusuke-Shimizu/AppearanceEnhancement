@@ -1283,7 +1283,8 @@ void ProCam::showV(void){
     MY_IMSHOW(l_VRed);
     MY_IMSHOW(l_VGreen);
     MY_IMSHOW(l_VBlue);
-    MY_WAIT_KEY(CV_BUTTON_ESC);
+    waitKey(30);
+//    MY_WAIT_KEY(CV_BUTTON_ESC);
 }
 
 ///////////////////////////////  print method ///////////////////////////////
@@ -1504,8 +1505,11 @@ bool ProCam::doRadiometricCompensation(const cv::Mat& _desiredImage, const int _
     
     // 投影画像を計算する
     Mat l_projectionImageOnCameraSpace(*l_camSize, CV_8UC3, CV_SCALAR_BLACK);
-//    getNextProjectionImage(&l_projectionImageOnCameraSpace, l_C);
     getNextProjectionImage(&l_projectionImageOnCameraSpace, _desiredImage);
+    
+    // 上で決定した投影光からCを復元出来るか試す
+    Mat l_reconstructC(*l_camSize, CV_8UC3, CV_SCALAR_BLACK);
+    reconstructC(&l_reconstructC, l_projectionImageOnCameraSpace);
 
     // project desired image
     Mat l_cameraImageFromDesiredImageProjection(*l_camSize, CV_8UC3, CV_SCALAR_BLACK);
@@ -1541,16 +1545,48 @@ bool ProCam::doRadiometricCompensation(const cv::Vec3b& _desiredColor, const int
     const Scalar l_color(_desiredColor);
     Mat l_image(*l_camSize, CV_8UC3, l_color);
 //    return doRadiometricCompensation(l_image, _waitTimeNum);
-    return doRadiometricCompensation(l_image, _waitTimeNum);
+    return doRadiometricCompensation2(l_image, _waitTimeNum);
 }
 bool ProCam::doRadiometricCompensation(const uchar& _desiredColorNumber, const int _waitTimeNum){
     return doRadiometricCompensation(Vec3b(_desiredColorNumber, _desiredColorNumber, _desiredColorNumber), _waitTimeNum);
 }
 bool ProCam::doRadiometricCompensation(const char* _fileName, const int _waitTimeNum){
     Mat l_image = imread(_fileName, 1);
-    return doRadiometricCompensation(l_image);
+//    return doRadiometricCompensation(l_image, _waitTimeNum);
+    return doRadiometricCompensation2(l_image, _waitTimeNum);
 }
-
+// C = F + VP
+void ProCam::reconstructC(cv::Mat* const _C, const cv::Mat& _P){
+    const Mat* l_F = getF();
+    const Mat_<Vec9d>* l_V = getV();
+    
+    int rows = _C->rows, cols = _C->cols;
+    if (isContinuous(*_C, _P, *l_F, *l_V)) {
+        cols *= rows;
+        rows = 1;
+    }
+    Mat l_matP(3, 1, CV_64FC1), l_matF(3, 1, CV_64FC1), l_matC(3, 1, CV_64FC1), l_matV(3, 3, CV_64FC1);
+    for (int y = 0; y < rows; ++ y) {
+        // init pointer
+        Vec3b* l_pC = _C->ptr<Vec3b>(y);
+        const Vec3b* l_pP = _P.ptr<Vec3b>(y);
+        const Vec3b* l_pF = l_F->ptr<Vec3b>(y);
+        const Vec9d* l_pV = l_V->ptr<Vec9d>(y);
+        
+        for (int x = 0; x < cols; ++ x) {
+            // vec -> mat
+            l_matF = Mat(Vec3d(l_pF[x]));
+            l_matP = Mat(Vec3d(l_pP[x]));
+            convertVecToMat(&l_matV, l_pV[x]);
+            
+            // calc
+            l_matP = l_matF + l_matV * l_matP;
+            
+            // mat -> vec
+            l_pC[x] = Vec3b(l_matP);
+        }
+    }
+}
 
 // yoshidaらの手法
 bool ProCam::doRadiometricCompensation2(const cv::Mat& _desiredImage, const int _waitTimeNum){

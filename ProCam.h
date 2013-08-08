@@ -195,6 +195,7 @@ public:
     bool doRadiometricCompensation(const cv::Vec3b& _desiredColor, const int _waitTimeNum = SLEEP_TIME);
     bool doRadiometricCompensation(const uchar& _desiredColorNumber, const int _waitTimeNum = SLEEP_TIME);
     bool doRadiometricCompensation(const char* _fileName, const int _waitTimeNum = SLEEP_TIME);
+    void reconstructC(cv::Mat* const _C, const cv::Mat& _P);
     bool doRadiometricCompensation2(const cv::Mat& _desiredImage, const int _waitTimeNum = SLEEP_TIME);
     void getProjectionImage(cv::Mat* const _P, const cv::Mat& _desireC, const cv::Mat_<Vec12d>& _K);
 };
