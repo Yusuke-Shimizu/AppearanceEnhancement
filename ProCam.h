@@ -124,7 +124,7 @@ public:
     bool setProjectorResponse(const cv::Mat_<cv::Vec3b>& _response);
     bool setProjectorResponseP2I(const cv::Mat_<cv::Vec3b>& _response);
     bool setV(const cv::Mat& _diffBB, const cv::Mat& _diffGB, const cv::Mat& _diffRB);
-    void setF(const cv::Mat& _P, const cv::Mat& _C);
+    void setF(const cv::Mat& _P);
     ///////////////////////////////  get method ///////////////////////////////
     DCam getDCam(void);
     cv::Size* getCameraSize(void);
@@ -193,6 +193,7 @@ public:
     bool doRadiometricCompensation(const cv::Mat& _desiredImage, const int _waitTimeNum = SLEEP_TIME);
     bool doRadiometricCompensation(const cv::Vec3b& _desiredColor, const int _waitTimeNum = SLEEP_TIME);
     bool doRadiometricCompensation(const uchar& _desiredColorNumber, const int _waitTimeNum = SLEEP_TIME);
+    bool doRadiometricCompensation(const char* _fileName, const int _waitTimeNum = SLEEP_TIME);
 };
 
 #endif /* defined(__cameraBase03__ProCam__) */

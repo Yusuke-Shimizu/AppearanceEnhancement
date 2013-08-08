@@ -343,21 +343,26 @@ bool ProCam::setV(const cv::Mat& _diffBB, const cv::Mat& _diffGB, const cv::Mat&
 
 // m_Fの設定
 // F = C - VP
-void ProCam::setF(const cv::Mat& _P, const cv::Mat& _C){
+void ProCam::setF(const cv::Mat& _P){
     const Mat_<Vec9d>* l_V = getV();
+    const Size* l_camSize = getCameraSize();
+    Mat l_C(*l_camSize, CV_8UC3, CV_SCALAR_BLACK);
     
     // error handle
-    if (!isEqualSize(_P, _C, *l_V) ) {
+    if (!isEqualSize(_P, l_C, *l_V) ) {
         cerr << "different size" << endl;
         _print_mat_propaty(_P);
-        _print_mat_propaty(_C);
+        _print_mat_propaty(l_C);
         _print_mat_propaty(*l_V);
         exit(-1);
     }
     
-    //
+    // get C from P
+    captureFromLinearLightOnProjectorDomain(&l_C, _P);
+    
+    // get F
     int rows = _P.rows, cols = _P.cols;
-    if (isContinuous(_P, _C, *l_V, m_F)) {
+    if (isContinuous(_P, l_C, *l_V, m_F)) {
         cols *= rows;
         rows = 1;
     }
@@ -365,7 +370,7 @@ void ProCam::setF(const cv::Mat& _P, const cv::Mat& _C){
     for (int y = 0; y < rows; ++ y) {
         // init pointer
         const Vec3b* l_pP = _P.ptr<Vec3b>(y);
-        const Vec3b* l_pC = _C.ptr<Vec3b>(y);
+        const Vec3b* l_pC = l_C.ptr<Vec3b>(y);
         const Vec9d* l_pV = l_V->ptr<Vec9d>(y);
         Vec3b* l_pF = m_F.ptr<Vec3b>(y);
         
@@ -1403,6 +1408,7 @@ bool ProCam::checkCameraLinearity(void){
     return true;
 }
 
+// 藤井らの手法の光学補正
 bool ProCam::doRadiometricCompensation(const cv::Mat& _desiredImage, const int _waitTimeNum){
     cout << "対象となる紙をセットして下さい．" << endl;
     cout << "セット出来ましたらESCボタンを押して下さい．" << endl;
@@ -1415,13 +1421,12 @@ bool ProCam::doRadiometricCompensation(const cv::Mat& _desiredImage, const int _
     // 環境光(F)を計算
     const Size* l_camSize = getCameraSize();
     const Mat whiteImage(*l_camSize, CV_8UC3, CV_SCALAR_WHITE);
-    Mat l_C(*l_camSize, CV_8UC3, CV_SCALAR_WHITE);
-    captureFromLinearLightOnProjectorDomain(&l_C, whiteImage);
-    setF(whiteImage, l_C);
+    setF(whiteImage);
     
     // 投影画像を計算する
     Mat l_projectionImageOnCameraSpace(*l_camSize, CV_8UC3, CV_SCALAR_BLACK);
-    getNextProjectionImage(&l_projectionImageOnCameraSpace, l_C);
+//    getNextProjectionImage(&l_projectionImageOnCameraSpace, l_C);
+    getNextProjectionImage(&l_projectionImageOnCameraSpace, _desiredImage);
 
     // project desired image
     Mat l_cameraImageFromDesiredImageProjection(*l_camSize, CV_8UC3, CV_SCALAR_BLACK);
@@ -1445,8 +1450,6 @@ bool ProCam::doRadiometricCompensation(const cv::Mat& _desiredImage, const int _
     // show images
     imshow("desired C", _desiredImage);
     imshow("P on Camera Domain", l_projectionImageOnCameraSpace);
-    //    imshow("P on Projector Domain", l_projectionImageOnProjectorSpace);
-    //    imshow("I", l_LProjectionImage);
     imshow("C", l_cameraImage);
     imshow("C when projection desired C", l_cameraImageFromDesiredImageProjection);
     waitKey(30);
@@ -1462,4 +1465,8 @@ bool ProCam::doRadiometricCompensation(const cv::Vec3b& _desiredColor, const int
 }
 bool ProCam::doRadiometricCompensation(const uchar& _desiredColorNumber, const int _waitTimeNum){
     return doRadiometricCompensation(Vec3b(_desiredColorNumber, _desiredColorNumber, _desiredColorNumber), _waitTimeNum);
+}
+bool ProCam::doRadiometricCompensation(const char* _fileName, const int _waitTimeNum){
+    Mat l_image = imread(_fileName, 1);
+    return doRadiometricCompensation(l_image);
 }
