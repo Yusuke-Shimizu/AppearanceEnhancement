@@ -18,8 +18,8 @@ const int CAPTURE_NUM = 10;
 #include "myDc1394.h"
 #include "common.h"
 
-#define GEO_CAL_CALC_FLAG       // 幾何変換を計算するフラグ
-#define PRJ_LINEAR_CALC_FLAG    // 線形化変換を計算するフラグ
+//#define GEO_CAL_CALC_FLAG       // 幾何変換を計算するフラグ
+//#define PRJ_LINEAR_CALC_FLAG    // 線形化変換を計算するフラグ
 
 //#define BAYER_FLAG
 //#define LIB_DC1394_FLAG
@@ -82,8 +82,8 @@ private:
     cv::Mat_<cv::Vec2i> m_accessMapCam2Prj; // カメラからプロジェクタへの位置マップ
     cv::Mat m_ColorTransMatCam2Pro;     // カメラ色空間からプロジェクタ色空間への変換行列
     double* m_cameraResponse;           // カメラの応答特性[0-1]->[0-1]
-    cv::Mat_<cv::Vec3b> m_projectorResponseI2P;    // プロジェクタの応答特性[0-255]
-    cv::Mat_<cv::Vec3b> m_projectorResponseP2I;    // プロジェクタの応答特性のインバース[0-255]
+    cv::Mat m_projectorResponseI2P;    // プロジェクタの応答特性[0-255]
+    cv::Mat m_projectorResponseP2I;    // プロジェクタの応答特性のインバース[0-255]
     
     // こっちはBGR色空間にしてる
     cv::Mat_<Vec9d> m_V;     // 全カメラ画素分のV（プロジェクタからカメラへの色変換行列）
@@ -123,6 +123,7 @@ public:
     bool setCameraResponse(const double* const camRes, const int camResSize);
     bool setProjectorResponse(const cv::Mat_<cv::Vec3b>& _response);
     bool setProjectorResponseP2I(const cv::Mat_<cv::Vec3b>& _response);
+    bool setProjectorResponseP2IAtOutOfCameraArea(void);
     bool setV(const cv::Mat& _diffBB, const cv::Mat& _diffGB, const cv::Mat& _diffRB);
     void setF(const cv::Mat& _P);
     ///////////////////////////////  get method ///////////////////////////////
@@ -134,8 +135,8 @@ public:
     cv::VideoCapture* getVideoCapture(void);
     const cv::Mat_<cv::Vec2i>* getAccessMapCam2Prj(void);
     void getPointOnPrjDomainFromPointOnCamDomain(cv::Point* const _prjPoint, const cv::Point& _camPoint);
-    const cv::Mat_<cv::Vec3b>* getProjectorResponseI2P(void);
-    const cv::Mat_<cv::Vec3b>* getProjectorResponseP2I(void);
+    const cv::Mat* getProjectorResponseI2P(void);
+    const cv::Mat* getProjectorResponseP2I(void);
     void getImageProjectorResponseP2I(cv::Mat* const _responseImage, const cv::Mat& _responseMap, const int _index);
     void getImageProjectorResponseP2I(cv::Mat* const _responseImage, const int _index);
     const cv::Mat_<Vec9d>* getV(void);
@@ -190,6 +191,7 @@ public:
     ///////////////////////////////  other method ///////////////////////////////
     bool interpolationProjectorResponseP2I(cv::Mat* const _prjRes);
     bool test_interpolationProjectorResponseP2I(void);
+    bool interpolateProjectorResponseP2IAtOutOfCameraArea(cv::Mat* const _prjResP2I);
     bool checkCameraLinearity(void);
     bool doRadiometricCompensation(const cv::Mat& _desiredImage, const int _waitTimeNum = SLEEP_TIME);
     bool doRadiometricCompensation(const cv::Vec3b& _desiredColor, const int _waitTimeNum = SLEEP_TIME);
