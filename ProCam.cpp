@@ -388,12 +388,12 @@ void ProCam::setF(const cv::Mat& _P){
             convertVecToMat(&l_matV, l_pV[x]);
             
             // calculation (F = C - VP)
-            Mat tmp = l_matV * l_matP;
-            l_matF = l_matC - tmp;
+            Mat l_VP = l_matV * l_matP;
+            l_matF = l_matC - l_VP;
             
             // Mat -> Vec3b
             l_pF[x] = Vec3b(Vec3d(l_matF));
-            l_pVP[x] = Vec3b(tmp);
+            l_pVP[x] = Vec3b(l_VP);
         }
     }
     MY_IMSHOW(l_VP);
@@ -792,10 +792,10 @@ bool ProCam::allCalibration(void){
     }
 
     // color caliration
-//    if ( !colorCalibration() ) {
-//        cerr << "color caliration error" << endl;
-//        exit(-1);
-//    }
+    if ( !colorCalibration() ) {
+        cerr << "color caliration error" << endl;
+        exit(-1);
+    }
     
     return true;
 }
@@ -1161,7 +1161,42 @@ bool ProCam::convertPtoIBySomePoint(cv::Mat* const _I, const cv::Mat&  _P, const
 
 // カメラの色空間からプロジェクタの色空間へ変換する
 void ProCam::convertColorSpaceOfCameraToProjector(cv::Mat* const _imageOnPrj, const cv::Mat& _imageOnCam){
+    const Mat_<Vec9d>* l_V = getV();
     
+    // error handle
+    if (!isEqualSize(*_imageOnPrj, _imageOnCam, *l_V)) {
+        cerr << "size is different" << endl;
+        _print_mat_propaty(*_imageOnPrj);
+        _print_mat_propaty(_imageOnCam);
+        _print_mat_propaty(*l_V);
+        exit(-1);
+    }
+    
+    //
+    int rows = _imageOnPrj->rows, cols = _imageOnPrj->cols;
+    if (isContinuous(*_imageOnPrj, _imageOnCam, *l_V)) {
+        cols *= rows;
+        rows = 1;
+    }
+    for (int y = 0; y < rows; ++ y) {
+        // init pointer
+        Vec3b* l_pImageOnPrj = _imageOnPrj->ptr<Vec3b>(y);
+        const Vec3b* l_pImageOnCam = _imageOnCam.ptr<Vec3b>(y);
+        const Vec9d* l_pV = l_V->ptr<Vec9d>(y);
+        
+        for (int x = 0; x < cols; ++ x) {
+            // vec -> mat
+            const Mat l_camMat = Mat(Vec3d(l_pImageOnCam[x]));
+            Mat l_VMat;
+            convertVecToMat(&l_VMat, l_pV[x]);
+            
+            // calc
+            Mat l_prjMat = l_VMat * l_camMat;
+            
+            // mat -> vec
+            l_pImageOnPrj[x] = Vec3b(l_prjMat);
+        }
+    }
 }
 
 ///////////////////////////////  show method ///////////////////////////////
@@ -1410,6 +1445,28 @@ bool ProCam::captureFromLinearFlatGrayLightOnProjectorDomain(cv::Mat* const _cap
     return captureFromLinearFlatLightOnProjectorDomain(_captureImage, l_projectionColor, _waitTimeNum);
 }
 
+// 線形化した投影光をプロジェクタの色空間の画像で取得する
+bool ProCam::captureOfProjecctorColorFromLinearLightOnProjectorDomain(cv::Mat* const _captureImage, const cv::Mat& _projectionImage, const int _waitTimeNum){
+    // 投影し撮影
+    Mat tmp = _captureImage->clone();
+    captureFromLinearLightOnProjectorDomain(&tmp, _projectionImage, _waitTimeNum);
+    
+    // convert color space camera to projector
+    convertColorSpaceOfCameraToProjector(_captureImage, tmp);
+    
+    return true;
+}
+bool ProCam::captureOfProjecctorColorFromLinearFlatLightOnProjectorDomain(cv::Mat* const _captureImage, const cv::Vec3b& _projectionColor, const int _waitTimeNum){
+    const Size* l_camSize = getCameraSize();    // カメラサイズの取得
+    const Mat l_projectionImage(*l_camSize, CV_8UC3, Scalar(_projectionColor)); // 投影画像
+    return captureOfProjecctorColorFromLinearLightOnProjectorDomain(_captureImage, l_projectionImage, _waitTimeNum);
+}
+bool ProCam::captureOfProjecctorColorFromLinearFlatGrayLightOnProjectorDomain(cv::Mat* const _captureImage, const uchar _projectionNumber, const int _waitTimeNum){
+    const Vec3b l_projectionColor(_projectionNumber, _projectionNumber, _projectionNumber);
+    return captureOfProjecctorColorFromLinearFlatLightOnProjectorDomain(_captureImage, l_projectionColor, _waitTimeNum);
+}
+
+
 ///////////////////////////////  other method ///////////////////////////////
 
 // projector responseの補間を行う
@@ -1502,6 +1559,7 @@ bool ProCam::interpolateProjectorResponseP2IAtOutOfCameraArea(cv::Mat* const _pr
     for (int P = 0; P < 256; ++ P) {
         Vec3b l_aveColor(0, 0, 0);
         Vec3d l_sum(0, 0, 0);
+        int cnt = 0;
         
         // calc sum color
         for (int y = 0; y < l_prjSize->height; ++ y) {
@@ -1511,12 +1569,14 @@ bool ProCam::interpolateProjectorResponseP2IAtOutOfCameraArea(cv::Mat* const _pr
             for (int x = 0; x < l_prjSize->width; ++ x) {
                 if (l_pCheckNonCameraAreaFlag[x] == CV_VEC3B_WHITE) {
                     l_sum += l_pPrjResP2I[x * 256 + P];
+                    ++ cnt;
                 }
             }
         }
         
         // get average
-        l_aveColor = (Vec3b)(l_sum / (l_camSize->area()));
+//        l_aveColor = (Vec3b)(l_sum / (l_camSize->area()));
+        l_aveColor = (Vec3b)(l_sum / (double)cnt);
         
         // set response at out of camera area
         for (int y = 0; y < l_prjSize->height; ++ y) {
@@ -1530,7 +1590,7 @@ bool ProCam::interpolateProjectorResponseP2IAtOutOfCameraArea(cv::Mat* const _pr
             }
         }
     }
-    
+        
     return true;
 }
 
@@ -1604,7 +1664,7 @@ bool ProCam::doRadiometricCompensation(const cv::Vec3b& _desiredColor, const int
     const Scalar l_color(_desiredColor);
     Mat l_image(*l_camSize, CV_8UC3, l_color);
 //    return doRadiometricCompensation(l_image, _waitTimeNum);
-    return doRadiometricCompensation2(l_image, _waitTimeNum);
+    return doRadiometricCompensation(l_image, _waitTimeNum);
 }
 bool ProCam::doRadiometricCompensation(const uchar& _desiredColorNumber, const int _waitTimeNum){
     return doRadiometricCompensation(Vec3b(_desiredColorNumber, _desiredColorNumber, _desiredColorNumber), _waitTimeNum);
@@ -1612,7 +1672,7 @@ bool ProCam::doRadiometricCompensation(const uchar& _desiredColorNumber, const i
 bool ProCam::doRadiometricCompensation(const char* _fileName, const int _waitTimeNum){
     Mat l_image = imread(_fileName, 1);
 //    return doRadiometricCompensation(l_image, _waitTimeNum);
-    return doRadiometricCompensation2(l_image, _waitTimeNum);
+    return doRadiometricCompensation(l_image, _waitTimeNum);
 }
 // C = F + VP
 void ProCam::reconstructC(cv::Mat* const _C, const cv::Mat& _P){
@@ -1648,7 +1708,7 @@ void ProCam::reconstructC(cv::Mat* const _C, const cv::Mat& _P){
 }
 
 // yoshidaらの手法
-bool ProCam::doRadiometricCompensation2(const cv::Mat& _desiredImage, const int _waitTimeNum){
+bool ProCam::doRadiometricCompensationByYoshidaMethod(const cv::Mat& _desiredImage, const int _waitTimeNum){
     cout << "対象となる紙をセットして下さい．" << endl;
     cout << "セット出来ましたらESCボタンを押して下さい．" << endl;
     MY_WAIT_KEY(CV_BUTTON_ESC);
@@ -1662,6 +1722,58 @@ bool ProCam::doRadiometricCompensation2(const cv::Mat& _desiredImage, const int 
     Mat l_projectionImageOnCameraSpace(*l_camSize, CV_8UC3, CV_SCALAR_BLACK);
     //    getNextProjectionImage(&l_projectionImageOnCameraSpace, _desiredImage);
     getProjectionImage(&l_projectionImageOnCameraSpace, _desiredImage, l_K);
+    
+    // project desired image
+    Mat l_cameraImageFromDesiredImageProjection(*l_camSize, CV_8UC3, CV_SCALAR_BLACK);
+    captureFromLightOnProjectorDomain(&l_cameraImageFromDesiredImageProjection, _desiredImage, _waitTimeNum);
+    
+    // project compensated image
+    Mat l_cameraImage(*l_camSize, CV_8UC3, CV_SCALAR_BLACK);
+    captureFromLinearLightOnProjectorDomain(&l_cameraImage, l_projectionImageOnCameraSpace, _waitTimeNum);
+    
+    // calc difference
+    Vec3d l_diffC(0.0, 0.0, 0.0), l_diffPDC(0.0, 0.0, 0.0);
+    getAvgOfDiffMat2(&l_diffC, _desiredImage, l_cameraImage);
+    getAvgOfDiffMat2(&l_diffPDC, _desiredImage, l_cameraImageFromDesiredImageProjection);
+    int index = (int)_desiredImage.at<Vec3b>(0,0)[0];
+    _print_gnuplot7(cout, index, l_diffC[2], l_diffC[1], l_diffC[0], l_diffPDC[2], l_diffPDC[1], l_diffPDC[0]);
+    Vec3b l_aveC, l_avePDC;
+    calcAverageOfImage(&l_aveC, l_cameraImage);
+    calcAverageOfImage(&l_avePDC, l_cameraImageFromDesiredImageProjection);
+    _print3(index, l_avePDC, l_aveC);
+    
+    // show images
+    imshow("desired C", _desiredImage);
+    imshow("P on Camera Domain", l_projectionImageOnCameraSpace);
+    imshow("C", l_cameraImage);
+    imshow("C when projection desired C", l_cameraImageFromDesiredImageProjection);
+    waitKey(30);
+    
+    return true;
+}
+
+// 天野らの手法の光学補正
+bool ProCam::doRadiometricCompensationByAmanoMethod(const cv::Mat& _desiredImage, const int _waitTimeNum){
+    cout << "対象となる紙をセットして下さい．" << endl;
+    cout << "セット出来ましたらESCボタンを押して下さい．" << endl;
+    MY_WAIT_KEY(CV_BUTTON_ESC);
+    
+    // 色変換行列(V)を計算
+    colorCalibration();
+    showV();
+    
+    // 環境光(F)を計算
+    const Size* l_camSize = getCameraSize();
+    const Mat whiteImage(*l_camSize, CV_8UC3, CV_SCALAR_WHITE);
+    setF(whiteImage);
+    
+    // 投影画像を計算する
+    Mat l_projectionImageOnCameraSpace(*l_camSize, CV_8UC3, CV_SCALAR_BLACK);
+    getNextProjectionImage(&l_projectionImageOnCameraSpace, _desiredImage);
+    
+    // 上で決定した投影光からCを復元出来るか試す
+    Mat l_reconstructC(*l_camSize, CV_8UC3, CV_SCALAR_BLACK);
+    reconstructC(&l_reconstructC, l_projectionImageOnCameraSpace);
     
     // project desired image
     Mat l_cameraImageFromDesiredImageProjection(*l_camSize, CV_8UC3, CV_SCALAR_BLACK);

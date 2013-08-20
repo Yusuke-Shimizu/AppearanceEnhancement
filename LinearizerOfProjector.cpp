@@ -644,6 +644,7 @@ bool LinearizerOfProjector::calcResponseFunction(cv::Mat_<cv::Vec3b>* const _res
     
     // interpolation projector response P to I
     l_procam->interpolationProjectorResponseP2I(&l_responseMapP2I);
+    l_procam->interpolateProjectorResponseP2IAtOutOfCameraArea(&l_responseMapP2I);
     
     // set and save
     // P2I

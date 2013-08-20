@@ -120,6 +120,7 @@ uchar getPixelNumuc(const cv::Mat& _image, const cv::Point& _point, const ColorN
 double getPixelNumd(const cv::Mat& _image, const cv::Point& _point, const ColorName _cName);
 //const cv::Scalar_<double>* getPixelNumd(const cv::Mat& _image, const cv::Point& _point);
 const cv::Vec3d* getPixelNumd(const cv::Mat& _image, const cv::Point& _point);
+bool getDiagonalImage(cv::Mat* _diagImage, const cv::Mat_<Vec9d>& _vec9dImage);
 ///////////////////////////////  print method ///////////////////////////////
 void printMatPropaty(const cv::Mat& m1);
 void printOpenCVVersion(void);

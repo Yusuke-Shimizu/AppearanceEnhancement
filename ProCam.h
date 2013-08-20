@@ -188,6 +188,9 @@ public:
     bool captureFromLinearLightOnProjectorDomain(cv::Mat* const _captureImage, const cv::Mat& _projectionImage, const int _waitTimeNum = SLEEP_TIME);
     bool captureFromLinearFlatLightOnProjectorDomain(cv::Mat* const _captureImage, const cv::Vec3b& _projectionColor, const int _waitTimeNum = SLEEP_TIME);
     bool captureFromLinearFlatGrayLightOnProjectorDomain(cv::Mat* const _captureImage, const uchar _projectionNumber, const int _waitTimeNum = SLEEP_TIME);
+    bool captureOfProjecctorColorFromLinearLightOnProjectorDomain(cv::Mat* const _captureImage, const cv::Mat& _projectionImage, const int _waitTimeNum = SLEEP_TIME);
+    bool captureOfProjecctorColorFromLinearFlatLightOnProjectorDomain(cv::Mat* const _captureImage, const cv::Vec3b& _projectionColor, const int _waitTimeNum = SLEEP_TIME);
+    bool captureOfProjecctorColorFromLinearFlatGrayLightOnProjectorDomain(cv::Mat* const _captureImage, const uchar _projectionNumber, const int _waitTimeNum = SLEEP_TIME);
     ///////////////////////////////  other method ///////////////////////////////
     bool interpolationProjectorResponseP2I(cv::Mat* const _prjRes);
     bool test_interpolationProjectorResponseP2I(void);
@@ -198,7 +201,8 @@ public:
     bool doRadiometricCompensation(const uchar& _desiredColorNumber, const int _waitTimeNum = SLEEP_TIME);
     bool doRadiometricCompensation(const char* _fileName, const int _waitTimeNum = SLEEP_TIME);
     void reconstructC(cv::Mat* const _C, const cv::Mat& _P);
-    bool doRadiometricCompensation2(const cv::Mat& _desiredImage, const int _waitTimeNum = SLEEP_TIME);
+    bool doRadiometricCompensationByYoshidaMethod(const cv::Mat& _desiredImage, const int _waitTimeNum = SLEEP_TIME);
+    bool doRadiometricCompensationByAmanoMethod(const cv::Mat& _desiredImage, const int _waitTimeNum = SLEEP_TIME);
     void getProjectionImage(cv::Mat* const _P, const cv::Mat& _desireC, const cv::Mat_<Vec12d>& _K);
 };
 

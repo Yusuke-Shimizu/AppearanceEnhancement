@@ -235,6 +235,36 @@ const cv::Vec3d* getPixelNumd(const cv::Mat& _image, const cv::Point& _point){
     return &pImage[_point.x];
 }
 
+// 対角成分のみを取り出した行列を取得する
+bool getDiagonalImage(cv::Mat* _diagImage, const cv::Mat_<Vec9d>& _vec9dImage){
+    // error handle
+    if (!isEqualSize(*_diagImage, _vec9dImage)) {
+        std::cerr << "size is different" << std::endl;
+        _print_mat_propaty(*_diagImage);
+        _print_mat_propaty(_vec9dImage);
+        exit(-1);
+    }
+    
+    // set
+    int rows = _diagImage->rows, cols = _diagImage->cols;
+    if (isContinuous(*_diagImage, _vec9dImage)) {
+        cols *= rows;
+        rows = 1;
+    }
+    for (int y = 0; y < rows; ++ y) {
+        Vec3d* l_pDiagImage = _diagImage->ptr<Vec3d>(y);
+        const Vec9d* l_pVec9dImage = _vec9dImage.ptr<Vec9d>(y);
+        
+        for (int x = 0; x < cols; ++ x) {
+            for (int c = 0; c < 3; ++ c) {
+                l_pDiagImage[x][c] = l_pVec9dImage[x][c + c * 3];
+            }
+        }
+    }
+    
+    return true;
+}
+
 ///////////////////////////////  print method ///////////////////////////////
 // Matの様々な要素を表示
 void printMatPropaty(const Mat& m1){

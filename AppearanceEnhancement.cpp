@@ -24,6 +24,102 @@ AppearanceEnhancement::AppearanceEnhancement(void){
     init();
 }
 ///////////////////////////////  denstructor ///////////////////////////////
+///////////////////////////////  init method ///////////////////////////////
+// 全体の初期化
+bool AppearanceEnhancement::init(void){
+    srand((unsigned) time(NULL));
+    return initRadiometricModel();
+}
+
+// 光学モデルに必要なモデルの初期化
+// return   : 成功したかどうか
+bool AppearanceEnhancement::initRadiometricModel(void){
+    initProCam();
+    ProCam* l_procam = getProCam();
+    const Size* l_camSize = l_procam->getCameraSize();
+    if ( !initP() ) return false;
+    if ( !initC() ) return false;
+    if ( !initK(*l_camSize) ) return false;
+    if ( !initF() ) return false;
+    if ( !initCfull(*l_camSize) ) return false;
+    if ( !initC0(*l_camSize) ) return false;
+    return true;
+}
+
+// カメラ色(C)の初期化
+// return   : 初期化出来たかどうか
+bool AppearanceEnhancement::initC(void){
+    m_C = cv::Mat::zeros(3, 1, CV_64FC1);
+    return true;
+}
+
+// プロジェクタ色(P)の初期化
+// return   : 初期化出来たかどうか
+bool AppearanceEnhancement::initP(void){
+    m_P = cv::Mat::zeros(3, 1, CV_64FC1);
+    return true;
+}
+
+// 反射率(K)の初期化
+// return   : 初期化出来たかどうか
+bool AppearanceEnhancement::initK(const cv::Size& _camSize){
+    // init K
+    m_K = cv::Mat::eye(3, 3, CV_64FC1);
+    
+    // init K map
+    const Vec9d l_vec(1, 0, 0,
+                      0, 1, 0,
+                      0, 0, 1);
+    m_KMap = Mat_<Vec9d>(_camSize);
+    const int rows = m_KMap.rows, cols = m_KMap.cols;
+    for (int y = 0; y < rows; ++ y) {
+        Vec9d* l_pKMap = m_KMap.ptr<Vec9d>(y);
+        for (int x = 0; x < cols; ++ x) {
+            l_pKMap[x] = l_vec;
+        }
+    }
+    
+    return true;
+}
+
+// 環境光(F)の初期化
+// return   : 初期化出来たかどうか
+bool AppearanceEnhancement::initF(void){
+    m_F = cv::Mat::zeros(3, 1, CV_64FC1);
+    return true;
+}
+
+// 最大輝度撮影色(Cfull)の初期化
+// return   : 初期化出来たかどうか
+bool AppearanceEnhancement::initCfull(const cv::Size& _camSize){
+    // init Cfull
+    m_Cfull = cv::Mat::zeros(3, 1, CV_64FC1);
+    
+    // init Cfull map
+    m_CfullMap = Mat(_camSize, CV_8UC3, CV_SCALAR_BLACK);
+    
+    return true;
+}
+
+// 最小輝度撮影色(C0)の初期化
+// return   : 初期化出来たかどうか
+bool AppearanceEnhancement::initC0(const cv::Size& _camSize){
+    // init C0
+    m_C0 = cv::Mat::zeros(3, 1, CV_64FC1);
+
+    // init C0 map
+    m_C0Map = Mat(_camSize, CV_8UC3, CV_SCALAR_BLACK);
+    return true;
+}
+
+bool AppearanceEnhancement::initProCam(void){
+    Size prjSize(PRJ_SIZE);
+    ProCam procam(prjSize);
+    procam.allCalibration();
+//    procam.doRadiometricCompensation(100);
+    return true;
+}
+
 ///////////////////////////////  set method ///////////////////////////////
 // 光学モデルに必要な行列の全体設定
 bool AppearanceEnhancement::setRadiometricModel(const cv::Mat& C, const cv::Mat& P, const cv::Mat& K, const cv::Mat& F, const cv::Mat& Cfull, const cv::Mat& C0){
@@ -60,6 +156,44 @@ bool AppearanceEnhancement::setK(const cv::Mat& K){
     return true;
 }
 
+//
+bool AppearanceEnhancement::setKMap(const cv::Mat& _P){
+    // get Cfull, C0
+    const Mat l_Cfull = getCfullMap();
+    const Mat l_C0 = getC0Map();
+    
+    // get C
+    ProCam* l_procam = getProCam();
+    const Size* l_camSize = l_procam->getCameraSize();
+    Mat l_C(*l_camSize, CV_8UC3, CV_SCALAR_BLACK);
+    l_procam->captureOfProjecctorColorFromLinearLightOnProjectorDomain(&l_C, _P);
+    
+    // calc
+    int rows = _P.rows, cols = _P.cols;
+    if (isContinuous(_P, l_C, l_Cfull, l_C0)) {
+        cols *= rows;
+        rows = 1;
+    }
+    for (int y = 0; y < rows; ++ y) {
+        // init pointer
+        Vec9d* l_pK = m_KMap.ptr<Vec9d>(y);
+        const Vec3b* l_pP = _P.ptr<Vec3b>(y);
+        const Vec3b* l_pC = l_C.ptr<Vec3b>(y);
+        const Vec3b* l_pCfull = l_Cfull.ptr<Vec3b>(y);
+        const Vec3b* l_pC0 = l_C0.ptr<Vec3b>(y);
+        
+        for (int x = 0; x < cols; ++ x) {
+            // calc
+            // K = C / {(Cf - C0) * P + C0}
+            for (int c = 0; c < 3; ++ c) {
+                l_pK[x][3 * c + c] = l_pC[x][c] / ((l_pCfull[x][c] - l_pC0[x][c]) * l_pP[x][c] + l_pC0[x][c]);
+            }
+        }
+    }
+
+    return true;
+}
+
 // 環境光の設定
 // input / F    : 設定する環境光
 // return       : 成功したかどうか
@@ -82,6 +216,12 @@ bool AppearanceEnhancement::setCfull(const double& _luminance){
     return setCfull(_luminance, _luminance, _luminance);
 }
 
+// m_CfullMapの設定
+bool AppearanceEnhancement::setCfullMap(void){
+    ProCam* l_procam = getProCam();
+    return l_procam->captureOfProjecctorColorFromLinearFlatGrayLightOnProjectorDomain(&m_CfullMap, 255);
+}
+
 
 // 最小輝度撮影色の設定
 // input / C0   : 設定する色
@@ -98,11 +238,22 @@ bool AppearanceEnhancement::setC0(const double& luminance){
     return setC0(luminance, luminance, luminance);
 }
 
+// m_C0Mapの設定
+bool AppearanceEnhancement::setC0Map(void){
+    ProCam* l_procam = getProCam();
+    return l_procam->captureOfProjecctorColorFromLinearFlatGrayLightOnProjectorDomain(&m_CfullMap, 0);
+}
+
 ///////////////////////////////  get method ///////////////////////////////
 // m_Cfullの取得
 bool AppearanceEnhancement::getCfull(cv::Mat* const Cfull){
     *Cfull = m_Cfull;
     return true;
+}
+
+// m_CfullMapの取得
+const cv::Mat& AppearanceEnhancement::getCfullMap(void){
+    return m_CfullMap;
 }
 
 // m_C0の取得
@@ -111,65 +262,19 @@ bool AppearanceEnhancement::getC0(cv::Mat* const C0){
     return true;
 }
 
-///////////////////////////////  init method ///////////////////////////////
-// 全体の初期化
-bool AppearanceEnhancement::init(void){
-    srand((unsigned) time(NULL));
-    return initRadiometricModel();
+// m_C0Mapの取得
+const cv::Mat& AppearanceEnhancement::getC0Map(void){
+    return m_C0Map;
 }
 
-// 光学モデルに必要なモデルの初期化
-// return   : 成功したかどうか
-bool AppearanceEnhancement::initRadiometricModel(void){
-    if ( !initP() ) return false;
-    if ( !initC() ) return false;
-    if ( !initK() ) return false;
-    if ( !initF() ) return false;
-    if ( !initCfull() ) return false;
-    if ( !initC0() ) return false;
-    return true;
+// m_KMapの取得
+const cv::Mat_<Vec9d>& AppearanceEnhancement::getKMap(void){
+    return m_KMap;
 }
 
-// カメラ色(C)の初期化
-// return   : 初期化出来たかどうか
-bool AppearanceEnhancement::initC(void){
-    m_C = cv::Mat::zeros(3, 1, CV_64FC1);
-    return true;
-}
-
-// プロジェクタ色(P)の初期化
-// return   : 初期化出来たかどうか
-bool AppearanceEnhancement::initP(void){
-    m_P = cv::Mat::zeros(3, 1, CV_64FC1);
-    return true;
-}
-
-// 反射率(K)の初期化
-// return   : 初期化出来たかどうか
-bool AppearanceEnhancement::initK(void){
-    m_K = cv::Mat::eye(3, 3, CV_64FC1);
-    return true;
-}
-
-// 環境光(F)の初期化
-// return   : 初期化出来たかどうか
-bool AppearanceEnhancement::initF(void){
-    m_F = cv::Mat::zeros(3, 1, CV_64FC1);
-    return true;
-}
-
-// 最大輝度撮影色(Cfull)の初期化
-// return   : 初期化出来たかどうか
-bool AppearanceEnhancement::initCfull(void){
-    m_Cfull = cv::Mat::zeros(3, 1, CV_64FC1);
-    return true;
-}
-
-// 最小輝度撮影色(C0)の初期化
-// return   : 初期化出来たかどうか
-bool AppearanceEnhancement::initC0(void){
-    m_C0 = cv::Mat::zeros(3, 1, CV_64FC1);
-    return true;
+// m_procamの取得
+ProCam* AppearanceEnhancement::getProCam(void){
+    return m_procam;
 }
 
 ///////////////////////////////  print method ///////////////////////////////
@@ -417,21 +522,7 @@ bool AppearanceEnhancement::printAmanoMethod(void){
     return true;
 }
 
-///////////////////////////////  other method ///////////////////////////////
-// 光学モデルのテスト ( C=K{(C_full-C_0)P + C_0 + F} )
-// return   : テストが合ってるかどうか
-bool AppearanceEnhancement:: test_RadiometricModel(void){
-    setCfull(0.8);
-    setC0(0.1);
-
-//    printStandardDeviationOfRadiometricModel();
-    printSwitchIteratorError();
-//    printSimultaneousIteratorError();
-//    printAmanoMethod();
-    
-    return true;
-}
-
+///////////////////////////////  calc method ///////////////////////////////
 // 光学モデルを用いて反射率と環境光の推定を行う
 // output / K   : 推定する反射率
 // output / F   : 推定する環境光
@@ -467,14 +558,14 @@ bool AppearanceEnhancement::calcReflectAndAmbient(cv::Mat* const _K, cv::Mat* co
         Mat Ans = C12inv * P12 * C0full;
         calcK.at<double>(color, color) = 1.0 / Ans.at<double>(0, 0);
         calcF.at<double>(0, color) = Ans.at<double>(0, 1);
-//        calcK.at<double>(color, color) = C2_1.at<double>(0, color) / (Cfull_0.at<double>(0, color) * P2_1.at<double>(0, color));
-//        calcF.at<double>(0, color) = ((Cfull_0.at<double>(0, color) * (_C1.at<double>(0, color) * _P2.at<double>(0, color)))) / C2_1.at<double>(0, color);
+        //        calcK.at<double>(color, color) = C2_1.at<double>(0, color) / (Cfull_0.at<double>(0, color) * P2_1.at<double>(0, color));
+        //        calcF.at<double>(0, color) = ((Cfull_0.at<double>(0, color) * (_C1.at<double>(0, color) * _P2.at<double>(0, color)))) / C2_1.at<double>(0, color);
     }
     
     // 丸め込み
     roundReflectance(&calcK);
     roundAmbient(&calcF);
-
+    
     // 出力
     *_K = calcK;
     *_F = calcF;
@@ -505,10 +596,10 @@ bool AppearanceEnhancement::calcReflect(cv::Mat* const _K, const cv::Mat& _P, co
     
     // 丸め込み
     roundReflectance(&calcK);
-
+    
     // get estimated K
     *_K = calcK;
-
+    
     return true;
 }
 
@@ -527,7 +618,7 @@ bool AppearanceEnhancement::calcAmbient(cv::Mat* const _F, const cv::Mat& _P, co
     Mat Cfull_0 = Cfull - C0;
     Cfull.release();
     Mat calcF = Mat::zeros(3, 1, CV_64FC1);
-
+    
     // calculation
     for (int c = 0; c < 3; ++ c) {
         calcF.at<double>(0, c) = _C.at<double>(0, c) / _K.at<double>(c, c) - (Cfull_0.at<double>(0, c) * _P.at<double>(0,c) + C0.at<double>(0, c));
@@ -538,7 +629,7 @@ bool AppearanceEnhancement::calcAmbient(cv::Mat* const _F, const cv::Mat& _P, co
     
     // get estimated F
     *_F = calcF;
-
+    
     return true;
 }
 
@@ -586,7 +677,7 @@ bool AppearanceEnhancement::calcCameraAddedFixNoise(cv::Mat* const _C, const cv:
         C.at<double>(0, c) = _K.at<double>(c, c) * ((Cfull.at<double>(0, c) - C0.at<double>(0, c)) * _P.at<double>(0, c) + C0.at<double>(0, c) + _F.at<double>(0, c)) + noise;
     }
     *_C = C;
-
+    
     return true;
 }
 
@@ -618,8 +709,8 @@ bool AppearanceEnhancement::calcNextProjection(cv::Mat* const _P, const cv::Mat&
     getC0(&C0);
     getCfull(&Cfull);
     Cfull_0 = Cfull - C0;
-//    Cfull.release();
-
+    //    Cfull.release();
+    
     // calc _P
     Mat P = Mat::zeros(3, 1, CV_64FC1);
     divElmByElm(&P, _C, _K.diag()); // P = C ./ K
@@ -667,6 +758,7 @@ bool AppearanceEnhancement::calcRangeOfDesireC(cv::Mat* const _rangeTop, cv::Mat
     return true;
 }
 
+///////////////////////////////  round method ///////////////////////////////
 // desireCを光学モデルを用いて範囲を決め，その範囲に丸める
 // outpute / _desireC   : 丸めるdesireC
 // input / _K           : 反射率
@@ -677,7 +769,7 @@ bool AppearanceEnhancement::roundDesireC(cv::Mat* const _desireC, const cv::Mat&
     Mat rangeTop = Mat::zeros(rows, cols, CV_64FC1);
     Mat rangeDown = Mat::zeros(rows, cols, CV_64FC1);
     calcRangeOfDesireC(&rangeTop, &rangeDown, _K, _F);
-
+    
     // 丸め込み
     roundXtoYForMat(_desireC, rangeDown, rangeTop);
     
@@ -725,4 +817,47 @@ bool AppearanceEnhancement::roundAmbient(cv::Mat* const _F){
     return true;
 }
 
+///////////////////////////////  show method ///////////////////////////////
+bool AppearanceEnhancement::showKMap(void){
+    const Mat_<Vec9d> l_KVec9d = getKMap();
+    Mat l_K(l_KVec9d.rows, l_KVec9d.cols, CV_64FC3);
+    getDiagonalImage(&l_K, l_KVec9d);
+    
+    MY_IMSHOW(l_K);
+    
+    return true;
+}
 
+///////////////////////////////  other method ///////////////////////////////
+// 光学モデルのテスト ( C=K{(C_full-C_0)P + C_0 + F} )
+// return   : テストが合ってるかどうか
+bool AppearanceEnhancement::test_RadiometricModel(void){
+    setCfull(0.8);
+    setC0(0.1);
+
+//    printStandardDeviationOfRadiometricModel();
+    printSwitchIteratorError();
+//    printSimultaneousIteratorError();
+//    printAmanoMethod();
+    
+    return true;
+}
+
+// 見えの強調を天野先生方式で行う
+bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
+    // init
+    setCfullMap();
+    setC0Map();
+    
+    //
+    ProCam* l_procam = getProCam();
+    const Size* l_camSize = l_procam->getCameraSize();
+    Mat l_projectionImage(*l_camSize, CV_8UC3, CV_SCALAR_WHITE);
+    setKMap(l_projectionImage);
+    
+    // show
+    showKMap();
+    MY_WAIT_KEY(CV_BUTTON_ESC);
+    
+    return true;
+}
