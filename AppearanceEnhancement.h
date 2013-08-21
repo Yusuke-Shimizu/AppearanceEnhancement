@@ -20,7 +20,7 @@ class ProCam;
 
 class AppearanceEnhancement{
 private:
-    ProCam* m_procam;
+    ProCam m_procam;
     // C=K{(C_full-C_0)P + C_0 + F}に必要な行列
     cv::Mat m_C, m_P, m_K, m_F, m_Cfull, m_C0;
     // 画面全体の反射率等
@@ -30,7 +30,7 @@ private:
     AppearanceEnhancement(const AppearanceEnhancement& ae); // コピーコンストラクタ隠し（プログラムで１つしか存在しない為）
 public:
     ///////////////////////////////  constructor ///////////////////////////////
-    AppearanceEnhancement(void);
+    AppearanceEnhancement(const cv::Size& _prjSize);
     ///////////////////////////////  destructor ///////////////////////////////
     ///////////////////////////////  init method ///////////////////////////////
     bool init(void);

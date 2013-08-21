@@ -19,7 +19,7 @@ using namespace cv;
 int main(int argc, const char * argv[])
 {
     //
-    AppearanceEnhancement ae;
+    AppearanceEnhancement ae(PRJ_SIZE);
     ae.doAppearanceEnhancementByAmano();
     
     // プロカムの設定

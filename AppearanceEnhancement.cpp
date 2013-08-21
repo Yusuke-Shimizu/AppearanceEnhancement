@@ -20,7 +20,8 @@ using namespace std;
 using namespace cv;
 
 ///////////////////////////////  constructor ///////////////////////////////
-AppearanceEnhancement::AppearanceEnhancement(void){
+AppearanceEnhancement::AppearanceEnhancement(const cv::Size& _prjSize)
+:m_procam(_prjSize){
     init();
 }
 ///////////////////////////////  denstructor ///////////////////////////////
@@ -34,7 +35,7 @@ bool AppearanceEnhancement::init(void){
 // 光学モデルに必要なモデルの初期化
 // return   : 成功したかどうか
 bool AppearanceEnhancement::initRadiometricModel(void){
-    initProCam();
+//    initProCam();
     ProCam* l_procam = getProCam();
     const Size* l_camSize = l_procam->getCameraSize();
     if ( !initP() ) return false;
@@ -113,9 +114,9 @@ bool AppearanceEnhancement::initC0(const cv::Size& _camSize){
 }
 
 bool AppearanceEnhancement::initProCam(void){
-    Size prjSize(PRJ_SIZE);
-    ProCam procam(prjSize);
-    procam.allCalibration();
+//    Size prjSize(PRJ_SIZE);
+//    m_procam(PRJ_SIZE);
+//    procam.allCalibration();
 //    procam.doRadiometricCompensation(100);
     return true;
 }
@@ -186,7 +187,7 @@ bool AppearanceEnhancement::setKMap(const cv::Mat& _P){
             // calc
             // K = C / {(Cf - C0) * P + C0}
             for (int c = 0; c < 3; ++ c) {
-                l_pK[x][3 * c + c] = l_pC[x][c] / ((l_pCfull[x][c] - l_pC0[x][c]) * l_pP[x][c] + l_pC0[x][c]);
+                l_pK[x][3 * c + c] = (double)l_pC[x][c] / (double)(((double)l_pCfull[x][c] - (double)l_pC0[x][c]) * (double)l_pP[x][c] + (double)l_pC0[x][c]);
             }
         }
     }
@@ -274,7 +275,7 @@ const cv::Mat_<Vec9d>& AppearanceEnhancement::getKMap(void){
 
 // m_procamの取得
 ProCam* AppearanceEnhancement::getProCam(void){
-    return m_procam;
+    return &m_procam;
 }
 
 ///////////////////////////////  print method ///////////////////////////////

@@ -1187,7 +1187,7 @@ void ProCam::convertColorSpaceOfCameraToProjector(cv::Mat* const _imageOnPrj, co
         for (int x = 0; x < cols; ++ x) {
             // vec -> mat
             const Mat l_camMat = Mat(Vec3d(l_pImageOnCam[x]));
-            Mat l_VMat;
+            Mat l_VMat(3, 3, CV_64FC1);
             convertVecToMat(&l_VMat, l_pV[x]);
             
             // calc

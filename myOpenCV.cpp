@@ -492,7 +492,6 @@ bool convertVecToMat(cv::Mat* const _dst, const Vec9d& _src){
         double* p_dst = _dst->ptr<double>(y);
         for (int x = 0; x < cols; ++ x, ++ i) {
             p_dst[x] = _src[i];
-//            _print2(p_dst[x], _src[i]);
         }
     }
     return true;
