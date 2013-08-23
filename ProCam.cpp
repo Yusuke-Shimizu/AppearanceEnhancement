@@ -816,8 +816,11 @@ bool ProCam::geometricCalibration(void){
     // load
     loadAccessMapCam2Prj();
 #endif
+
+#ifdef SHOW_GEOMETRIC_CALIBRATION_MAP_FLAG
     // show geometric map
     showAccessMapCam2Prj();
+#endif
     
     return true;
 }
@@ -844,9 +847,11 @@ bool ProCam::linearizeOfProjector(void){
     linearPrj.loadAllCImages();
 #endif
     
+#ifdef SHOW_LINEAR_FLAG
     // show
     showProjectorResponseP2I();
     showProjectorResponseI2P();
+#endif
     
     // print
     Point pt(cols*0.6/256, rows*0.6);

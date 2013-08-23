@@ -676,7 +676,7 @@ void LinearizerOfProjector::test_responseFunction(void){
     for (int i = 0; i < 256; ++ i) {
         l_procam->captureFromLinearFlatGrayLightOnProjectorDomain(&l_captureImage, i);
         Vec3b l_color = l_captureImage.at<Vec3b>(100, 100);
-        _print(l_color);
+        _print2(i, l_color);
     }
 }
 

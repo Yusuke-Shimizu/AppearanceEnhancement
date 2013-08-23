@@ -38,7 +38,7 @@ public:
     bool initC(void);
     bool initP(void);
     bool initK(const cv::Size& _camSize);
-    bool initF(void);
+    bool initF(const cv::Size& _camSize);
     bool initCfull(const cv::Size& _camSize);
     bool initC0(const cv::Size& _camSize);
     bool initProCam(void);
@@ -49,6 +49,7 @@ public:
     bool setK(const cv::Mat& K);
     bool setKMap(const cv::Mat& _P);
     bool setF(const cv::Mat& F);
+    bool setFMap(const cv::Mat& _F);
     bool setCfull(const cv::Mat& Cfull);
     bool setCfull(const double& red, const double& blue, const double& green);
     bool setCfull(const double& luminance);
@@ -63,6 +64,7 @@ public:
     bool getC0(cv::Mat* const C0);
     const cv::Mat& getC0Map(void);
     const cv::Mat_<Vec9d>& getKMap(void);
+    const cv::Mat& getFMap(void);
     ProCam* getProCam(void);
     ///////////////////////////////  print method ///////////////////////////////
 //    bool printData(std::ofstream* ofs, const cv::Mat& data);
@@ -80,6 +82,8 @@ public:
     bool calcCameraAddedFixNoise(cv::Mat* const _C, const cv::Mat& _K, const cv::Mat& _F, const cv::Mat& _P, const double& noise);
     bool calcNextProjection(cv::Mat* const _P, const cv::Mat& _C, const cv::Mat& _K, const cv::Mat& _F);
     bool calcRangeOfDesireC(cv::Mat* const _rangeTop, cv::Mat* const _rangeDown, const cv::Mat& _K, const cv::Mat& _F);
+    ////////////////////////////// estimate method //////////////////////////////
+    bool estimateF(const cv::Mat& _P);
     ///////////////////////////////  round method ///////////////////////////////
     bool roundDesireC(cv::Mat* const _desireC, const cv::Mat& _K, const cv::Mat& _F);
     bool roundReflectance(cv::Mat* const _K);

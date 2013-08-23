@@ -35,13 +35,13 @@ bool AppearanceEnhancement::init(void){
 // 光学モデルに必要なモデルの初期化
 // return   : 成功したかどうか
 bool AppearanceEnhancement::initRadiometricModel(void){
-//    initProCam();
+    initProCam();
     ProCam* l_procam = getProCam();
     const Size* l_camSize = l_procam->getCameraSize();
     if ( !initP() ) return false;
     if ( !initC() ) return false;
     if ( !initK(*l_camSize) ) return false;
-    if ( !initF() ) return false;
+    if ( !initF(*l_camSize) ) return false;
     if ( !initCfull(*l_camSize) ) return false;
     if ( !initC0(*l_camSize) ) return false;
     return true;
@@ -85,8 +85,11 @@ bool AppearanceEnhancement::initK(const cv::Size& _camSize){
 
 // 環境光(F)の初期化
 // return   : 初期化出来たかどうか
-bool AppearanceEnhancement::initF(void){
+bool AppearanceEnhancement::initF(const cv::Size& _camSize){
     m_F = cv::Mat::zeros(3, 1, CV_64FC1);
+    
+    m_FMap = Mat(_camSize, CV_8UC3, CV_SCALAR_BLACK);
+
     return true;
 }
 
@@ -116,7 +119,7 @@ bool AppearanceEnhancement::initC0(const cv::Size& _camSize){
 bool AppearanceEnhancement::initProCam(void){
 //    Size prjSize(PRJ_SIZE);
 //    m_procam(PRJ_SIZE);
-//    procam.allCalibration();
+    m_procam.allCalibration();
 //    procam.doRadiometricCompensation(100);
     return true;
 }
@@ -159,9 +162,10 @@ bool AppearanceEnhancement::setK(const cv::Mat& K){
 
 //
 bool AppearanceEnhancement::setKMap(const cv::Mat& _P){
-    // get Cfull, C0
+    // get Cfull, C0, F
     const Mat l_Cfull = getCfullMap();
     const Mat l_C0 = getC0Map();
+    const Mat l_F = getFMap();
     
     // get C
     ProCam* l_procam = getProCam();
@@ -171,7 +175,7 @@ bool AppearanceEnhancement::setKMap(const cv::Mat& _P){
     
     // calc
     int rows = _P.rows, cols = _P.cols;
-    if (isContinuous(_P, l_C, l_Cfull, l_C0)) {
+    if (isContinuous(_P, l_C, l_Cfull, l_C0, l_F, m_KMap)) {
         cols *= rows;
         rows = 1;
     }
@@ -182,12 +186,21 @@ bool AppearanceEnhancement::setKMap(const cv::Mat& _P){
         const Vec3b* l_pC = l_C.ptr<Vec3b>(y);
         const Vec3b* l_pCfull = l_Cfull.ptr<Vec3b>(y);
         const Vec3b* l_pC0 = l_C0.ptr<Vec3b>(y);
+        const Vec3b* l_pF = l_F.ptr<Vec3b>(y);
         
         for (int x = 0; x < cols; ++ x) {
             // calc
             // K = C / {(Cf - C0) * P + C0}
             for (int c = 0; c < 3; ++ c) {
-                l_pK[x][3 * c + c] = (double)l_pC[x][c] / (double)(((double)l_pCfull[x][c] - (double)l_pC0[x][c]) * (double)l_pP[x][c] + (double)l_pC0[x][c]);
+                // normalize
+                double l_nC = (double)l_pC[x][c] / 255.0;
+                double l_nP = (double)l_pP[x][c] / 255.0;
+                double l_nCfull = (double)l_pCfull[x][c] / 255.0;
+                double l_nC0 = (double)l_pC0[x][c] / 255.0;
+                double l_nF = (double)l_pF[x][c] / 255.0;
+                
+                // calculation
+                l_pK[x][3 * c + c] = l_nC / ((l_nCfull - l_nC0) * l_nP + l_nC0 + l_nF);
             }
         }
     }
@@ -202,6 +215,19 @@ bool AppearanceEnhancement::setF(const cv::Mat& F){
     m_F = F;
     return true;
 }
+bool AppearanceEnhancement::setFMap(const cv::Mat& _F){
+    // error handle
+    if (!isEqualSizeAndType(m_FMap, _F)) {
+        cerr << "different size or type" << endl;
+        _print_mat_propaty(_F);
+        _print_mat_propaty(m_FMap);
+        exit(-1);
+    }
+    
+    m_FMap = _F;
+    return true;
+}
+
 
 // 最大輝度撮影色の設定
 // input / Cfull    : 設定する色
@@ -242,7 +268,7 @@ bool AppearanceEnhancement::setC0(const double& luminance){
 // m_C0Mapの設定
 bool AppearanceEnhancement::setC0Map(void){
     ProCam* l_procam = getProCam();
-    return l_procam->captureOfProjecctorColorFromLinearFlatGrayLightOnProjectorDomain(&m_CfullMap, 0);
+    return l_procam->captureOfProjecctorColorFromLinearFlatGrayLightOnProjectorDomain(&m_C0Map, 0);
 }
 
 ///////////////////////////////  get method ///////////////////////////////
@@ -271,6 +297,11 @@ const cv::Mat& AppearanceEnhancement::getC0Map(void){
 // m_KMapの取得
 const cv::Mat_<Vec9d>& AppearanceEnhancement::getKMap(void){
     return m_KMap;
+}
+
+// m_FMapの取得
+const cv::Mat& AppearanceEnhancement::getFMap(void){
+    return m_FMap;
 }
 
 // m_procamの取得
@@ -759,6 +790,57 @@ bool AppearanceEnhancement::calcRangeOfDesireC(cv::Mat* const _rangeTop, cv::Mat
     return true;
 }
 
+////////////////////////////// estimate method //////////////////////////////
+// Fの推定
+bool AppearanceEnhancement::estimateF(const cv::Mat& _P){
+    // get Cfull, C0, K
+    const Mat l_Cfull = getCfullMap();
+    const Mat l_C0 = getC0Map();
+    const Mat l_K = getKMap();
+    
+    // get C
+    ProCam* l_procam = getProCam();
+    const Size* l_camSize = l_procam->getCameraSize();
+    Mat l_C(*l_camSize, CV_8UC3, CV_SCALAR_BLACK);
+    l_procam->captureOfProjecctorColorFromLinearLightOnProjectorDomain(&l_C, _P);
+    
+    // calc
+    int rows = _P.rows, cols = _P.cols;
+    if (isContinuous(_P, l_C, l_Cfull, l_C0, l_K, m_FMap)) {
+        cols *= rows;
+        rows = 1;
+    }
+    for (int y = 0; y < rows; ++ y) {
+        // init pointer
+        Vec3b* l_pF = m_FMap.ptr<Vec3b>(y);
+        const Vec9d* l_pK = l_K.ptr<Vec9d>(y);
+        const Vec3b* l_pP = _P.ptr<Vec3b>(y);
+        const Vec3b* l_pC = l_C.ptr<Vec3b>(y);
+        const Vec3b* l_pCfull = l_Cfull.ptr<Vec3b>(y);
+        const Vec3b* l_pC0 = l_C0.ptr<Vec3b>(y);
+        
+        for (int x = 0; x < cols; ++ x) {
+            // calc
+            // K = C / {(Cf - C0) * P + C0}
+            for (int c = 0; c < 3; ++ c) {
+                // normalize
+                double l_nC = (double)l_pC[x][c] / 255.0;
+                double l_nP = (double)l_pP[x][c] / 255.0;
+                double l_nCfull = (double)l_pCfull[x][c] / 255.0;
+                double l_nC0 = (double)l_pC0[x][c] / 255.0;
+                
+                // calculation
+                double l_nF = l_nC / l_pK[x][3 * c + c] - ((l_nCfull - l_nC0) * l_nP + l_nC0);
+                
+                // [0:1] -> [0:255]
+                l_pF[x][c] = (char)(l_nF * 255);
+            }
+        }
+    }
+    
+    return true;
+}
+
 ///////////////////////////////  round method ///////////////////////////////
 // desireCを光学モデルを用いて範囲を決め，その範囲に丸める
 // outpute / _desireC   : 丸めるdesireC
@@ -854,11 +936,28 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
     ProCam* l_procam = getProCam();
     const Size* l_camSize = l_procam->getCameraSize();
     Mat l_projectionImage(*l_camSize, CV_8UC3, CV_SCALAR_WHITE);
-    setKMap(l_projectionImage);
-    
-    // show
-    showKMap();
-    MY_WAIT_KEY(CV_BUTTON_ESC);
+    bool estKFlag = true;
+    while (true) {
+        // estimate
+        if (estKFlag) {
+            setKMap(l_projectionImage);
+        } else {
+            estimateF(l_projectionImage);
+        }
+        
+        // show
+        showKMap();
+        MY_IMSHOW(m_FMap);
+        
+        cout << "please set any paper" << endl;
+        MY_WAIT_KEY(CV_BUTTON_ESC);
+        char key = waitKey(-1);
+        if (key == CV_BUTTON_ESC) {
+            break;
+        } else if (key == CV_BUTTON_UP) {
+            estKFlag = !estKFlag;
+        }
+    }
     
     return true;
 }
