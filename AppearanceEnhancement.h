@@ -10,11 +10,15 @@
 #define __cameraBase03__AppearanceEnhancement__
 
 #include <fstream>
+#include <string>
 #include "ProCam.h"
 #include "myOpenCV.h"
 
 const double NOISE_RANGE = 0.01;
 //#define NOISE_RANGE 0.05
+
+const std::string C_FULL_FILE_NAME = "data/cfull.png";
+const std::string C_0_FILE_NAME = "data/c0.png";
 
 class ProCam;
 
@@ -54,10 +58,12 @@ public:
     bool setCfull(const double& red, const double& blue, const double& green);
     bool setCfull(const double& luminance);
     bool setCfullMap(void);
+    bool setCfullMap(const cv::Mat& _Cfull);
     bool setC0(const cv::Mat& C0);
     bool setC0(const double& red, const double& blue, const double& green);
     bool setC0(const double& luminance);
     bool setC0Map(void);
+    bool setC0Map(const cv::Mat& _C0);
     ///////////////////////////////  get method ///////////////////////////////
     bool getCfull(cv::Mat* const Cfull);
     const cv::Mat& getCfullMap(void);
@@ -73,6 +79,12 @@ public:
     bool printSwitchIteratorError(void);
     bool printSimultaneousIteratorError(void);
     bool printAmanoMethod(void);
+    ///////////////////////////////  save method ///////////////////////////////
+    bool saveCfull(const std::string& _fileName = C_FULL_FILE_NAME);
+    bool saveC0(const std::string& _fileName = C_0_FILE_NAME);
+    ///////////////////////////////  load method ///////////////////////////////
+    bool loadCfull(const std::string& _fileName = C_FULL_FILE_NAME);
+    bool loadC0(const std::string& _fileName = C_0_FILE_NAME);
     ///////////////////////////////  calc method ///////////////////////////////
     bool calcReflectAndAmbient(cv::Mat* const _K, cv::Mat* const _F, const cv::Mat& _P1, const cv::Mat& _C1, const cv::Mat& _P2, const cv::Mat& _C2);
     bool calcReflect(cv::Mat* const _K, const cv::Mat& _P, const cv::Mat& _C, const cv::Mat& _F);

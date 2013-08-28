@@ -329,16 +329,27 @@ bool ProCam::setV(const cv::Mat& _diffBB, const cv::Mat& _diffGB, const cv::Mat&
         Vec9d* l_pV = m_V.ptr<Vec9d>(y);
         
         for (int x = 0; x < cols; ++ x) {
+//            l_pV[x][0] = l_pDiffBB[x][0];
+//            l_pV[x][1] = l_pDiffBB[x][1];
+//            l_pV[x][2] = l_pDiffBB[x][2];
+//            
+//            l_pV[x][3] = l_pDiffGB[x][0];
+//            l_pV[x][4] = l_pDiffGB[x][1];
+//            l_pV[x][5] = l_pDiffGB[x][2];
+//            
+//            l_pV[x][6] = l_pDiffRB[x][0];
+//            l_pV[x][7] = l_pDiffRB[x][1];
+//            l_pV[x][8] = l_pDiffRB[x][2];
             l_pV[x][0] = l_pDiffBB[x][0];
-            l_pV[x][1] = l_pDiffBB[x][1];
-            l_pV[x][2] = l_pDiffBB[x][2];
+            l_pV[x][1] = l_pDiffGB[x][0];
+            l_pV[x][2] = l_pDiffRB[x][0];
             
-            l_pV[x][3] = l_pDiffGB[x][0];
+            l_pV[x][3] = l_pDiffBB[x][1];
             l_pV[x][4] = l_pDiffGB[x][1];
-            l_pV[x][5] = l_pDiffGB[x][2];
+            l_pV[x][5] = l_pDiffRB[x][1];
             
-            l_pV[x][6] = l_pDiffRB[x][0];
-            l_pV[x][7] = l_pDiffRB[x][1];
+            l_pV[x][6] = l_pDiffBB[x][2];
+            l_pV[x][7] = l_pDiffGB[x][2];
             l_pV[x][8] = l_pDiffRB[x][2];
         }
     }
@@ -1164,44 +1175,59 @@ bool ProCam::convertPtoIBySomePoint(cv::Mat* const _I, const cv::Mat&  _P, const
     return true;
 }
 
-// カメラの色空間からプロジェクタの色空間へ変換する
-void ProCam::convertColorSpaceOfCameraToProjector(cv::Mat* const _imageOnPrj, const cv::Mat& _imageOnCam){
+void ProCam::convertColorSpace(cv::Mat* const _dst, const cv::Mat& _src, const bool P2CFlag){
     const Mat_<Vec9d>* l_V = getV();
     
     // error handle
-    if (!isEqualSize(*_imageOnPrj, _imageOnCam, *l_V)) {
+    if (!isEqualSize(*_dst, _src, *l_V)) {
         cerr << "size is different" << endl;
-        _print_mat_propaty(*_imageOnPrj);
-        _print_mat_propaty(_imageOnCam);
+        _print_mat_propaty(*_dst);
+        _print_mat_propaty(_src);
         _print_mat_propaty(*l_V);
         exit(-1);
     }
     
     //
-    int rows = _imageOnPrj->rows, cols = _imageOnPrj->cols;
-    if (isContinuous(*_imageOnPrj, _imageOnCam, *l_V)) {
+    int rows = _dst->rows, cols = _dst->cols;
+    if (isContinuous(*_dst, _src, *l_V)) {
         cols *= rows;
         rows = 1;
     }
     for (int y = 0; y < rows; ++ y) {
         // init pointer
-        Vec3b* l_pImageOnPrj = _imageOnPrj->ptr<Vec3b>(y);
-        const Vec3b* l_pImageOnCam = _imageOnCam.ptr<Vec3b>(y);
+        Vec3b* l_pDst = _dst->ptr<Vec3b>(y);
+        const Vec3b* l_pSrc = _src.ptr<Vec3b>(y);
         const Vec9d* l_pV = l_V->ptr<Vec9d>(y);
         
         for (int x = 0; x < cols; ++ x) {
             // vec -> mat
-            const Mat l_camMat = Mat(Vec3d(l_pImageOnCam[x]));
+            const Mat l_srcMat = Mat(Vec3d(l_pSrc[x]));
             Mat l_VMat(3, 3, CV_64FC1);
             convertVecToMat(&l_VMat, l_pV[x]);
             
             // calc
-            Mat l_prjMat = l_VMat * l_camMat;
+            Mat colorMix;
+            if (P2CFlag) {
+                colorMix = l_VMat;
+            } else {
+                colorMix = l_VMat.inv();
+            }
+            Mat l_dstMat = colorMix * l_srcMat;
             
             // mat -> vec
-            l_pImageOnPrj[x] = Vec3b(l_prjMat);
+            l_pDst[x] = Vec3b(l_dstMat);
         }
     }
+}
+
+// カメラの色空間からプロジェクタの色空間へ変換する
+void ProCam::convertColorSpaceOfCameraToProjector(cv::Mat* const _imageOnPrj, const cv::Mat& _imageOnCam){
+    convertColorSpace(_imageOnPrj, _imageOnCam, false);
+}
+
+// プロジェクタの色空間からカメラの色空間へ変換する
+void ProCam::convertColorSpaceOfProjectorToCamera(cv::Mat* const _imageOnCam, const cv::Mat& _imageOnPrj){
+    convertColorSpace(_imageOnCam, _imageOnPrj, true);
 }
 
 ///////////////////////////////  show method ///////////////////////////////

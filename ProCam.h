@@ -170,7 +170,9 @@ public:
     bool convertPtoI(cv::Mat* const _I, const cv::Mat&  _P);
     bool convertPtoIBySomePoint(cv::Mat* const _I, const cv::Mat&  _P, const cv::Point& _point);
 //    bool convertCameraImageToProjectorOne(cv::Mat* const _prjImg, const cv::Mat&  _camImg);
+    void convertColorSpace(cv::Mat* const _imageOnPrj, const cv::Mat& _imageOnCam, const bool P2CFlag);
     void convertColorSpaceOfCameraToProjector(cv::Mat* const _imageOnPrj, const cv::Mat& _imageOnCam);
+    void convertColorSpaceOfProjectorToCamera(cv::Mat* const _imageOnCam, const cv::Mat& _imageOnPrj);
     ///////////////////////////////  show method ///////////////////////////////
     bool showAccessMapCam2Prj(void);
     bool showProjectorResponseI2P(void);

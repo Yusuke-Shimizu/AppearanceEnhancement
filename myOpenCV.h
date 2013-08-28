@@ -29,24 +29,37 @@
 
 #ifdef MAC
 const int CV_BUTTON_ESC     = 27;
-const int CV_BUTTON_UP      = 63232;
-const int CV_BUTTON_DOWN    = 63233;
-const int CV_BUTTON_LEFT    = 63234;
-const int CV_BUTTON_RIGHT   = 63235;
+const int CV_BUTTON_UP      = 0;
+const int CV_BUTTON_DOWN    = 1;
+const int CV_BUTTON_LEFT    = 2;
+const int CV_BUTTON_RIGHT   = 3;
+const int CV_BUTTON_c       = 99;
+const int CV_BUTTON_C       = 67;
+const int CV_BUTTON_g       = 103;
+const int CV_BUTTON_G       = 71;
 #endif
 #ifdef MAC_PROJECTOR
 const int CV_BUTTON_ESC     = 27;
-const int CV_BUTTON_UP      = 63232;
-const int CV_BUTTON_DOWN    = 63233;
-const int CV_BUTTON_LEFT    = 63234;
-const int CV_BUTTON_RIGHT   = 63235;
+const int CV_BUTTON_UP      = 0;
+const int CV_BUTTON_DOWN    = 1;
+const int CV_BUTTON_LEFT    = 2;
+const int CV_BUTTON_RIGHT   = 3;
+const int CV_BUTTON_c       = 99;
+const int CV_BUTTON_C       = 67;
+const int CV_BUTTON_g       = 103;
+const int CV_BUTTON_G       = 71;
 #endif
 #ifdef LINUX
-const char CV_BUTTON_ESC     = 27;
-const char CV_BUTTON_UP      = 82;
-const char CV_BUTTON_DOWN    = 84;
-const char CV_BUTTON_LEFT    = 81;
-const char CV_BUTTON_RIGHT   = 83;
+const char CV_BUTTON_ESC    = 27;
+const char CV_BUTTON_UP     = 82;
+const char CV_BUTTON_DOWN   = 84;
+const char CV_BUTTON_LEFT   = 81;
+const char CV_BUTTON_RIGHT  = 83;
+// 以下は検証する！
+const int CV_BUTTON_c       = 99;
+const int CV_BUTTON_C       = 67;
+const int CV_BUTTON_g       = 103;
+const int CV_BUTTON_G       = 71;
 #endif
 
 // define based Color
@@ -168,6 +181,7 @@ bool divElmByElm(cv::Mat* const dst, const cv::Mat& src1, const cv::Mat& src2);
 bool normalizeByAnyColorChannel(cv::Mat* const image, const ColorName _cName);
 bool calcAverageOfImage(cv::Vec3b* const _aveColor, const cv::Mat& image);
 bool insertMatForDeepDepthMat(cv::Mat* const _deepDepthMat, const cv::Mat& _oneLayerMat, const int _depth, const int _maxDepth = 256);
+void checkButton(void);
 ///////////////////////////////  inline method ///////////////////////////////
 inline void MY_WAIT_KEY(void){
     std::cout << "push any key" << std::endl;

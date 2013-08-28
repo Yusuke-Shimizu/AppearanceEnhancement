@@ -18,6 +18,7 @@ using namespace cv;
 // main method
 int main(int argc, const char * argv[])
 {
+    checkButton();
     //
     AppearanceEnhancement ae(PRJ_SIZE);
     ae.doAppearanceEnhancementByAmano();

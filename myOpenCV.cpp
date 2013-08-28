@@ -1080,4 +1080,21 @@ bool insertMatForDeepDepthMat(cv::Mat* const _deepDepthMat, const cv::Mat& _oneL
     return true;
 }
 
-
+// ボタンの番号を調べる
+void checkButton(void){
+    const Mat image(480, 640, CV_8UC3, CV_SCALAR_BLACK);
+    MY_IMSHOW(image);
+    bool flag = true;
+    while (flag) {
+        char key = waitKey(-1);
+        switch (key) {
+            case CV_BUTTON_ESC:
+                flag = false;
+                break;
+                
+            default:
+                std::cout << (int)key << std::endl;
+                break;
+        }
+    }
+}

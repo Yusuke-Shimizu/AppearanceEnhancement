@@ -246,7 +246,13 @@ bool AppearanceEnhancement::setCfull(const double& _luminance){
 // m_CfullMapの設定
 bool AppearanceEnhancement::setCfullMap(void){
     ProCam* l_procam = getProCam();
-    return l_procam->captureOfProjecctorColorFromLinearFlatGrayLightOnProjectorDomain(&m_CfullMap, 255);
+    l_procam->captureOfProjecctorColorFromLinearFlatGrayLightOnProjectorDomain(&m_CfullMap, 255);
+    saveCfull();
+    return true;
+}
+bool AppearanceEnhancement::setCfullMap(const cv::Mat& _Cfull){
+    m_CfullMap = _Cfull.clone();
+    return true;
 }
 
 
@@ -268,7 +274,13 @@ bool AppearanceEnhancement::setC0(const double& luminance){
 // m_C0Mapの設定
 bool AppearanceEnhancement::setC0Map(void){
     ProCam* l_procam = getProCam();
-    return l_procam->captureOfProjecctorColorFromLinearFlatGrayLightOnProjectorDomain(&m_C0Map, 0);
+    l_procam->captureOfProjecctorColorFromLinearFlatGrayLightOnProjectorDomain(&m_C0Map, 0);
+    saveC0();
+    return true;
+}
+bool AppearanceEnhancement::setC0Map(const cv::Mat& _C0){
+    m_C0Map = _C0.clone();
+    return true;
 }
 
 ///////////////////////////////  get method ///////////////////////////////
@@ -554,6 +566,28 @@ bool AppearanceEnhancement::printAmanoMethod(void){
     return true;
 }
 
+///////////////////////////////  save method ///////////////////////////////
+bool AppearanceEnhancement::saveCfull(const std::string& _fileName){
+    const Mat l_Cfull = getCfullMap();
+    imwrite(_fileName, l_Cfull);
+    return true;
+}
+bool AppearanceEnhancement::saveC0(const std::string& _fileName){
+    const Mat l_C0 = getC0Map();
+    imwrite(_fileName, l_C0);
+    return true;
+}
+
+///////////////////////////////  load method ///////////////////////////////
+bool AppearanceEnhancement::loadCfull(const std::string& _fileName){
+    const Mat l_Cfull = imread(_fileName);
+    return setCfullMap(l_Cfull);
+}
+bool AppearanceEnhancement::loadC0(const std::string& _fileName){
+    const Mat l_C0 = imread(_fileName);
+    return setC0Map(l_C0);
+}
+
 ///////////////////////////////  calc method ///////////////////////////////
 // 光学モデルを用いて反射率と環境光の推定を行う
 // output / K   : 推定する反射率
@@ -792,6 +826,7 @@ bool AppearanceEnhancement::calcRangeOfDesireC(cv::Mat* const _rangeTop, cv::Mat
 
 ////////////////////////////// estimate method //////////////////////////////
 // Fの推定
+// model : C = K * {(Cf - C0) * P + C0 + F}
 bool AppearanceEnhancement::estimateF(const cv::Mat& _P){
     // get Cfull, C0, K
     const Mat l_Cfull = getCfullMap();
@@ -803,6 +838,8 @@ bool AppearanceEnhancement::estimateF(const cv::Mat& _P){
     const Size* l_camSize = l_procam->getCameraSize();
     Mat l_C(*l_camSize, CV_8UC3, CV_SCALAR_BLACK);
     l_procam->captureOfProjecctorColorFromLinearLightOnProjectorDomain(&l_C, _P);
+    Mat l_P = _P.clone();
+    l_procam->convertColorSpaceOfProjectorToCamera(&l_P, _P);
     
     // calc
     int rows = _P.rows, cols = _P.cols;
@@ -814,7 +851,8 @@ bool AppearanceEnhancement::estimateF(const cv::Mat& _P){
         // init pointer
         Vec3b* l_pF = m_FMap.ptr<Vec3b>(y);
         const Vec9d* l_pK = l_K.ptr<Vec9d>(y);
-        const Vec3b* l_pP = _P.ptr<Vec3b>(y);
+//        const Vec3b* l_pP = _P.ptr<Vec3b>(y);
+        const Vec3b* l_pP = l_P.ptr<Vec3b>(y);
         const Vec3b* l_pC = l_C.ptr<Vec3b>(y);
         const Vec3b* l_pCfull = l_Cfull.ptr<Vec3b>(y);
         const Vec3b* l_pC0 = l_C0.ptr<Vec3b>(y);
@@ -832,8 +870,8 @@ bool AppearanceEnhancement::estimateF(const cv::Mat& _P){
                 // calculation
                 double l_nF = l_nC / l_pK[x][3 * c + c] - ((l_nCfull - l_nC0) * l_nP + l_nC0);
                 
-                // [0:1] -> [0:255]
-                l_pF[x][c] = (char)(l_nF * 255);
+                // inverse normalize
+                l_pF[x][c] = (char)(l_nF * 255.0);
             }
         }
     }
@@ -949,9 +987,9 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
         showKMap();
         MY_IMSHOW(m_FMap);
         
-        cout << "please set any paper" << endl;
-        MY_WAIT_KEY(CV_BUTTON_ESC);
-        char key = waitKey(-1);
+//        cout << "please set any paper" << endl;
+//        MY_WAIT_KEY(CV_BUTTON_ESC);
+        char key = waitKey(30);
         if (key == CV_BUTTON_ESC) {
             break;
         } else if (key == CV_BUTTON_UP) {
