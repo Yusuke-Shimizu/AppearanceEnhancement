@@ -96,6 +96,7 @@ public:
     bool calcRangeOfDesireC(cv::Mat* const _rangeTop, cv::Mat* const _rangeDown, const cv::Mat& _K, const cv::Mat& _F);
     ////////////////////////////// estimate method //////////////////////////////
     bool estimateF(const cv::Mat& _P);
+    bool estimateKF(const cv::Mat& _P1, const cv::Mat& _P2);
     ///////////////////////////////  round method ///////////////////////////////
     bool roundDesireC(cv::Mat* const _desireC, const cv::Mat& _K, const cv::Mat& _F);
     bool roundReflectance(cv::Mat* const _K);
@@ -104,7 +105,7 @@ public:
     bool showKMap(void);
     ///////////////////////////////  other method ///////////////////////////////
     bool test_RadiometricModel(void);
-    bool doAppearanceCrealy(const double _s);
+    bool doAppearanceCrealy(cv::Mat* const _P, const double _s);
     bool doAppearanceEnhancementByAmano(void);
 };
 

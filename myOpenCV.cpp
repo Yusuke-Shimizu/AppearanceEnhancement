@@ -57,6 +57,12 @@ bool isContinuous(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const
 bool isContinuous(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4, const cv::Mat& m5, const cv::Mat& m6){
     return isContinuous(m1, m2, m3, m4, m5) & m6.isContinuous();
 }
+bool isContinuous(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4, const cv::Mat& m5, const cv::Mat& m6, const cv::Mat& m7){
+    return isContinuous(m1, m2, m3, m4, m5, m6) & m7.isContinuous();
+}
+bool isContinuous(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4, const cv::Mat& m5, const cv::Mat& m6, const cv::Mat& m7, const cv::Mat& m8){
+    return isContinuous(m1, m2, m3, m4, m5, m6, m7) & m8.isContinuous();
+}
 
 
 // ビット深度が等しいかどうか

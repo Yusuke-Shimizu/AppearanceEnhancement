@@ -887,6 +887,63 @@ bool AppearanceEnhancement::estimateF(const cv::Mat& _P){
     return true;
 }
 
+// estimate K and F
+bool AppearanceEnhancement::estimateKF(const cv::Mat& _P1, const cv::Mat& _P2){
+    // init
+    ProCam* l_procam = getProCam();
+    const Size* l_camSize = l_procam->getCameraSize();
+    const Mat l_Cfull = getCfullMap(), l_C0 = getC0Map();
+    Mat l_C1(*l_camSize, CV_8UC3, CV_SCALAR_BLACK), l_C2(*l_camSize, CV_8UC3, CV_SCALAR_BLACK);
+    l_procam->captureOfProjecctorColorFromLinearLightOnProjectorDomain(&l_C1, _P2, SLEEP_TIME * 5);
+    l_procam->captureOfProjecctorColorFromLinearLightOnProjectorDomain(&l_C2, _P2);
+    
+    int rows = _P1.rows, cols = _P1.cols;
+    if (isContinuous(_P1, _P2, l_C1, l_C2, l_Cfull, l_C0, m_KMap, m_FMap)) {
+        cols *= rows;
+        rows = 1;
+    }
+    for (int y = 0; y < rows; ++ y) {
+        Vec9d* l_pK = m_KMap.ptr<Vec9d>(y);
+        Vec3b* l_pF = m_FMap.ptr<Vec3b>(y);
+        const Vec3b* l_pC1 = l_C1.ptr<Vec3b>(y);
+        const Vec3b* l_pC2 = l_C2.ptr<Vec3b>(y);
+        const Vec3b* l_pP1 = _P1.ptr<Vec3b>(y);
+        const Vec3b* l_pP2 = _P2.ptr<Vec3b>(y);
+        const Vec3b* l_pCfull = l_Cfull.ptr<Vec3b>(y);
+        const Vec3b* l_pC0 = l_C0.ptr<Vec3b>(y);
+        
+        for (int x = 0; x < cols; ++ x) {
+            for (int c = 0; c < 3; ++ c) {
+                // normalize
+                const double l_nC1 = l_pC1[x][c] / 255.0;
+                const double l_nC2 = l_pC2[x][c] / 255.0;
+                const double l_nP1 = l_pP1[x][c] / 255.0;
+                const double l_nP2 = l_pP2[x][c] / 255.0;
+                const double l_nCfull = l_pCfull[x][c] / 255.0;
+                const double l_nC0 = l_pC0[x][c] / 255.0;
+                
+                // set matrix
+                const Mat l_C12 = (Mat_<double>(2, 2) << l_nC1, -1, l_nC2, -1);
+                const Mat l_P12 = (Mat_<double>(2, 2) << l_nP1, 1, l_nP2, 1);
+                const Mat l_Cf0 = (Mat_<double>(2, 1) << (l_nCfull - l_nC0), l_nC0);
+                
+                // calculation
+                const Mat l_nKF = l_C12.inv() * l_P12 * l_Cf0;
+                
+                // set
+                // K
+                l_pK[x][c+c*3] = 1 / l_nKF.at<double>(0, 0);
+                // F
+                double l_roundF = l_nKF.at<double>(1, 0);
+                round0to1(&l_roundF);
+                l_pF[x][c] = (uchar)(l_roundF * 255);
+            }
+        }
+    }
+    
+    return true;
+}
+
 ///////////////////////////////  round method ///////////////////////////////
 // desireCを光学モデルを用いて範囲を決め，その範囲に丸める
 // outpute / _desireC   : 丸めるdesireC
@@ -973,25 +1030,25 @@ bool AppearanceEnhancement::test_RadiometricModel(void){
 }
 
 // 対象の彩度を強調させる
-bool AppearanceEnhancement::doAppearanceCrealy(const double _s){
+bool AppearanceEnhancement::doAppearanceCrealy(cv::Mat* const _P, const double _s){
     ProCam* l_procam = getProCam();
     const Size* l_camSize = l_procam->getCameraSize();
     Mat l_desireC(*l_camSize, CV_8UC3, CV_SCALAR_BLACK);
-    Mat l_P(*l_camSize, CV_8UC3, CV_SCALAR_BLACK);
+//    Mat _P(*l_camSize, CV_8UC3, CV_SCALAR_BLACK);
     const Mat l_K = getKMap();
     const Mat l_F = getFMap();
     const Mat l_Cfull = getCfullMap();
     const Mat l_C0 = getC0Map();
     const Mat grayTransMat = (Mat_<double>(1, 3) << 0.114478, 0.586611, 0.298912);
     
-    int rows = l_P.rows, cols = l_P.cols;
-    if (isContinuous(l_desireC, l_P, l_K, l_F, l_Cfull, l_C0)) {
+    int rows = _P->rows, cols = _P->cols;
+    if (isContinuous(l_desireC, *_P, l_K, l_F, l_Cfull, l_C0)) {
         cols *= rows;
         rows = 1;
     }
     for (int y = 0; y < rows; ++ y) {
         Vec3b* l_pDesireC = l_desireC.ptr<Vec3b>(y);
-        Vec3b* l_pP = l_P.ptr<Vec3b>(y);
+        Vec3b* l_pP = _P->ptr<Vec3b>(y);
         const Vec9d* l_pK = l_K.ptr<Vec9d>(y);
         const Vec3b* l_pF = l_F.ptr<Vec3b>(y);
         const Vec3b* l_pCfull = l_Cfull.ptr<Vec3b>(y);
@@ -1027,11 +1084,11 @@ bool AppearanceEnhancement::doAppearanceCrealy(const double _s){
     
     // projection
     Mat l_C(*l_camSize, CV_8UC3, CV_SCALAR_BLACK);
-    l_procam->captureOfProjecctorColorFromLinearLightOnProjectorDomain(&l_C, l_P);
+    l_procam->captureOfProjecctorColorFromLinearLightOnProjectorDomain(&l_C, *_P);
     
     // show
     MY_IMSHOW(l_desireC);
-    MY_IMSHOW(l_P);
+    MY_IMSHOW(*_P);
     MY_IMSHOW(l_C);
     
     return true;
@@ -1063,7 +1120,7 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
         MY_IMSHOW(m_FMap);
         
         //
-        doAppearanceCrealy(1.5);
+        doAppearanceCrealy(&l_projectionImage, 1.5);
         
 //        cout << "please set any paper" << endl;
 //        MY_WAIT_KEY(CV_BUTTON_ESC);

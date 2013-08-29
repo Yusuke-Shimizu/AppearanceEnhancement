@@ -873,35 +873,35 @@ bool ProCam::linearizeOfProjector(void){
     linearPrj.saveAllC(PROJECTOR_ALL_C_IMAGES_FILE_NAME, pt);
 
     // test
-    cout << "do radiometric compensation" << endl;
-    int prjLum = 100;
-    linearPrj.doRadiometricCompensation(prjLum);
-    bool loopFlag = true;
-    while (loopFlag) {
-        linearPrj.doRadiometricCompensation(prjLum);
-//        prjLum += 1;    //1 or 10
-
-        char key = waitKey(-1);
-        switch (key) {
-            case CV_BUTTON_ESC:
-                loopFlag = !loopFlag;
-                break;
-            case CV_BUTTON_RIGHT:
-                prjLum += 10;
-                break;
-            case CV_BUTTON_LEFT:
-                prjLum -= 10;
-                break;
-            default:
-                break;
-        }
-        if (prjLum >= 256) {
-            prjLum = 0;
-        } else if (prjLum < 0) {
-            prjLum = 255;
-        }
-    }
-    cout << "did radiometric compensation" << endl;
+//    cout << "do radiometric compensation" << endl;
+//    int prjLum = 100;
+//    linearPrj.doRadiometricCompensation(prjLum);
+//    bool loopFlag = true;
+//    while (loopFlag) {
+//        linearPrj.doRadiometricCompensation(prjLum);
+////        prjLum += 1;    //1 or 10
+//
+//        char key = waitKey(-1);
+//        switch (key) {
+//            case CV_BUTTON_ESC:
+//                loopFlag = !loopFlag;
+//                break;
+//            case CV_BUTTON_RIGHT:
+//                prjLum += 10;
+//                break;
+//            case CV_BUTTON_LEFT:
+//                prjLum -= 10;
+//                break;
+//            default:
+//                break;
+//        }
+//        if (prjLum >= 256) {
+//            prjLum = 0;
+//        } else if (prjLum < 0) {
+//            prjLum = 255;
+//        }
+//    }
+//    cout << "did radiometric compensation" << endl;
     return true;
 }
 
