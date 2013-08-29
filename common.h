@@ -16,9 +16,14 @@
 
 // プリント系
 #define _print(var) std::cout<<#var<<" = "<<(var)<<" ("<<&(var)<<") ("<<__FUNCTION__<<")"<<std::endl
-#define _print2(var1, var2) std::cout<<"["<<#var1<<", "<<#var2<<"]"<<" = ["<<(var1)<<", "<<(var2)<<"] ("<<&(var1)<<") ("<<__FUNCTION__<<")"<<std::endl
-#define _print3(var1, var2, var3) std::cout<<"["<<#var1<<", "<<#var2<<", "<<#var3<<"]"<<" = ["<<(var1)<<", "<<(var2)<<", "<<(var3)<<"] ("<<&(var1)<<") ("<<__FUNCTION__<<")"<<std::endl
-#define _print4(var1, var2, var3, var4) std::cout<<"["<<#var1<<", "<<#var2<<", "<<#var3<<", "<<#var4<<"]"<<" = ["<<(var1)<<", "<<(var2)<<", "<<(var3)<<", "<<(var4)<<"] ("<<&(var1)<<") ("<<__FUNCTION__<<")"<<std::endl
+#define _print2(var1, var2) std::cout<<"["<<#var1<<", "<<#var2<<"]"<<" = ["<<(var1)<<", "<<(var2)<<"] ("<<__FUNCTION__<<")"<<std::endl
+#define _print3(var1, var2, var3) std::cout<<"["<<#var1<<", "<<#var2<<", "<<#var3<<"]"<<" = ["<<(var1)<<", "<<(var2)<<", "<<(var3)<<"] ("<<__FUNCTION__<<")"<<std::endl
+#define _print4(var1, var2, var3, var4) std::cout<<"["<<#var1<<", "<<#var2<<", "<<#var3<<", "<<#var4<<"]"<<" = ["<<(var1)<<", "<<(var2)<<", "<<(var3)<<", "<<(var4)<<"] ("<<__FUNCTION__<<")"<<std::endl
+#define _print5(var1, var2, var3, var4, var5) std::cout<<"["<<#var1<<", "<<#var2<<", "<<#var3<<", "<<#var4<<", "<<#var5<<"]"<<" = ["<<(var1)<<", "<<(var2)<<", "<<(var3)<<", "<<(var4)<<", "<<(var5)<<"] ("<<__FUNCTION__<<")"<<std::endl
+#define _print6(var1, var2, var3, var4, var5, var6) std::cout<<"["<<#var1<<", "<<#var2<<", "<<#var3<<", "<<#var4<<", "<<#var5<<", "<<#var6<<"]"<<" = ["<<(var1)<<", "<<(var2)<<", "<<(var3)<<", "<<(var4)<<", "<<(var5)<<", "<<(var6)<<"] ("<<__FUNCTION__<<")"<<std::endl
+#define _print7(var1, var2, var3, var4, var5, var6, var7) std::cout<<"["<<#var1<<", "<<#var2<<", "<<#var3<<", "<<#var4<<", "<<#var5<<", "<<#var6<<", "<<#var7<<"]"<<" = ["<<(var1)<<", "<<(var2)<<", "<<(var3)<<", "<<(var4)<<", "<<(var5)<<", "<<(var6)<<", "<<(var7)<<"] ("<<__FUNCTION__<<")"<<std::endl
+#define _print8(var1, var2, var3, var4, var5, var6, var7, var8) std::cout<<"["<<#var1<<", "<<#var2<<", "<<#var3<<", "<<#var4<<", "<<#var5<<", "<<#var6<<", "<<#var7<<", "<<#var8<<"]"<<" = ["<<(var1)<<", "<<(var2)<<", "<<(var3)<<", "<<(var4)<<", "<<(var5)<<", "<<(var6)<<", "<<(var7)<<", "<<(var8)<<"] ("<<__FUNCTION__<<")"<<std::endl
+#define _print9(var1, var2, var3, var4, var5, var6, var7, var8, var9) std::cout<<"["<<#var1<<", "<<#var2<<", "<<#var3<<", "<<#var4<<", "<<#var5<<", "<<#var6<<", "<<#var7<<", "<<#var8<<", "<<#var9<<"]"<<" = ["<<(var1)<<", "<<(var2)<<", "<<(var3)<<", "<<(var4)<<", "<<(var5)<<", "<<(var6)<<", "<<(var7)<<", "<<(var8)<<", "<<(var9)<<"] ("<<__FUNCTION__<<")"<<std::endl
 // name print
 #define _print_name(var) std::cout<<#var<<" ("<<&(var)<<") ("<<__FUNCTION__<<")"<<std::endl
 #define _print_name_ln(var) _print_name(var)<<std::endl

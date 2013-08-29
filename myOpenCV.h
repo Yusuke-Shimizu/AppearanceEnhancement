@@ -28,15 +28,17 @@
 #define _print_mat_propaty(mat) _print_name(mat);printMatPropaty(mat)
 
 #ifdef MAC
-const int CV_BUTTON_ESC     = 27;
-const int CV_BUTTON_UP      = 0;
-const int CV_BUTTON_DOWN    = 1;
-const int CV_BUTTON_LEFT    = 2;
-const int CV_BUTTON_RIGHT   = 3;
-const int CV_BUTTON_c       = 99;
-const int CV_BUTTON_C       = 67;
-const int CV_BUTTON_g       = 103;
-const int CV_BUTTON_G       = 71;
+const char CV_BUTTON_ESC    = 27;
+const char CV_BUTTON_UP     = 0;
+const char CV_BUTTON_DOWN   = 1;
+const char CV_BUTTON_LEFT   = 2;
+const char CV_BUTTON_RIGHT  = 3;
+const char CV_BUTTON_c      = 99;
+const char CV_BUTTON_C      = 67;
+const char CV_BUTTON_g      = 103;
+const char CV_BUTTON_G      = 71;
+const char CV_BUTTON_f      = 102;
+const char CV_BUTTON_F      = 70;
 #endif
 #ifdef MAC_PROJECTOR
 const int CV_BUTTON_ESC     = 27;
@@ -55,11 +57,12 @@ const char CV_BUTTON_UP     = 82;
 const char CV_BUTTON_DOWN   = 84;
 const char CV_BUTTON_LEFT   = 81;
 const char CV_BUTTON_RIGHT  = 83;
-// 以下は検証する！
-const int CV_BUTTON_c       = 99;
-const int CV_BUTTON_C       = 67;
-const int CV_BUTTON_g       = 103;
-const int CV_BUTTON_G       = 71;
+const char CV_BUTTON_c      = 99;
+const char CV_BUTTON_C      = 67;
+const char CV_BUTTON_g      = 103;
+const char CV_BUTTON_G      = 71;
+const char CV_BUTTON_f      = 102;
+const char CV_BUTTON_F      = 70;
 #endif
 
 // define based Color

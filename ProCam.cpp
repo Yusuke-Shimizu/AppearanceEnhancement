@@ -791,11 +791,16 @@ bool ProCam::loadProjectorResponseP2IForByte(const char* fileName){
 // 全てのキャリブレーションを行う
 bool ProCam::allCalibration(void){
     // geometri calibration
+#ifdef GEO_CAL_CALC_FLAG
     if ( !geometricCalibration() ) {
         cerr << "geometric calibration error" << endl;
         return false;
     }
-
+#else
+    // load
+    loadAccessMapCam2Prj();
+#endif
+    
     // linearized projector
     if ( !linearizeOfProjector() ) {
         cerr << "linearized error of projector" << endl;
@@ -817,16 +822,11 @@ bool ProCam::geometricCalibration(void){
     Size* camSize = getCameraSize();
     Mat_<Vec2i> l_accessMapCam2Prj(*camSize);
     
-#ifdef GEO_CAL_CALC_FLAG
     // calculation
     GeometricCalibration gc(this);
     if (!gc.doCalibration(&l_accessMapCam2Prj)) return false;
     setAccessMapCam2Prj(l_accessMapCam2Prj);
     saveAccessMapCam2Prj();
-#else
-    // load
-    loadAccessMapCam2Prj();
-#endif
 
 #ifdef SHOW_GEOMETRIC_CALIBRATION_MAP_FLAG
     // show geometric map

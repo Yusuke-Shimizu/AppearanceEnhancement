@@ -104,6 +104,7 @@ public:
     bool showKMap(void);
     ///////////////////////////////  other method ///////////////////////////////
     bool test_RadiometricModel(void);
+    bool doAppearanceCrealy(const double _s);
     bool doAppearanceEnhancementByAmano(void);
 };
 

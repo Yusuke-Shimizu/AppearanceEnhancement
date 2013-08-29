@@ -838,8 +838,6 @@ bool AppearanceEnhancement::estimateF(const cv::Mat& _P){
     const Size* l_camSize = l_procam->getCameraSize();
     Mat l_C(*l_camSize, CV_8UC3, CV_SCALAR_BLACK);
     l_procam->captureOfProjecctorColorFromLinearLightOnProjectorDomain(&l_C, _P);
-    Mat l_P = _P.clone();
-    l_procam->convertColorSpaceOfProjectorToCamera(&l_P, _P);
     
     // calc
     int rows = _P.rows, cols = _P.cols;
@@ -851,8 +849,7 @@ bool AppearanceEnhancement::estimateF(const cv::Mat& _P){
         // init pointer
         Vec3b* l_pF = m_FMap.ptr<Vec3b>(y);
         const Vec9d* l_pK = l_K.ptr<Vec9d>(y);
-//        const Vec3b* l_pP = _P.ptr<Vec3b>(y);
-        const Vec3b* l_pP = l_P.ptr<Vec3b>(y);
+        const Vec3b* l_pP = _P.ptr<Vec3b>(y);
         const Vec3b* l_pC = l_C.ptr<Vec3b>(y);
         const Vec3b* l_pCfull = l_Cfull.ptr<Vec3b>(y);
         const Vec3b* l_pC0 = l_C0.ptr<Vec3b>(y);
@@ -871,10 +868,21 @@ bool AppearanceEnhancement::estimateF(const cv::Mat& _P){
                 double l_nF = l_nC / l_pK[x][3 * c + c] - ((l_nCfull - l_nC0) * l_nP + l_nC0);
                 
                 // inverse normalize
-                l_pF[x][c] = (char)(l_nF * 255.0);
+                if (l_nF > 1) {
+                    l_pF[x][c] = 255;
+                } else if(l_nF < 0) {
+                    l_pF[x][c] = 0;
+                } else {
+                    l_pF[x][c] = (char)(l_nF * 255.0);
+                }
             }
         }
     }
+    
+    // show difference
+    Mat l_diffF(*l_camSize, CV_8UC3, CV_SCALAR_BLACK);
+    absdiff(m_FMap, _P, l_diffF);
+    MY_IMSHOW(l_diffF);
     
     return true;
 }
@@ -964,6 +972,71 @@ bool AppearanceEnhancement::test_RadiometricModel(void){
     return true;
 }
 
+// 対象の彩度を強調させる
+bool AppearanceEnhancement::doAppearanceCrealy(const double _s){
+    ProCam* l_procam = getProCam();
+    const Size* l_camSize = l_procam->getCameraSize();
+    Mat l_desireC(*l_camSize, CV_8UC3, CV_SCALAR_BLACK);
+    Mat l_P(*l_camSize, CV_8UC3, CV_SCALAR_BLACK);
+    const Mat l_K = getKMap();
+    const Mat l_F = getFMap();
+    const Mat l_Cfull = getCfullMap();
+    const Mat l_C0 = getC0Map();
+    const Mat grayTransMat = (Mat_<double>(1, 3) << 0.114478, 0.586611, 0.298912);
+    
+    int rows = l_P.rows, cols = l_P.cols;
+    if (isContinuous(l_desireC, l_P, l_K, l_F, l_Cfull, l_C0)) {
+        cols *= rows;
+        rows = 1;
+    }
+    for (int y = 0; y < rows; ++ y) {
+        Vec3b* l_pDesireC = l_desireC.ptr<Vec3b>(y);
+        Vec3b* l_pP = l_P.ptr<Vec3b>(y);
+        const Vec9d* l_pK = l_K.ptr<Vec9d>(y);
+        const Vec3b* l_pF = l_F.ptr<Vec3b>(y);
+        const Vec3b* l_pCfull = l_Cfull.ptr<Vec3b>(y);
+        const Vec3b* l_pC0 = l_C0.ptr<Vec3b>(y);
+
+        for (int x = 0; x < cols; ++ x) {
+            // calc gray image
+            const Mat l_matK = (Mat_<double>(3, 1) << l_pK[x][0] ,l_pK[x][4] ,l_pK[x][8]);
+            const Mat l_gray = grayTransMat * l_matK;
+            
+            for (int c = 0; c < 3; ++ c) {
+                // normalize
+                const double l_nF = l_pF[x][c] / 255.0;
+                const double l_nCfull = l_pCfull[x][c] / 255.0;
+                const double l_nC0 = l_pC0[x][c] / 255.0;
+                
+                // calc desire C
+                const double l_desireColor = (1 + _s) * l_pK[x][c+c*3] - _s * l_gray.at<double>(0, 0);
+                double l_roundDesireColor = l_desireColor * 255;
+                roundXtoY(&l_roundDesireColor, 0, 255);
+                l_pDesireC[x][c] = (uchar)l_roundDesireColor;
+                
+                // calc P
+                // C=K{(Cf-C0)P+C0+F}
+                // P = (C/K - C0 - F) / (Cf-C0)
+                const double l_nP = (l_desireColor / l_pK[x][c+c*3] - (l_nC0 + l_nF)) / (l_nCfull - l_nC0);
+                double l_roundP = l_nP * 255;
+                roundXtoY(&l_roundP, 0, 255);
+                l_pP[x][c] = (uchar)l_roundP;
+            }
+        }
+    }
+    
+    // projection
+    Mat l_C(*l_camSize, CV_8UC3, CV_SCALAR_BLACK);
+    l_procam->captureOfProjecctorColorFromLinearLightOnProjectorDomain(&l_C, l_P);
+    
+    // show
+    MY_IMSHOW(l_desireC);
+    MY_IMSHOW(l_P);
+    MY_IMSHOW(l_C);
+    
+    return true;
+}
+
 // 見えの強調を天野先生方式で行う
 bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
     // init
@@ -974,12 +1047,14 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
     ProCam* l_procam = getProCam();
     const Size* l_camSize = l_procam->getCameraSize();
     Mat l_projectionImage(*l_camSize, CV_8UC3, CV_SCALAR_WHITE);
-    bool estKFlag = true;
-    while (true) {
+    bool estKFlag = true, loopFlag = true;
+    while (loopFlag) {
         // estimate
         if (estKFlag) {
+            cout << "estimate K" << endl;
             setKMap(l_projectionImage);
         } else {
+            cout << "estimate F" << endl;
             estimateF(l_projectionImage);
         }
         
@@ -987,13 +1062,32 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
         showKMap();
         MY_IMSHOW(m_FMap);
         
+        //
+        doAppearanceCrealy(1.5);
+        
 //        cout << "please set any paper" << endl;
 //        MY_WAIT_KEY(CV_BUTTON_ESC);
         char key = waitKey(30);
-        if (key == CV_BUTTON_ESC) {
-            break;
-        } else if (key == CV_BUTTON_UP) {
-            estKFlag = !estKFlag;
+        switch (key) {
+            case (CV_BUTTON_c):
+                l_procam->colorCalibration();
+                break;
+            case (CV_BUTTON_g):
+                l_procam->geometricCalibration();
+                break;
+            case (CV_BUTTON_f):
+                setCfullMap();
+                setC0Map();
+                break;
+            case (CV_BUTTON_UP):
+                estKFlag = !estKFlag;
+                break;
+            case (CV_BUTTON_ESC):
+                loopFlag = false;
+                break;
+            default:
+                cout << "you push " << (int)key << "key" << endl;
+                break;
         }
     }
     
