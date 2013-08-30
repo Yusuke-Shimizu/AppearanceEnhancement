@@ -39,6 +39,7 @@ const char CV_BUTTON_g      = 103;
 const char CV_BUTTON_G      = 71;
 const char CV_BUTTON_f      = 102;
 const char CV_BUTTON_F      = 70;
+const char CV_BUTTON_DELETE = 127;
 #endif
 #ifdef MAC_PROJECTOR
 const int CV_BUTTON_ESC     = 27;
@@ -63,6 +64,7 @@ const char CV_BUTTON_g      = 103;
 const char CV_BUTTON_G      = 71;
 const char CV_BUTTON_f      = 102;
 const char CV_BUTTON_F      = 70;
+const char CV_BUTTON_DELETE = 8;
 #endif
 
 // define based Color

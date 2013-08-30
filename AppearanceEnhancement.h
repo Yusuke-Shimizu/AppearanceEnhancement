@@ -51,7 +51,6 @@ public:
     bool setC(const cv::Mat& C);
     bool setP(const cv::Mat& P);
     bool setK(const cv::Mat& K);
-    bool setKMap(const cv::Mat& _P);
     bool setF(const cv::Mat& F);
     bool setFMap(const cv::Mat& _F);
     bool setCfull(const cv::Mat& Cfull);
@@ -95,8 +94,10 @@ public:
     bool calcNextProjection(cv::Mat* const _P, const cv::Mat& _C, const cv::Mat& _K, const cv::Mat& _F);
     bool calcRangeOfDesireC(cv::Mat* const _rangeTop, cv::Mat* const _rangeDown, const cv::Mat& _K, const cv::Mat& _F);
     ////////////////////////////// estimate method //////////////////////////////
+    bool estimateK(const cv::Mat& _P);
     bool estimateF(const cv::Mat& _P);
     bool estimateKF(const cv::Mat& _P1, const cv::Mat& _P2);
+    bool estimateKFByFujiiModel(const cv::Mat& _P1, const cv::Mat& _P2);
     ///////////////////////////////  round method ///////////////////////////////
     bool roundDesireC(cv::Mat* const _desireC, const cv::Mat& _K, const cv::Mat& _F);
     bool roundReflectance(cv::Mat* const _K);

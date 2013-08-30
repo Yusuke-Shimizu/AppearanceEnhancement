@@ -18,15 +18,7 @@ using namespace cv;
 // main method
 int main(int argc, const char * argv[])
 {
-//    for (int i = 0; i < 400; ++ i) {
-//        double d = 0.01 * i - 0.1;
-//        int c1 = (char)(d * 255.0);
-//        int c2 = (uchar)(d * 255.0);
-//        int c3 = (int)(d * 255.0);
-//        double d4 = d * 255;
-//        _print6(i, d, c1, c2, c3, d4);
-//    }
-//    checkButton();
+    checkButton();
     //
     AppearanceEnhancement ae(PRJ_SIZE);
     ae.doAppearanceEnhancementByAmano();
