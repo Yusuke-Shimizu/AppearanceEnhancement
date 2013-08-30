@@ -906,6 +906,7 @@ bool ProCam::linearizeOfProjector(void){
 }
 
 // 光学キャリブレーションを行う
+Mat g_F0;
 bool ProCam::colorCalibration(void){
     cout << "color calibration start!" << endl;
     
@@ -924,6 +925,7 @@ bool ProCam::colorCalibration(void){
     captureFromLinearFlatLightOnProjectorDomain(&red_cap, CV_VEC3B_RED);
     captureFromLinearFlatLightOnProjectorDomain(&green_cap, CV_VEC3B_GREEN);
     captureFromLinearFlatLightOnProjectorDomain(&blue_cap, CV_VEC3B_BLUE);
+    g_F0 = black_cap;
     
     // show image
     imshow("black_cap", black_cap);
@@ -1189,7 +1191,7 @@ void ProCam::convertColorSpace(cv::Mat* const _dst, const cv::Mat& _src, const b
     
     //
     int rows = _dst->rows, cols = _dst->cols;
-    if (isContinuous(*_dst, _src, *l_V)) {
+    if (isContinuous(*_dst, _src, *l_V, g_F0)) {
         cols *= rows;
         rows = 1;
     }
@@ -1198,10 +1200,12 @@ void ProCam::convertColorSpace(cv::Mat* const _dst, const cv::Mat& _src, const b
         Vec3b* l_pDst = _dst->ptr<Vec3b>(y);
         const Vec3b* l_pSrc = _src.ptr<Vec3b>(y);
         const Vec9d* l_pV = l_V->ptr<Vec9d>(y);
+        const Vec3b* l_pF0 = g_F0.ptr<Vec3b>(y);
         
         for (int x = 0; x < cols; ++ x) {
             // vec -> mat
             const Mat l_srcMat = Mat(Vec3d(l_pSrc[x]));
+            const Mat l_F0Mat = Mat(Vec3d(l_pF0[x]));
             Mat l_VMat(3, 3, CV_64FC1);
             convertVecToMat(&l_VMat, l_pV[x]);
             
@@ -1212,7 +1216,7 @@ void ProCam::convertColorSpace(cv::Mat* const _dst, const cv::Mat& _src, const b
             } else {
                 colorMix = l_VMat.inv();
             }
-            Mat l_dstMat = colorMix * l_srcMat;
+            Mat l_dstMat = colorMix * (l_srcMat - l_F0Mat);
             
             // mat -> vec
             l_pDst[x] = Vec3b(l_dstMat);

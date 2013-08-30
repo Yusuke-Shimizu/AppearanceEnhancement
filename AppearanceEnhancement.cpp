@@ -200,6 +200,7 @@ bool AppearanceEnhancement::setCfullMap(void){
     ProCam* l_procam = getProCam();
     l_procam->captureOfProjecctorColorFromLinearFlatGrayLightOnProjectorDomain(&m_CfullMap, 255);
     saveCfull();
+    MY_IMSHOW(m_CfullMap);
     return true;
 }
 bool AppearanceEnhancement::setCfullMap(const cv::Mat& _Cfull){
@@ -228,6 +229,7 @@ bool AppearanceEnhancement::setC0Map(void){
     ProCam* l_procam = getProCam();
     l_procam->captureOfProjecctorColorFromLinearFlatGrayLightOnProjectorDomain(&m_C0Map, 0);
     saveC0();
+    MY_IMSHOW(m_C0Map);
     return true;
 }
 bool AppearanceEnhancement::setC0Map(const cv::Mat& _C0){
@@ -1179,7 +1181,7 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
         
 //        cout << "please set any paper" << endl;
 //        MY_WAIT_KEY(CV_BUTTON_ESC);
-        char key = waitKey(30);
+        char key = waitKey(-1);
         switch (key) {
             case (CV_BUTTON_c): // have to get Cfull and C0 after color calibration
                 l_procam->colorCalibration();
