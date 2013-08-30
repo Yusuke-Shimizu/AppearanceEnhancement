@@ -1092,7 +1092,7 @@ void checkButton(void){
     MY_IMSHOW(image);
     bool flag = true;
     while (flag) {
-        char key = waitKey(-1);
+        int key = waitKey(-1);
         switch (key) {
             case CV_BUTTON_ESC:
                 flag = false;

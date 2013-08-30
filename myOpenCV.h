@@ -27,44 +27,42 @@
 #define MY_IMSHOW(img) cv::imshow(#img, img);cv::waitKey(30)
 #define _print_mat_propaty(mat) _print_name(mat);printMatPropaty(mat)
 
+
 #ifdef MAC
-const char CV_BUTTON_ESC    = 27;
-const char CV_BUTTON_UP     = 0;
-const char CV_BUTTON_DOWN   = 1;
-const char CV_BUTTON_LEFT   = 2;
-const char CV_BUTTON_RIGHT  = 3;
-const char CV_BUTTON_c      = 99;
-const char CV_BUTTON_C      = 67;
-const char CV_BUTTON_g      = 103;
-const char CV_BUTTON_G      = 71;
-const char CV_BUTTON_f      = 102;
-const char CV_BUTTON_F      = 70;
-const char CV_BUTTON_DELETE = 127;
-#endif
-#ifdef MAC_PROJECTOR
-const int CV_BUTTON_ESC     = 27;
-const int CV_BUTTON_UP      = 0;
-const int CV_BUTTON_DOWN    = 1;
-const int CV_BUTTON_LEFT    = 2;
-const int CV_BUTTON_RIGHT   = 3;
-const int CV_BUTTON_c       = 99;
-const int CV_BUTTON_C       = 67;
-const int CV_BUTTON_g       = 103;
-const int CV_BUTTON_G       = 71;
+const int CV_BUTTON_SMALL_TO_CAPITAL = -32;
+const int CV_BUTTON_ESC    = 27;
+const int CV_BUTTON_UP     = 63232;
+const int CV_BUTTON_DOWN   = CV_BUTTON_UP + 1;
+const int CV_BUTTON_LEFT   = CV_BUTTON_UP + 2;
+const int CV_BUTTON_RIGHT  = CV_BUTTON_UP + 3;
+const int CV_BUTTON_c      = 99;
+const int CV_BUTTON_C      = 67;
+const int CV_BUTTON_g      = 103;
+const int CV_BUTTON_G      = 71;
+const int CV_BUTTON_f      = 102;
+const int CV_BUTTON_F      = 70;
+const int CV_BUTTON_DELETE = 127;
 #endif
 #ifdef LINUX
-const char CV_BUTTON_ESC    = 27;
-const char CV_BUTTON_UP     = 82;
-const char CV_BUTTON_DOWN   = 84;
-const char CV_BUTTON_LEFT   = 81;
-const char CV_BUTTON_RIGHT  = 83;
-const char CV_BUTTON_c      = 99;
-const char CV_BUTTON_C      = 67;
-const char CV_BUTTON_g      = 103;
-const char CV_BUTTON_G      = 71;
-const char CV_BUTTON_f      = 102;
-const char CV_BUTTON_F      = 70;
-const char CV_BUTTON_DELETE = 8;
+const int CV_BUTTON_ESC     = 104803;
+const int CV_BUTTON_LEFT    = 1113937;//81;
+const int CV_BUTTON_UP      = CV_BUTTON_LEFT + 1;
+const int CV_BUTTON_RIGHT   = CV_BUTTON_LEFT + 2;
+const int CV_BUTTON_DOWN    = CV_BUTTON_LEFT + 3;
+const int CV_BUTTON_DELETE  = 1113864;
+
+const int CV_BUTTON_SMALL_TO_CAPITAL = 65504;
+const int CV_BUTTON_c       = 1048675;
+const int CV_BUTTON_C       = CV_BUTTON_c + CV_BUTTON_SMALL_TO_CAPITAL;
+const int CV_BUTTON_g       = 1048679;
+const int CV_BUTTON_G       = CV_BUTTON_g + CV_BUTTON_SMALL_TO_CAPITAL;
+const int CV_BUTTON_f       = 1048678;
+const int CV_BUTTON_F       = CV_BUTTON_f + CV_BUTTON_SMALL_TO_CAPITAL;
+const int CV_BUTTON_r      = 1048690;
+const int CV_BUTTON_R      = CV_BUTTON_r - CV_BUTTON_SMALL_TO_CAPITAL;
+const int CV_BUTTON_l      = 1048684;
+const int CV_BUTTON_L      = CV_BUTTON_l - CV_BUTTON_SMALL_TO_CAPITAL;;
+
 #endif
 
 // define based Color

@@ -1160,16 +1160,27 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
     ProCam* l_procam = getProCam();
     const Size* l_camSize = l_procam->getCameraSize();
     bool estKFlag = true, loopFlag = true, clearFlag = false;
-    int prj = 255;
+    int prj = 255, prj2 = 30;
     Mat l_projectionImage(*l_camSize, CV_8UC3, Scalar(prj, prj, prj));
+    Mat l_projectionImage2(*l_camSize, CV_8UC3, Scalar(prj2, prj2, prj2));
+    int l_estTarget = 0;
     while (loopFlag) {
         // estimate
-        if (estKFlag) {
-            cout << "estimate K" << endl;
-            estimateK(l_projectionImage);
-        } else {
-            cout << "estimate F" << endl;
-            estimateF(l_projectionImage);
+        switch (l_estTarget) {
+            case 0:
+                cout << "estimate K" << endl;
+                estimateK(l_projectionImage);
+                break;
+            case 1:
+                cout << "estimate F" << endl;
+                estimateF(l_projectionImage);
+                break;
+            case 2:
+                cout << "estimate K and F" << endl;
+                estimateKF(l_projectionImage, l_projectionImage2);
+                break;
+            default:
+                break;
         }
         
         // show
@@ -1181,7 +1192,7 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
         
 //        cout << "please set any paper" << endl;
 //        MY_WAIT_KEY(CV_BUTTON_ESC);
-        char key = waitKey(-1);
+        int key = waitKey(-1);
         switch (key) {
             case (CV_BUTTON_c): // have to get Cfull and C0 after color calibration
                 l_procam->colorCalibration();
@@ -1191,6 +1202,16 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
                 break;
             case (CV_BUTTON_g):
                 l_procam->geometricCalibration();
+                break;
+            case (CV_BUTTON_r):
+                l_estTarget = 0;
+                break;
+            case (CV_BUTTON_l):
+                l_estTarget = 1;
+                break;
+            case (CV_BUTTON_R):
+            case (CV_BUTTON_L):
+                l_estTarget = 2;
                 break;
             case (CV_BUTTON_UP):
                 estKFlag = !estKFlag;
