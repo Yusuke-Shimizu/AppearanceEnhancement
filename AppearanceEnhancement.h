@@ -19,6 +19,8 @@ const double NOISE_RANGE = 0.01;
 
 const std::string C_FULL_FILE_NAME = "data/cfull.png";
 const std::string C_0_FILE_NAME = "data/c0.png";
+const std::string K_FILE_NAME = "data/estK.png";
+const std::string F_FILE_NAME = "data/estF.png";
 
 class ProCam;
 
@@ -83,6 +85,8 @@ public:
     ///////////////////////////////  save method ///////////////////////////////
     bool saveCfull(const std::string& _fileName = C_FULL_FILE_NAME);
     bool saveC0(const std::string& _fileName = C_0_FILE_NAME);
+    bool saveK(const std::string& _fileName = K_FILE_NAME);
+    bool saveF(const std::string& _fileName = F_FILE_NAME);
     ///////////////////////////////  load method ///////////////////////////////
     bool loadCfull(const std::string& _fileName = C_FULL_FILE_NAME);
     bool loadC0(const std::string& _fileName = C_0_FILE_NAME);
@@ -98,7 +102,7 @@ public:
     ////////////////////////////// estimate method //////////////////////////////
     bool estimateK(const cv::Mat& _P);
     bool estimateF(const cv::Mat& _P);
-    bool estimateKF(const cv::Mat& _P1, const cv::Mat& _P2);
+    bool estimateKFByAmanoModel(const cv::Mat& _P1, const cv::Mat& _P2);
     bool estimateKFByFujiiModel(const cv::Mat& _P1, const cv::Mat& _P2);
     ///////////////////////////////  round method ///////////////////////////////
     bool roundDesireC(cv::Mat* const _desireC, const cv::Mat& _K, const cv::Mat& _F);

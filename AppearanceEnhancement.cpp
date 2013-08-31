@@ -533,6 +533,16 @@ bool AppearanceEnhancement::saveC0(const std::string& _fileName){
     imwrite(_fileName, l_C0);
     return true;
 }
+bool AppearanceEnhancement::saveK(const std::string& _fileName){
+    const Mat l_K = getKMap();
+    imwrite(_fileName, l_K);
+    return true;
+}
+bool AppearanceEnhancement::saveF(const std::string& _fileName){
+    const Mat l_F = getFMap();
+    imwrite(_fileName, l_F);
+    return true;
+}
 
 ///////////////////////////////  load method ///////////////////////////////
 bool AppearanceEnhancement::loadCfull(const std::string& _fileName){
@@ -802,7 +812,7 @@ bool AppearanceEnhancement::estimateK(const cv::Mat& _P){
     }
     for (int y = 0; y < rows; ++ y) {
         // init pointer
-        Vec9d* l_pK = m_KMap.ptr<Vec9d>(y);
+        Vec3d* l_pK = m_KMap.ptr<Vec3d>(y);
         const Vec3b* l_pP = _P.ptr<Vec3b>(y);
         const Vec3b* l_pC = l_C.ptr<Vec3b>(y);
         const Vec3b* l_pCfull = l_Cfull.ptr<Vec3b>(y);
@@ -821,10 +831,13 @@ bool AppearanceEnhancement::estimateK(const cv::Mat& _P){
                 double l_nF = (double)l_pF[x][c] / 255.0;
                 
                 // calculation
-                l_pK[x][3 * c + c] = l_nC / ((l_nCfull - l_nC0) * l_nP + l_nC0 + l_nF);
+                l_pK[x][c] = l_nC / ((l_nCfull - l_nC0) * l_nP + l_nC0 + l_nF);
             }
         }
     }
+    
+    // save
+    saveK();
     
     return true;
 }
@@ -883,16 +896,14 @@ bool AppearanceEnhancement::estimateF(const cv::Mat& _P){
         }
     }
 
-    // show difference
-    Mat l_diffF(*l_camSize, CV_8UC3, CV_SCALAR_BLACK);
-    absdiff(m_FMap, _P, l_diffF);
-    MY_IMSHOW(l_diffF);
+    // save
+    saveF();
     
     return true;
 }
 
 // estimate K and F
-bool AppearanceEnhancement::estimateKF(const cv::Mat& _P1, const cv::Mat& _P2){
+bool AppearanceEnhancement::estimateKFByAmanoModel(const cv::Mat& _P1, const cv::Mat& _P2){
     // init
     ProCam* l_procam = getProCam();
     const Size* l_camSize = l_procam->getCameraSize();
@@ -907,7 +918,7 @@ bool AppearanceEnhancement::estimateKF(const cv::Mat& _P1, const cv::Mat& _P2){
         rows = 1;
     }
     for (int y = 0; y < rows; ++ y) {
-        Vec9d* l_pK = m_KMap.ptr<Vec9d>(y);
+        Vec3d* l_pK = m_KMap.ptr<Vec3d>(y);
         Vec3b* l_pF = m_FMap.ptr<Vec3b>(y);
         const Vec3b* l_pC1 = l_C1.ptr<Vec3b>(y);
         const Vec3b* l_pC2 = l_C2.ptr<Vec3b>(y);
@@ -936,7 +947,7 @@ bool AppearanceEnhancement::estimateKF(const cv::Mat& _P1, const cv::Mat& _P2){
                 
                 // set
                 // K
-                l_pK[x][c+c*3] = 1 / l_nKF.at<double>(0, 0);
+                l_pK[x][c] = 1 / l_nKF.at<double>(0, 0);
                 // F
                 double l_roundF = l_nKF.at<double>(1, 0);
                 round0to1(&l_roundF);
@@ -945,6 +956,10 @@ bool AppearanceEnhancement::estimateKF(const cv::Mat& _P1, const cv::Mat& _P2){
         }
     }
     
+    // save
+    saveK();
+    saveF();
+        
     return true;
 }
 bool AppearanceEnhancement::estimateKFByFujiiModel(const cv::Mat& _P1, const cv::Mat& _P2){
@@ -964,7 +979,7 @@ bool AppearanceEnhancement::estimateKFByFujiiModel(const cv::Mat& _P1, const cv:
         rows = 1;
     }
     for (int y = 0; y < rows; ++ y) {
-        Vec9d* l_pK = m_KMap.ptr<Vec9d>(y);
+        Vec3d* l_pK = m_KMap.ptr<Vec3d>(y);
         Vec3b* l_pF = m_FMap.ptr<Vec3b>(y);
         const Vec3b* l_pC1 = l_C1.ptr<Vec3b>(y);
         const Vec3b* l_pC2 = l_C2.ptr<Vec3b>(y);
@@ -988,7 +1003,7 @@ bool AppearanceEnhancement::estimateKFByFujiiModel(const cv::Mat& _P1, const cv:
                 
                 // set
                 // K
-                l_pK[x][c+c*3] = 1 / l_nKF.at<double>(0, 0);
+                l_pK[x][c] = 1 / l_nKF.at<double>(0, 0);
                 // F
                 double l_roundF = l_nKF.at<double>(1, 0);
                 round0to1(&l_roundF);
@@ -996,7 +1011,11 @@ bool AppearanceEnhancement::estimateKFByFujiiModel(const cv::Mat& _P1, const cv:
             }
         }
     }
-    
+
+    // save
+    saveK();
+    saveF();
+
     return true;
 }
 
@@ -1146,9 +1165,15 @@ bool AppearanceEnhancement::doAppearanceCrealy(cv::Mat* const _P, const double _
     l_procam->captureOfProjecctorColorFromLinearLightOnProjectorDomain(&l_C, *_P);
     
     // show
+    Mat l_diffC = l_desireC.clone();
+    absdiff(l_desireC, l_C, l_diffC);
+    Vec3d l_diffAverage(0,0,0);
+    calcAverageOfImage_d(&l_diffAverage, l_diffC);
+    _print(l_diffAverage);
     MY_IMSHOW(l_desireC);
     MY_IMSHOW(*_P);
     MY_IMSHOW(l_C);
+    MY_IMSHOW(l_diffC);
     
     return true;
 }
@@ -1162,7 +1187,7 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
     //
     ProCam* l_procam = getProCam();
     const Size* l_camSize = l_procam->getCameraSize();
-    bool estKFlag = true, loopFlag = true, clearFlag = false;
+    bool loopFlag = true, clearFlag = false;
     int prj = 255, prj2 = 30;
     Mat l_projectionImage(*l_camSize, CV_8UC3, Scalar(prj, prj, prj));
     Mat l_projectionImage2(*l_camSize, CV_8UC3, Scalar(prj2, prj2, prj2));
@@ -1179,8 +1204,12 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
                 estimateF(l_projectionImage);
                 break;
             case 2:
-                cout << "estimate K and F" << endl;
-                estimateKF(l_projectionImage, l_projectionImage2);
+                cout << "estimate K and F by Amano model" << endl;
+                estimateKFByAmanoModel(l_projectionImage, l_projectionImage2);
+                break;
+            case 3:
+                cout << "estimate K and F by Fujii model" << endl;
+                estimateKFByFujiiModel(l_projectionImage, l_projectionImage2);
                 break;
             default:
                 break;
@@ -1190,6 +1219,12 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
 //        showKMap();
         MY_IMSHOW(m_KMap);
         MY_IMSHOW(m_FMap);
+        
+        // print average
+        Vec3d l_diffK(0,0,0), l_diffF(0,0,0);
+        calcAverageOfImage_d(&l_diffK, m_KMap);
+        calcAverageOfImage_d(&l_diffF, m_FMap);
+        _print2(l_diffK, l_diffF);
         
         // appearance enhance
         if (clearFlag) doAppearanceCrealy(&l_projectionImage, 1.5);
@@ -1213,11 +1248,10 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
                 l_estTarget = 1;
                 break;
             case (CV_BUTTON_R):
-            case (CV_BUTTON_L):
                 l_estTarget = 2;
                 break;
-            case (CV_BUTTON_UP):
-                estKFlag = !estKFlag;
+            case (CV_BUTTON_L):
+                l_estTarget = 3;
                 break;
             case (CV_BUTTON_DOWN):
                 clearFlag = !clearFlag;
@@ -1239,7 +1273,7 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
                 loopFlag = false;
                 break;
             default:
-                cout << "you push " << (int)key << "key" << endl;
+                cout << "you push " << (int)key << " key" << endl;
                 break;
         }
     }

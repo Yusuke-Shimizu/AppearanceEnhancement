@@ -100,7 +100,7 @@ bool LinearizerOfProjector::setResponseMap(cv::Mat_<cv::Vec3b>* const _responseM
     // convert P on Camera Space to Projector Space
     Mat l_PImageOnProjectorSpace(*l_prjSize, CV_8UC3, CV_SCALAR_BLACK);    // カメラ座標系におけるP（=V^{-1}C）
     l_procam->convertProjectorDomainToCameraOne(&l_PImageOnProjectorSpace, l_PImageOnCameraSpace);
-    MY_IMSHOW(l_PImageOnProjectorSpace);
+//    MY_IMSHOW(l_PImageOnProjectorSpace);
     
     // create check mat
     const Mat l_whiteCameraImage(l_camSize->height, l_camSize->width, CV_8UC3, CV_SCALAR_WHITE);

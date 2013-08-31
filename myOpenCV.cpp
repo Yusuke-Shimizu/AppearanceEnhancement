@@ -970,6 +970,13 @@ bool normalizeByAnyColorChannel(cv::Mat* const image, const ColorName _cName){
 
 // 画像の平均色を取得
 bool calcAverageOfImage(cv::Vec3b* const _aveColor, const cv::Mat& image){
+    Vec3d l_diff_d(0,0,0);
+    calcAverageOfImage_d(&l_diff_d, image);
+    *_aveColor = (Vec3b)l_diff_d;
+    
+    return true;
+}
+bool calcAverageOfImage_d(cv::Vec3d* const _aveColor, const cv::Mat& image){
     // setting
     int rows = image.rows, cols = image.cols;
     if (image.isContinuous()) {
@@ -985,8 +992,7 @@ bool calcAverageOfImage(cv::Vec3b* const _aveColor, const cv::Mat& image){
             sum += *(pixVal + x);
         }
     }
-    sum /= rows * cols;
-    *_aveColor = (cv::Vec3b)sum;
+    *_aveColor = sum / (rows * cols);
     
     return true;
 }
