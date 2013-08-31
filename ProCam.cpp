@@ -850,6 +850,10 @@ bool ProCam::linearizeOfProjector(void){
     // get projector response
     LinearizerOfProjector linearPrj(this);
 #ifdef PRJ_LINEAR_CALC_FLAG
+    loadProjectorResponseP2IForByte(PROJECTOR_RESPONSE_P2I_FILE_NAME_BYTE);
+    loadProjectorResponseForByte(PROJECTOR_RESPONSE_I2P_FILE_NAME_BYTE);
+    l_prjResponseI2P = m_projectorResponseI2P;
+    l_prjResponseP2I = m_projectorResponseP2I;
     if ( !linearPrj.doLinearlize(&l_prjResponseI2P, &l_prjResponseP2I) ) return false;    // 引数消してもいいかも
 #else
     linearPrj.loadColorMixingMatrixOfByte(CMM_MAP_FILE_NAME_BYTE);
@@ -1261,7 +1265,7 @@ bool ProCam::showAccessMapCam2Prj(void){
 
         MY_IMSHOW(l_capImage);
 
-        char pushKey = waitKey(-1);
+        int pushKey = waitKey(-1);
         switch (pushKey) {
             case (CV_BUTTON_ESC):
                 flag = false;

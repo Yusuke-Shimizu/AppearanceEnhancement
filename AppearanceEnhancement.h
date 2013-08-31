@@ -28,7 +28,8 @@ private:
     // C=K{(C_full-C_0)P + C_0 + F}に必要な行列
     cv::Mat m_C, m_P, m_K, m_F, m_Cfull, m_C0;
     // 画面全体の反射率等
-    cv::Mat_<Vec9d> m_KMap;
+//    cv::Mat_<Vec9d> m_KMap;
+    cv::Mat m_KMap;
     cv::Mat m_FMap, m_CfullMap, m_C0Map;
     
     AppearanceEnhancement(const AppearanceEnhancement& ae); // コピーコンストラクタ隠し（プログラムで１つしか存在しない為）
@@ -68,7 +69,8 @@ public:
     const cv::Mat& getCfullMap(void);
     bool getC0(cv::Mat* const C0);
     const cv::Mat& getC0Map(void);
-    const cv::Mat_<Vec9d>& getKMap(void);
+//    const cv::Mat_<Vec9d>& getKMap(void);
+    const cv::Mat& getKMap(void);
     const cv::Mat& getFMap(void);
     ProCam* getProCam(void);
     ///////////////////////////////  print method ///////////////////////////////
@@ -103,7 +105,7 @@ public:
     bool roundReflectance(cv::Mat* const _K);
     bool roundAmbient(cv::Mat* const _F);
     ///////////////////////////////  show method ///////////////////////////////
-    bool showKMap(void);
+//    bool showKMap(void);
     ///////////////////////////////  other method ///////////////////////////////
     bool test_RadiometricModel(void);
     bool doAppearanceCrealy(cv::Mat* const _P, const double _s);

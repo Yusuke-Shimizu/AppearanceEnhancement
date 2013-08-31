@@ -68,17 +68,18 @@ bool AppearanceEnhancement::initK(const cv::Size& _camSize){
     m_K = cv::Mat::eye(3, 3, CV_64FC1);
     
     // init K map
-    const Vec9d l_vec(1, 0, 0,
-                      0, 1, 0,
-                      0, 0, 1);
-    m_KMap = Mat_<Vec9d>(_camSize);
-    const int rows = m_KMap.rows, cols = m_KMap.cols;
-    for (int y = 0; y < rows; ++ y) {
-        Vec9d* l_pKMap = m_KMap.ptr<Vec9d>(y);
-        for (int x = 0; x < cols; ++ x) {
-            l_pKMap[x] = l_vec;
-        }
-    }
+//    const Vec9d l_vec(1, 0, 0,
+//                      0, 1, 0,
+//                      0, 0, 1);
+//    m_KMap = Mat_<Vec9d>(_camSize);
+//    const int rows = m_KMap.rows, cols = m_KMap.cols;
+//    for (int y = 0; y < rows; ++ y) {
+//        Vec9d* l_pKMap = m_KMap.ptr<Vec9d>(y);
+//        for (int x = 0; x < cols; ++ x) {
+//            l_pKMap[x] = l_vec;
+//        }
+//    }
+    m_KMap = Mat(_camSize, CV_64FC3, Scalar(1.0, 1.0, 1.0));
     
     return true;
 }
@@ -261,7 +262,8 @@ const cv::Mat& AppearanceEnhancement::getC0Map(void){
 }
 
 // m_KMapの取得
-const cv::Mat_<Vec9d>& AppearanceEnhancement::getKMap(void){
+//const cv::Mat_<Vec9d>& AppearanceEnhancement::getKMap(void){
+const cv::Mat& AppearanceEnhancement::getKMap(void){
     return m_KMap;
 }
 
@@ -850,7 +852,7 @@ bool AppearanceEnhancement::estimateF(const cv::Mat& _P){
     for (int y = 0; y < rows; ++ y) {
         // init pointer
         Vec3b* l_pF = m_FMap.ptr<Vec3b>(y);
-        const Vec9d* l_pK = l_K.ptr<Vec9d>(y);
+        const Vec3d* l_pK = l_K.ptr<Vec3d>(y);
         const Vec3b* l_pP = _P.ptr<Vec3b>(y);
         const Vec3b* l_pC = l_C.ptr<Vec3b>(y);
         const Vec3b* l_pCfull = l_Cfull.ptr<Vec3b>(y);
@@ -867,7 +869,7 @@ bool AppearanceEnhancement::estimateF(const cv::Mat& _P){
                 double l_nC0 = (double)l_pC0[x][c] / 255.0;
                 
                 // calculation
-                double l_nF = l_nC / l_pK[x][3 * c + c] - ((l_nCfull - l_nC0) * l_nP + l_nC0);
+                double l_nF = l_nC / l_pK[x][c] - ((l_nCfull - l_nC0) * l_nP + l_nC0);
                 
                 // inverse normalize
                 if (l_nF > 1) {
@@ -880,7 +882,7 @@ bool AppearanceEnhancement::estimateF(const cv::Mat& _P){
             }
         }
     }
-    
+
     // show difference
     Mat l_diffF(*l_camSize, CV_8UC3, CV_SCALAR_BLACK);
     absdiff(m_FMap, _P, l_diffF);
@@ -1058,15 +1060,15 @@ bool AppearanceEnhancement::roundAmbient(cv::Mat* const _F){
 }
 
 ///////////////////////////////  show method ///////////////////////////////
-bool AppearanceEnhancement::showKMap(void){
-    const Mat_<Vec9d> l_KVec9d = getKMap();
-    Mat l_K(l_KVec9d.rows, l_KVec9d.cols, CV_64FC3);
-    getDiagonalImage(&l_K, l_KVec9d);
-    
-    MY_IMSHOW(l_K);
-    
-    return true;
-}
+//bool AppearanceEnhancement::showKMap(void){
+//    const Mat_<Vec9d> l_KVec9d = getKMap();
+//    Mat l_K(l_KVec9d.rows, l_KVec9d.cols, CV_64FC3);
+//    getDiagonalImage(&l_K, l_KVec9d);
+//    
+//    MY_IMSHOW(l_K);
+//    
+//    return true;
+//}
 
 ///////////////////////////////  other method ///////////////////////////////
 // 光学モデルのテスト ( C=K{(C_full-C_0)P + C_0 + F} )
@@ -1103,14 +1105,15 @@ bool AppearanceEnhancement::doAppearanceCrealy(cv::Mat* const _P, const double _
     for (int y = 0; y < rows; ++ y) {
         Vec3b* l_pDesireC = l_desireC.ptr<Vec3b>(y);
         Vec3b* l_pP = _P->ptr<Vec3b>(y);
-        const Vec9d* l_pK = l_K.ptr<Vec9d>(y);
+        const Vec3d* l_pK = l_K.ptr<Vec3d>(y);
         const Vec3b* l_pF = l_F.ptr<Vec3b>(y);
         const Vec3b* l_pCfull = l_Cfull.ptr<Vec3b>(y);
         const Vec3b* l_pC0 = l_C0.ptr<Vec3b>(y);
 
         for (int x = 0; x < cols; ++ x) {
             // calc gray image
-            const Mat l_matK = (Mat_<double>(3, 1) << l_pK[x][0] ,l_pK[x][4] ,l_pK[x][8]);
+//            const Mat l_matK = (Mat_<double>(3, 1) << l_pK[x][0] ,l_pK[x][4] ,l_pK[x][8]);
+            const Mat l_matK = Mat(l_pK[x]);
             const Mat l_gray = grayTransMat * l_matK;
             
             for (int c = 0; c < 3; ++ c) {
@@ -1120,7 +1123,7 @@ bool AppearanceEnhancement::doAppearanceCrealy(cv::Mat* const _P, const double _
                 const double l_nC0 = l_pC0[x][c] / 255.0;
                 
                 // calc desire C
-                const double l_desireColor = (1 + _s) * l_pK[x][c+c*3] - _s * l_gray.at<double>(0, 0);
+                const double l_desireColor = (1 + _s) * l_matK.at<double>(c, 0) - _s * l_gray.at<double>(0, 0);
                 double l_roundDesireColor = l_desireColor * 255;
                 roundXtoY(&l_roundDesireColor, 0, 255);
                 l_pDesireC[x][c] = (uchar)l_roundDesireColor;
@@ -1129,7 +1132,7 @@ bool AppearanceEnhancement::doAppearanceCrealy(cv::Mat* const _P, const double _
                 // C=K{(Cf-C0)P+C0+F}
                 // P = (C/K - C0 - F) / (Cf-C0)
 //                const double l_nP = (l_desireColor / l_pK[x][c+c*3] - (l_nC0 + l_nF)) / (l_nCfull - l_nC0);
-                const double l_nP = (l_desireColor / l_pK[x][c+c*3] - (l_nC0 + l_nF)) / (l_nCfull - l_nC0);
+                const double l_nP = (l_desireColor / l_matK.at<double>(c, 0) - (l_nC0 + l_nF)) / (l_nCfull - l_nC0);
                 
                 double l_roundP = l_nP * 255;
                 roundXtoY(&l_roundP, 0, 255);
@@ -1184,14 +1187,14 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
         }
         
         // show
-        showKMap();
+//        showKMap();
+        MY_IMSHOW(m_KMap);
         MY_IMSHOW(m_FMap);
         
         // appearance enhance
         if (clearFlag) doAppearanceCrealy(&l_projectionImage, 1.5);
         
-//        cout << "please set any paper" << endl;
-//        MY_WAIT_KEY(CV_BUTTON_ESC);
+        // check key
         int key = waitKey(-1);
         switch (key) {
             case (CV_BUTTON_c): // have to get Cfull and C0 after color calibration

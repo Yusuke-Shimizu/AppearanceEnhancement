@@ -19,7 +19,7 @@ const int CAPTURE_NUM = 10;
 #include "common.h"
 
 #define GEO_CAL_CALC_FLAG       // 幾何変換を計算するフラグ
-//#define PRJ_LINEAR_CALC_FLAG    // 線形化変換を計算するフラグ
+#define PRJ_LINEAR_CALC_FLAG    // 線形化変換を計算するフラグ
 
 //#define SHOW_GEOMETRIC_CALIBRATION_MAP_FLAG // 幾何変換のマップを表示するフラグ
 //#define SHOW_LINEAR_FLAG                    // プロジェクタ線形化を表示するフラグ

@@ -44,13 +44,12 @@ const int CV_BUTTON_F      = 70;
 const int CV_BUTTON_DELETE = 127;
 #endif
 #ifdef LINUX
-const int CV_BUTTON_ESC     = 104803;
+const int CV_BUTTON_ESC     = 1048603;
 const int CV_BUTTON_LEFT    = 1113937;//81;
 const int CV_BUTTON_UP      = CV_BUTTON_LEFT + 1;
 const int CV_BUTTON_RIGHT   = CV_BUTTON_LEFT + 2;
 const int CV_BUTTON_DOWN    = CV_BUTTON_LEFT + 3;
 const int CV_BUTTON_DELETE  = 1113864;
-
 const int CV_BUTTON_SMALL_TO_CAPITAL = 65504;
 const int CV_BUTTON_c       = 1048675;
 const int CV_BUTTON_C       = CV_BUTTON_c + CV_BUTTON_SMALL_TO_CAPITAL;
@@ -59,10 +58,9 @@ const int CV_BUTTON_G       = CV_BUTTON_g + CV_BUTTON_SMALL_TO_CAPITAL;
 const int CV_BUTTON_f       = 1048678;
 const int CV_BUTTON_F       = CV_BUTTON_f + CV_BUTTON_SMALL_TO_CAPITAL;
 const int CV_BUTTON_r      = 1048690;
-const int CV_BUTTON_R      = CV_BUTTON_r - CV_BUTTON_SMALL_TO_CAPITAL;
+const int CV_BUTTON_R      = CV_BUTTON_r + CV_BUTTON_SMALL_TO_CAPITAL;
 const int CV_BUTTON_l      = 1048684;
-const int CV_BUTTON_L      = CV_BUTTON_l - CV_BUTTON_SMALL_TO_CAPITAL;;
-
+const int CV_BUTTON_L      = CV_BUTTON_l + CV_BUTTON_SMALL_TO_CAPITAL;;
 #endif
 
 // define based Color
