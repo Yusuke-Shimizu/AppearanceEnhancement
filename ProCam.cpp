@@ -1405,9 +1405,9 @@ bool ProCam::captureFromLight(cv::Mat* const captureImage, const cv::Mat& projec
     cvMoveWindow(WINDOW_NAME, POSITION_OF_PROJECTION_IMAGE.x, POSITION_OF_PROJECTION_IMAGE.y);
     cv::waitKey(_waitTimeNum);
     
-    // N回撮影する
+    // バッファを捨てる
     cv::Mat image(captureImage->rows, captureImage->cols, CV_8UC3);
-    for (int i = 0; i < CAPTURE_NUM; ++ i) {
+    for (int i = 0; i < BUFFER_NUM; ++ i) {
         getCaptureImage(&image);
     }
     

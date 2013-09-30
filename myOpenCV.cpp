@@ -976,10 +976,10 @@ bool calcAverageOfImage(cv::Vec3b* const _aveColor, const cv::Mat& image){
     
     return true;
 }
-bool calcAverageOfImage_d(cv::Vec3d* const _aveColor, const cv::Mat& image){
+bool calcAverageOfImage_d(cv::Vec3d* const _aveColor, const cv::Mat& _image){
     // setting
-    int rows = image.rows, cols = image.cols;
-    if (image.isContinuous()) {
+    int rows = _image.rows, cols = _image.cols;
+    if (_image.isContinuous()) {
         cols *= rows;
         rows = 1;
     }
@@ -987,9 +987,9 @@ bool calcAverageOfImage_d(cv::Vec3d* const _aveColor, const cv::Mat& image){
     // scanning all pixel
     cv::Vec3d sum(0, 0, 0);
     for (int y = 0; y < rows; ++ y) {
-        const cv::Vec3b* pixVal = image.ptr<cv::Vec3b>(y);
+        const cv::Vec3b* l_pImage = _image.ptr<cv::Vec3b>(y);
         for (int x = 0; x < cols; ++ x) {
-            sum += *(pixVal + x);
+            sum += l_pImage[x];
         }
     }
     *_aveColor = sum / (rows * cols);
@@ -1109,4 +1109,39 @@ void checkButton(void){
                 break;
         }
     }
+}
+
+// Matの平均を取得
+void meanMat(cv::Mat* const _meanMat, const std::vector<cv::Mat>& _matVec){
+    Mat l_sum(_matVec.at(0).rows, _matVec.at(0).rows, CV_64FC3, CV_SCALAR_BLACK);
+    
+    for (vector<Mat>::const_iterator l_matItr = _matVec.begin();
+         l_matItr != _matVec.end();
+         ++ l_matItr) {
+        Mat l_mat64;
+        l_matItr->convertTo(l_mat64, CV_64FC3);
+        l_sum += l_mat64;
+    }
+    l_sum /= _matVec.size();
+    
+    *_meanMat = l_sum.clone();
+}
+void test_meanMat(void){
+    Mat l_mat1(3, 3, CV_8UC3, CV_SCALAR_BLACK);
+    Mat l_mat2(3, 3, CV_8UC3, CV_SCALAR_BLUE);
+    Mat l_mat3(3, 3, CV_8UC3, CV_SCALAR_RED);
+    Mat l_mat4(3, 3, CV_8UC3, CV_SCALAR_GREEN);
+    Mat l_mat5(3, 3, CV_8UC3, CV_SCALAR_WHITE);
+    Mat l_mat6 = l_mat1+l_mat2/2;
+    _print(l_mat6);
+    vector<Mat> l_vecMat;
+    l_vecMat.push_back(l_mat1);
+    l_vecMat.push_back(l_mat2);
+    l_vecMat.push_back(l_mat3);
+    l_vecMat.push_back(l_mat4);
+    l_vecMat.push_back(l_mat5);
+    
+    Mat l_meanMat(3,3,CV_8UC3, CV_SCALAR_BLACK);
+    meanMat(&l_meanMat, l_vecMat);
+    _print(l_meanMat);
 }

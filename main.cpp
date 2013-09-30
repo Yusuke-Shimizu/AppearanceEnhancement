@@ -18,16 +18,11 @@ using namespace cv;
 // main method
 int main(int argc, const char * argv[])
 {
-//    checkButton();
-    //
+    // experimentation
     AppearanceEnhancement ae(PRJ_SIZE);
     ae.doAppearanceEnhancementByAmano();
     
-    // プロカムの設定
-//    Size prjSize(PRJ_SIZE);
-//    ProCam procam(prjSize);
-//    procam.allCalibration();
-//    
-//    procam.doRadiometricCompensation(100);
+    // simulation
+//    ae.test_RadiometricModel();
     return 0;
 }

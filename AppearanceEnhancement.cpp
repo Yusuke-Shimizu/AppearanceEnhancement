@@ -22,7 +22,9 @@ using namespace cv;
 ///////////////////////////////  constructor ///////////////////////////////
 AppearanceEnhancement::AppearanceEnhancement(const cv::Size& _prjSize)
 :m_procam(_prjSize){
-    init();
+    initCfull(Size(1,1));
+    initC0(Size(1,1));
+//    init();
 }
 ///////////////////////////////  denstructor ///////////////////////////////
 ///////////////////////////////  init method ///////////////////////////////
@@ -322,7 +324,7 @@ bool AppearanceEnhancement::printStandardDeviationOfRadiometricModel(void){
     Mat estF = Mat::zeros(3, 1, CV_64FC1);
     Mat estOnlyK = Mat::zeros(3, 3, CV_64FC1);
     Mat estOnlyF = Mat::zeros(3, 1, CV_64FC1);
-    Mat P1 = Mat::zeros(3, 1, CV_64FC1);
+    Mat P1 = Mat::ones(3, 1, CV_64FC1);
     Mat P2 = Mat::zeros(3, 1, CV_64FC1);
     Mat C1 = Mat::zeros(3, 1, CV_64FC1);
     Mat C2 = Mat::zeros(3, 1, CV_64FC1);
@@ -333,16 +335,22 @@ bool AppearanceEnhancement::printStandardDeviationOfRadiometricModel(void){
     
     //    cout << "index\tansK\tansK2\testK\testOnlyK\tansF\tansF2\testF\testOnlyF" << endl;
     ofstream ofs("output.txt");
-    for (int i = 1; i <= sampling; ++ i) {
+    for (int i = 0; i <= sampling; ++ i) {
         // init
         vector<double> vec[4];
         double vec_ave[4] = {0, 0, 0, 0};
         double vec_var[4] = {0, 0, 0, 0};
         double vec_sb[4] = {0, 0, 0, 0};
         double index = step * (double)i;
+//        ansK = Mat::eye(3, 3, CV_64FC1) * index;
+//        ansK2 = Mat::eye(3, 3, CV_64FC1) * index;
+        ansF = Mat::ones(3, 1, CV_64FC1) * index;
+        ansF2 = Mat::ones(3, 1, CV_64FC1) * index;
+//        ansK = Mat::eye(3, 3, CV_64FC1) * 0;
+//        ansK2 = Mat::eye(3, 3, CV_64FC1) * 0;
         //        double up = 0.11, dw = 0.09;
         //        double index_comp = (up - dw) * index + dw;
-        setColor(&P1, index);
+//        setColor(&P1, index);
         //        setColor(&P1, step * cstStep);
         
         for (int j = 0; j < variance_sampling; ++ j) {
@@ -357,13 +365,13 @@ bool AppearanceEnhancement::printStandardDeviationOfRadiometricModel(void){
             calcReflectAndAmbient(&estK, &estF, P1, C1, P2, C2);
             calcReflect(&estOnlyK, P1, C1, ansF);
             calcAmbient(&estOnlyF, P1, C1, ansK);
-            _print4(C1, C2, P1, P2);
             
             // 推定値をベクターに入れる
             vec[0].push_back(estK.at<double>(0, 0));
             vec[1].push_back(estF.at<double>(0, 0));
             vec[2].push_back(estOnlyK.at<double>(0, 0));
             vec[3].push_back(estOnlyF.at<double>(0, 0));
+//            _print(estK);
         }
         
         // calc average, variance and standard derivation
@@ -374,8 +382,8 @@ bool AppearanceEnhancement::printStandardDeviationOfRadiometricModel(void){
         }
         
         // output
-        _print_excel9(index, vec_ave[0], vec_sb[0], vec_ave[1], vec_sb[1], vec_ave[2], vec_sb[2], vec_ave[3], vec_sb[3]);
-        _print_gnuplot9(ofs, index, vec_ave[0], vec_sb[0], vec_ave[1], vec_sb[1], vec_ave[2], vec_sb[2], vec_ave[3], vec_sb[3]);
+        _print_excel9(i, vec_ave[0], vec_sb[0], vec_ave[1], vec_sb[1], vec_ave[2], vec_sb[2], vec_ave[3], vec_sb[3]);
+        _print_gnuplot9(ofs, i, vec_ave[0], vec_sb[0], vec_ave[1], vec_sb[1], vec_ave[2], vec_sb[2], vec_ave[3], vec_sb[3]);
     }
     ofs.close();
     
@@ -588,6 +596,7 @@ bool AppearanceEnhancement::calcReflectAndAmbient(cv::Mat* const _K, cv::Mat* co
         
         // calc K and F
         Mat Ans = C12inv * P12 * C0full;
+//        cout << Ans<<" = "<<C12<<".inv() * "<<P12<<" * "<<C0full<<";" << endl;
         calcK.at<double>(color, color) = 1.0 / Ans.at<double>(0, 0);
         calcF.at<double>(0, color) = Ans.at<double>(0, 1);
         //        calcK.at<double>(color, color) = C2_1.at<double>(0, color) / (Cfull_0.at<double>(0, color) * P2_1.at<double>(0, color));
@@ -595,8 +604,8 @@ bool AppearanceEnhancement::calcReflectAndAmbient(cv::Mat* const _K, cv::Mat* co
     }
     
     // 丸め込み
-    roundReflectance(&calcK);
-    roundAmbient(&calcF);
+//    roundReflectance(&calcK);
+//    roundAmbient(&calcF);
     
     // 出力
     *_K = calcK;
@@ -832,6 +841,7 @@ bool AppearanceEnhancement::estimateK(const cv::Mat& _P){
                 
                 // calculation
                 l_pK[x][c] = l_nC / ((l_nCfull - l_nC0) * l_nP + l_nC0 + l_nF);
+                round0to1(&l_pK[x][c]);
             }
         }
     }
@@ -885,13 +895,8 @@ bool AppearanceEnhancement::estimateF(const cv::Mat& _P){
                 double l_nF = l_nC / l_pK[x][c] - ((l_nCfull - l_nC0) * l_nP + l_nC0);
                 
                 // inverse normalize
-                if (l_nF > 1) {
-                    l_pF[x][c] = 255;
-                } else if(l_nF < 0) {
-                    l_pF[x][c] = 0;
-                } else {
-                    l_pF[x][c] = (char)(l_nF * 255.0);
-                }
+                round0to1(&l_nF);
+                l_pF[x][c] = (char)(l_nF * 255.0);
             }
         }
     }
@@ -949,9 +954,9 @@ bool AppearanceEnhancement::estimateKFByAmanoModel(const cv::Mat& _P1, const cv:
                 // K
                 l_pK[x][c] = 1 / l_nKF.at<double>(0, 0);
                 // F
-                double l_roundF = l_nKF.at<double>(1, 0);
-                round0to1(&l_roundF);
-                l_pF[x][c] = (uchar)(l_roundF * 255);
+                double l_nRoundF = l_nKF.at<double>(1, 0);
+                round0to1(&l_nRoundF);
+                l_pF[x][c] = (uchar)(l_nRoundF * 255);
             }
         }
     }
@@ -969,12 +974,12 @@ bool AppearanceEnhancement::estimateKFByFujiiModel(const cv::Mat& _P1, const cv:
     Mat l_C1(*l_camSize, CV_8UC3, CV_SCALAR_BLACK), l_C2(*l_camSize, CV_8UC3, CV_SCALAR_BLACK);
     l_procam->captureOfProjecctorColorFromLinearLightOnProjectorDomain(&l_C1, _P1, SLEEP_TIME * 5);
     l_procam->captureOfProjecctorColorFromLinearLightOnProjectorDomain(&l_C2, _P2);
-    Mat l_P1onC(*l_camSize, CV_8UC3, CV_SCALAR_BLACK), l_P2onC(*l_camSize, CV_8UC3, CV_SCALAR_BLACK);
-    l_procam->convertColorSpaceOfProjectorToCamera(&l_P1onC, _P1);
-    l_procam->convertColorSpaceOfProjectorToCamera(&l_P2onC, _P2);
+//    Mat _P1(*l_camSize, CV_8UC3, CV_SCALAR_BLACK), _P2(*l_camSize, CV_8UC3, CV_SCALAR_BLACK);
+//    l_procam->convertColorSpaceOfProjectorToCamera(&l_P1onC, _P1);
+//    l_procam->convertColorSpaceOfProjectorToCamera(&l_P2onC, _P2);
     
-    int rows = l_P1onC.rows, cols = l_P1onC.cols;
-    if (isContinuous(l_P1onC, l_P2onC, l_C1, l_C2, m_KMap, m_FMap)) {
+    int rows = _P1.rows, cols = _P1.cols;
+    if (isContinuous(_P1, _P2, l_C1, l_C2, m_KMap, m_FMap)) {
         cols *= rows;
         rows = 1;
     }
@@ -983,8 +988,8 @@ bool AppearanceEnhancement::estimateKFByFujiiModel(const cv::Mat& _P1, const cv:
         Vec3b* l_pF = m_FMap.ptr<Vec3b>(y);
         const Vec3b* l_pC1 = l_C1.ptr<Vec3b>(y);
         const Vec3b* l_pC2 = l_C2.ptr<Vec3b>(y);
-        const Vec3b* l_pP1 = l_P1onC.ptr<Vec3b>(y);
-        const Vec3b* l_pP2 = l_P2onC.ptr<Vec3b>(y);
+        const Vec3b* l_pP1 = _P1.ptr<Vec3b>(y);
+        const Vec3b* l_pP2 = _P2.ptr<Vec3b>(y);
         
         for (int x = 0; x < cols; ++ x) {
             for (int c = 0; c < 3; ++ c) {
@@ -1016,6 +1021,57 @@ bool AppearanceEnhancement::estimateKFByFujiiModel(const cv::Mat& _P1, const cv:
     saveK();
     saveF();
 
+    return true;
+}
+
+////////////////////////////// evaluate method //////////////////////////////
+bool AppearanceEnhancement::evaluateK(const cv::Mat& _ansK){
+    // get difference
+    MY_IMSHOW(_ansK);
+    Mat l_estK = getKMap();
+    Mat l_diffK(l_estK.rows, l_estK.cols, CV_64FC3, CV_SCALAR_BLACK);
+    absdiff(_ansK, l_estK, l_diffK);
+    MY_IMSHOW(l_diffK);
+    
+    // show mean and standard deviation
+    Scalar l_meanK(0.0, 0.0, 0.0), l_stddevK(0.0, 0.0, 0.0);
+    meanStdDev(l_diffK, l_meanK, l_stddevK);
+    _print2(l_meanK, l_stddevK);
+    return true;
+}
+bool AppearanceEnhancement::evaluateF(const cv::Mat& _ansF){
+    // get difference
+    MY_IMSHOW(_ansF);
+    Mat l_estF = getKMap();
+    Mat l_diffF(l_estF.rows, l_estF.cols, CV_64FC3, CV_SCALAR_BLACK);
+    absdiff(_ansF, l_estF, l_diffF);
+    MY_IMSHOW(l_diffF);
+    
+    // show mean and standard deviation
+    Scalar l_meanF(0.0, 0.0, 0.0), l_stddevF(0.0, 0.0, 0.0);
+    meanStdDev(l_diffF, l_meanF, l_stddevF);
+    _print2(l_meanF, l_stddevF);
+
+    return true;
+}
+bool AppearanceEnhancement::evaluateKF(void){
+    // init
+    ProCam* l_procam = getProCam();
+    const Size* l_camSize = l_procam->getCameraSize();
+    
+    // make answer to reflectance
+    cout << "Please shut out ambient light" << endl;
+    Mat l_ansK(*l_camSize, CV_8UC3, CV_SCALAR_BLACK);
+    l_procam->captureOfProjecctorColorFromLinearFlatGrayLightOnProjectorDomain(&l_ansK, 255);
+    
+    // make answer to ambient light
+    cout << "Please set the standard white board" << endl;
+    Mat l_ansF(*l_camSize, CV_8UC3, CV_SCALAR_BLACK);
+    l_procam->captureOfProjecctorColorFromLinearFlatGrayLightOnProjectorDomain(&l_ansF, 0);
+    
+    // evaluation
+    evaluateK(l_ansK);
+    evaluateF(l_ansF);
     return true;
 }
 
@@ -1096,8 +1152,8 @@ bool AppearanceEnhancement::test_RadiometricModel(void){
     setCfull(0.8);
     setC0(0.1);
 
-//    printStandardDeviationOfRadiometricModel();
-    printSwitchIteratorError();
+    printStandardDeviationOfRadiometricModel();
+//    printSwitchIteratorError();
 //    printSimultaneousIteratorError();
 //    printAmanoMethod();
     
@@ -1142,8 +1198,8 @@ bool AppearanceEnhancement::doAppearanceCrealy(cv::Mat* const _P, const double _
                 const double l_nC0 = l_pC0[x][c] / 255.0;
                 
                 // calc desire C
-                const double l_desireColor = (1 + _s) * l_matK.at<double>(c, 0) - _s * l_gray.at<double>(0, 0);
-                double l_roundDesireColor = l_desireColor * 255;
+                const double l_nDesireColor = (1 + _s) * l_matK.at<double>(c, 0) - _s * l_gray.at<double>(0, 0);
+                double l_roundDesireColor = l_nDesireColor * 255;
                 roundXtoY(&l_roundDesireColor, 0, 255);
                 l_pDesireC[x][c] = (uchar)l_roundDesireColor;
                 
@@ -1151,7 +1207,7 @@ bool AppearanceEnhancement::doAppearanceCrealy(cv::Mat* const _P, const double _
                 // C=K{(Cf-C0)P+C0+F}
                 // P = (C/K - C0 - F) / (Cf-C0)
 //                const double l_nP = (l_desireColor / l_pK[x][c+c*3] - (l_nC0 + l_nF)) / (l_nCfull - l_nC0);
-                const double l_nP = (l_desireColor / l_matK.at<double>(c, 0) - (l_nC0 + l_nF)) / (l_nCfull - l_nC0);
+                const double l_nP = (l_nDesireColor / l_matK.at<double>(c, 0) - (l_nC0 + l_nF)) / (l_nCfull - l_nC0);
                 
                 double l_roundP = l_nP * 255;
                 roundXtoY(&l_roundP, 0, 255);
@@ -1211,6 +1267,10 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
                 cout << "estimate K and F by Fujii model" << endl;
                 estimateKFByFujiiModel(l_projectionImage, l_projectionImage2);
                 break;
+            case 4:
+                cout << "evaluate estimated K and F" << endl;
+                evaluateKF();
+                break;
             default:
                 break;
         }
@@ -1227,19 +1287,18 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
         _print2(l_diffK, l_diffF);
         
         // appearance enhance
-        if (clearFlag) doAppearanceCrealy(&l_projectionImage, 1.5);
+        if (clearFlag) doAppearanceCrealy(&l_projectionImage, 1.3);
         
         // check key
         int key = waitKey(-1);
         switch (key) {
+            case (CV_BUTTON_g):
+                l_procam->geometricCalibration();
             case (CV_BUTTON_c): // have to get Cfull and C0 after color calibration
                 l_procam->colorCalibration();
             case (CV_BUTTON_f):
                 setCfullMap();
                 setC0Map();
-                break;
-            case (CV_BUTTON_g):
-                l_procam->geometricCalibration();
                 break;
             case (CV_BUTTON_r):
                 l_estTarget = 0;
@@ -1253,21 +1312,27 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
             case (CV_BUTTON_L):
                 l_estTarget = 3;
                 break;
+            case (CV_BUTTON_a):
+                l_estTarget = 4;
+                break;
             case (CV_BUTTON_DOWN):
                 clearFlag = !clearFlag;
                 break;
             case (CV_BUTTON_RIGHT):
                 prj = std::min(prj + 10, 255);
+                _print2(prj, prj2);
                 l_projectionImage = Mat(*l_camSize, CV_8UC3, Scalar(prj, prj, prj));
                 break;
             case (CV_BUTTON_LEFT):
                 prj = std::max(prj - 10, 0);
+                _print2(prj, prj2);
                 l_projectionImage = Mat(*l_camSize, CV_8UC3, Scalar(prj, prj, prj));
                 break;
             case (CV_BUTTON_DELETE):
                 initK(*l_camSize);
                 initF(*l_camSize);
                 l_projectionImage = Mat(*l_camSize, CV_8UC3, CV_SCALAR_WHITE);
+                prj = 255;
                 break;
             case (CV_BUTTON_ESC):
                 loopFlag = false;

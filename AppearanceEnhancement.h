@@ -104,6 +104,10 @@ public:
     bool estimateF(const cv::Mat& _P);
     bool estimateKFByAmanoModel(const cv::Mat& _P1, const cv::Mat& _P2);
     bool estimateKFByFujiiModel(const cv::Mat& _P1, const cv::Mat& _P2);
+    ////////////////////////////// evaluate method //////////////////////////////
+    bool evaluateK(const cv::Mat& _ansK);
+    bool evaluateF(const cv::Mat& _ansF);
+    bool evaluateKF(void);
     ///////////////////////////////  round method ///////////////////////////////
     bool roundDesireC(cv::Mat* const _desireC, const cv::Mat& _K, const cv::Mat& _F);
     bool roundReflectance(cv::Mat* const _K);
