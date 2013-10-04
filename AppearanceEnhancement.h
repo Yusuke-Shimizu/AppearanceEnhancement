@@ -99,8 +99,11 @@ public:
     bool calcCameraAddedFixNoise(cv::Mat* const _C, const cv::Mat& _K, const cv::Mat& _F, const cv::Mat& _P, const double& noise);
     bool calcNextProjection(cv::Mat* const _P, const cv::Mat& _C, const cv::Mat& _K, const cv::Mat& _F);
     bool calcRangeOfDesireC(cv::Mat* const _rangeTop, cv::Mat* const _rangeDown, const cv::Mat& _K, const cv::Mat& _F);
+    bool calcTargetImage(cv::Mat* const _targetImage, const cv::Mat& _Cest, const double& _s, const int _enhanceType = 0);
+    bool calcNextProjectionImage(cv::Mat* const _nextP, const cv::Mat& _targetImage, const cv::Mat& _C, const cv::Mat& _P, const cv::Mat& _K, const cv::Mat& _F, const cv::Mat& _Cfull, const cv::Mat& _C0, const double& _alpha = 0.1);
     ////////////////////////////// estimate method //////////////////////////////
     bool estimateK(const cv::Mat& _P);
+    bool estimateK(const cv::Mat& _P, const cv::Mat& _C, const cv::Mat& _CMax, const cv::Mat& _CMin);
     bool estimateF(const cv::Mat& _P);
     bool estimateKFByAmanoModel(const cv::Mat& _P1, const cv::Mat& _P2);
     bool estimateKFByFujiiModel(const cv::Mat& _P1, const cv::Mat& _P2);

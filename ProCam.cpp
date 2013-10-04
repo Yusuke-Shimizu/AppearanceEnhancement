@@ -1319,7 +1319,7 @@ bool ProCam::showProjectorResponse(const cv::Mat& _prjRes){
         if (i < 0) i = 255;
         
         // handle image
-        char pushKey = waitKey(-1);
+        int pushKey = waitKey(-1);
         if (pushKey == CV_BUTTON_LEFT || pushKey == CV_BUTTON_DOWN){
             ++ i;
         }
