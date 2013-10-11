@@ -22,9 +22,9 @@ using namespace cv;
 ///////////////////////////////  constructor ///////////////////////////////
 AppearanceEnhancement::AppearanceEnhancement(const cv::Size& _prjSize)
 :m_procam(_prjSize){
-    initCfull(Size(1,1));
-    initC0(Size(1,1));
-//    init();
+//    initCfull(Size(1,1));
+//    initC0(Size(1,1));
+    init();
 }
 ///////////////////////////////  denstructor ///////////////////////////////
 ///////////////////////////////  init method ///////////////////////////////
@@ -806,17 +806,19 @@ bool AppearanceEnhancement::calcTargetImage(cv::Mat* const _targetImage, const c
     Mat l_targetImage(rows, cols, CV_8UC3, CV_SCALAR_BLACK);
     
     // to be gray scale
-    Mat l_grayCest(rows, cols, CV_8UC1, 0);
-    cvtColor(_Cest, l_grayCest, CV_BGR2GRAY);
+    Mat l_Cest32(rows, cols, CV_32FC3);
+    _Cest.convertTo(l_Cest32, CV_32FC3);
+    Mat l_grayCest(rows, cols, CV_32FC1, 0);
+    cvtColor(l_Cest32, l_grayCest, CV_BGR2GRAY);
     
     // scan
-    if (isContinuous(l_targetImage, _Cest, l_grayCest)) {
+    if (isContinuous(l_targetImage, l_Cest32, l_grayCest)) {
         cols *= rows;
         rows = 1;
     }
     for (int y = 0; y < rows; ++ y) {
         Vec3b* l_pTargetImage = l_targetImage.ptr<Vec3b>(y);
-        const Vec3b* l_pCest = _Cest.ptr<Vec3b>(y);
+        const Vec3b* l_pCest = l_Cest32.ptr<Vec3b>(y);
         const uchar* l_pGrayCest = l_grayCest.ptr<uchar>(y);
         
         for (int x = 0; x < cols; ++ x) {
@@ -829,6 +831,7 @@ bool AppearanceEnhancement::calcTargetImage(cv::Mat* const _targetImage, const c
     
     // copy
     *_targetImage = l_targetImage.clone();
+    MY_IMSHOW(l_targetImage);
 
     return true;
 }
@@ -872,6 +875,7 @@ bool AppearanceEnhancement::calcNextProjectionImage(cv::Mat* const _nextP, const
             }
         }
     }
+    MY_IMSHOW(*_nextP);
     return true;
 }
 
@@ -1452,8 +1456,11 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
             case (CV_BUTTON_a):
                 l_estTarget = 4;
                 break;
+            case (CV_BUTTON_UP):
+                l_enhanceRate ++;
+                break;
             case (CV_BUTTON_DOWN):
-                clearFlag = !clearFlag;
+                l_enhanceRate --;
                 break;
             case (CV_BUTTON_RIGHT):
                 prj = std::min(prj + 10, 255);
@@ -1466,9 +1473,11 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
                 l_projectionImage = Mat(*l_camSize, CV_8UC3, Scalar(prj, prj, prj));
                 break;
             case (CV_BUTTON_DELETE):
+                cout << "all clean" << endl;
                 initK(*l_camSize);
                 initF(*l_camSize);
                 l_projectionImage = Mat(*l_camSize, CV_8UC3, CV_SCALAR_WHITE);
+                l_captureImage = Mat(*l_camSize, CV_8UC3, CV_SCALAR_WHITE);
                 l_targetImage = Mat(*l_camSize, CV_8UC3, CV_SCALAR_WHITE);
                 prj = 255;
                 break;
