@@ -824,7 +824,10 @@ bool AppearanceEnhancement::calcTargetImage(cv::Mat* const _targetImage, const c
         for (int x = 0; x < cols; ++ x) {
             for (int c = 0; c < 3; ++ c) {
                 // calc desire C
-                l_pTargetImage[x][c] = (1 + _s) * (double)l_pCest[x][c] - _s * (double)l_pGrayCest[x];
+                double l_targetImageNumber = (1 + _s) * (double)l_pCest[x][c] - _s * (double)l_pGrayCest[x];
+//                round0to255(&l_targetImageNumber);
+                roundXtoY(&l_targetImageNumber, 0, 255);
+                l_pTargetImage[x][c] = (uchar)l_targetImageNumber;
             }
         }
     }
@@ -838,6 +841,7 @@ bool AppearanceEnhancement::calcTargetImage(cv::Mat* const _targetImage, const c
 
 // 次に投影する画像を決定
 bool AppearanceEnhancement::calcNextProjectionImage(cv::Mat* const _nextP, const cv::Mat& _targetImage, const cv::Mat& _C, const cv::Mat& _P, const cv::Mat& _K, const cv::Mat& _F, const cv::Mat& _Cfull, const cv::Mat& _C0, const double& _alpha){
+    
     // init
     int rows = _targetImage.rows, cols = _targetImage.cols, channel = _targetImage.channels();
     if (isContinuous(*_nextP, _targetImage, _C, _P, _K, _F, _Cfull, _C0)) {
@@ -852,7 +856,7 @@ bool AppearanceEnhancement::calcNextProjectionImage(cv::Mat* const _nextP, const
         const Vec3b* l_pC = _C.ptr<Vec3b>(y);
         const Vec3b* l_pP = _P.ptr<Vec3b>(y);
         const Vec3d* l_pK = _K.ptr<Vec3d>(y);
-        const Vec3b* l_pF = _F.ptr<Vec3b>(y);
+//        const Vec3b* l_pF = _F.ptr<Vec3b>(y);
         const Vec3b* l_pCfull = _Cfull.ptr<Vec3b>(y);
         const Vec3b* l_pC0 = _C0.ptr<Vec3b>(y);
         
@@ -863,13 +867,15 @@ bool AppearanceEnhancement::calcNextProjectionImage(cv::Mat* const _nextP, const
                 const double l_nC = l_pC[x][c] / 255.0;
                 const double l_nP = l_pP[x][c] / 255.0;
                 const double l_nK = l_pK[x][c];
-                const double l_nF = l_pF[x][c] / 255.0;
+//                const double l_nF = l_pF[x][c] / 255.0;
                 const double l_nCfull = l_pCfull[x][c] / 255.0;
                 const double l_nC0 = l_pC0[x][c] / 255.0;
                 
                 // calculation
-                const double l_nNextP = (1 - _alpha) * (l_nTargetImage - l_nC) / (l_nK * (l_nCfull - l_nC0)) + l_nP;
-                
+                double l_nNextP = (1 - _alpha) * (l_nTargetImage - l_nC) / (l_nK * (l_nCfull - l_nC0)) + l_nP;
+//                const double l_nNextP = (l_nTargetImage / l_nK - l_nC0) / (l_nCfull - l_nC0);
+                round0to1(&l_nNextP);
+
                 // unnormalize
                 l_pNextP[x][c] = (uchar)(l_nNextP * 255);
             }
@@ -1363,14 +1369,14 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
     //
     ProCam* l_procam = getProCam();
     const Size* l_camSize = l_procam->getCameraSize();
-    bool loopFlag = true, clearFlag = false;
+    bool loopFlag = true;//, clearFlag = false;
     int prj = 255, prj2 = 30;
     Mat l_projectionImage(*l_camSize, CV_8UC3, Scalar(prj, prj, prj));
     Mat l_projectionImageBefore(*l_camSize, CV_8UC3, Scalar(prj2, prj2, prj2));
     Mat l_captureImage(*l_camSize, CV_8UC3, Scalar(prj, prj, prj));
     Mat l_captureImageBefore(*l_camSize, CV_8UC3, Scalar(prj2, prj2, prj2));
     Mat l_targetImage(*l_camSize, CV_8UC3, CV_SCALAR_WHITE);
-    double l_enhanceRate = 1.3;
+    double l_enhanceRate = 1.3, l_alphaMPC = 0.1;
     int l_estTarget = 0;
     
     while (loopFlag) {
@@ -1420,11 +1426,11 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
         l_captureImageBefore = l_captureImage.clone();
 
         // calc next projection image
-        calcNextProjectionImage(&l_projectionImage, l_targetImage, l_captureImageBefore, l_projectionImageBefore, l_KMap, l_FMap, l_Cfull, l_C0);
+        calcNextProjectionImage(&l_projectionImage, l_targetImage, l_captureImageBefore, l_projectionImageBefore, l_KMap, l_FMap, l_Cfull, l_C0, l_alphaMPC);
         
         // projection
         l_procam->captureOfProjecctorColorFromLinearLightOnProjectorDomain(&l_captureImage, l_projectionImage);
-        
+        MY_IMSHOW(l_captureImage);
         // appearance enhance
 //        if (clearFlag) doAppearanceCrealy(&l_projectionImage, 1.3);
         
@@ -1457,10 +1463,14 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
                 l_estTarget = 4;
                 break;
             case (CV_BUTTON_UP):
-                l_enhanceRate ++;
+//                l_enhanceRate += 0.1;
+                l_alphaMPC += 0.1;
+                _print2(l_enhanceRate, l_alphaMPC);
                 break;
             case (CV_BUTTON_DOWN):
-                l_enhanceRate --;
+//                l_enhanceRate -= 0.1;
+                l_alphaMPC -= 0.1;
+                _print2(l_enhanceRate, l_alphaMPC);
                 break;
             case (CV_BUTTON_RIGHT):
                 prj = std::min(prj + 10, 255);
