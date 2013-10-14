@@ -21,6 +21,9 @@ const std::string C_FULL_FILE_NAME = "data/cfull.png";
 const std::string C_0_FILE_NAME = "data/c0.png";
 const std::string K_FILE_NAME = "data/estK.png";
 const std::string F_FILE_NAME = "data/estF.png";
+const std::string C_FILE_NAME = "data/C.png";
+const std::string P_FILE_NAME = "data/P.png";
+const std::string TARGET_FILE_NAME = "data/target.png";
 
 class ProCam;
 
@@ -87,6 +90,7 @@ public:
     bool saveC0(const std::string& _fileName = C_0_FILE_NAME);
     bool saveK(const std::string& _fileName = K_FILE_NAME);
     bool saveF(const std::string& _fileName = F_FILE_NAME);
+    bool saveAll(const cv::Mat& _C, const cv::Mat& _P, const cv::Mat& _targetC, const std::string& _fileNameC = C_FILE_NAME, const std::string& _fileNameP = P_FILE_NAME, const std::string& _fileNameTarget = TARGET_FILE_NAME);
     ///////////////////////////////  load method ///////////////////////////////
     bool loadCfull(const std::string& _fileName = C_FULL_FILE_NAME);
     bool loadC0(const std::string& _fileName = C_0_FILE_NAME);

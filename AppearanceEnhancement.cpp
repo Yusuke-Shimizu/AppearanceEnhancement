@@ -552,6 +552,25 @@ bool AppearanceEnhancement::saveF(const std::string& _fileName){
     return true;
 }
 
+bool AppearanceEnhancement::saveAll(const cv::Mat& _C, const cv::Mat& _P, const cv::Mat& _targetC, const std::string& _fileNameC, const std::string& _fileNameP, const std::string& _fileNameTarget){
+    // get
+    const Mat l_K = getKMap();
+    const Mat l_F = getFMap();
+    const Mat l_C0 = getC0Map();
+    const Mat l_Cfull = getCfullMap();
+
+    // save
+    imwrite(C_FULL_FILE_NAME, l_Cfull);
+    imwrite(C_0_FILE_NAME, l_C0);
+    imwrite(K_FILE_NAME, l_K);
+    imwrite(F_FILE_NAME, l_F);
+    imwrite(_fileNameC, _C);
+    imwrite(_fileNameP, _P);
+    imwrite(_fileNameTarget, _targetC);
+    return true;
+}
+
+
 ///////////////////////////////  load method ///////////////////////////////
 bool AppearanceEnhancement::loadCfull(const std::string& _fileName){
     const Mat l_Cfull = imread(_fileName);
@@ -1433,6 +1452,9 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
         MY_IMSHOW(l_captureImage);
         // appearance enhance
 //        if (clearFlag) doAppearanceCrealy(&l_projectionImage, 1.3);
+        
+        // save
+        saveAll(l_captureImage, l_projectionImage, l_targetImage);
         
         // check key
         int key = waitKey(-1);
