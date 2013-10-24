@@ -929,10 +929,10 @@ bool ProCam::colorCalibration(void){
     cv::Mat blue_cap    (*cameraSize, depth8x3, CV_SCALAR_BLACK);
     
     // capture from some color light
-    captureFromLinearFlatLightOnProjectorDomain(&black_cap, CV_VEC3B_BLACK, false, SLEEP_TIME * 5);
-    captureFromLinearFlatLightOnProjectorDomain(&red_cap, CV_VEC3B_RED);
-    captureFromLinearFlatLightOnProjectorDomain(&green_cap, CV_VEC3B_GREEN);
-    captureFromLinearFlatLightOnProjectorDomain(&blue_cap, CV_VEC3B_BLUE);
+    captureFromLinearFlatLightOnProjectorDomain(&black_cap, CV_VEC3B_BLACK, true, SLEEP_TIME * 5);
+    captureFromLinearFlatLightOnProjectorDomain(&red_cap, CV_VEC3B_RED, true);
+    captureFromLinearFlatLightOnProjectorDomain(&green_cap, CV_VEC3B_GREEN, true);
+    captureFromLinearFlatLightOnProjectorDomain(&blue_cap, CV_VEC3B_BLUE, true);
     g_F0 = black_cap;
     
     // show image

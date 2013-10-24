@@ -206,7 +206,7 @@ bool AppearanceEnhancement::setCfull(const double& _luminance){
 // m_CfullMapの設定
 bool AppearanceEnhancement::setCfullMap(void){
     ProCam* l_procam = getProCam();
-    l_procam->captureOfProjecctorColorFromLinearFlatGrayLightOnProjectorDomain(&m_CfullMap, 255);
+    l_procam->captureOfProjecctorColorFromLinearFlatGrayLightOnProjectorDomain(&m_CfullMap, 255, SLEEP_TIME, true);
     saveCfull();
     MY_IMSHOW(m_CfullMap);
     return true;
@@ -235,7 +235,7 @@ bool AppearanceEnhancement::setC0(const double& luminance){
 // m_C0Mapの設定
 bool AppearanceEnhancement::setC0Map(void){
     ProCam* l_procam = getProCam();
-    l_procam->captureOfProjecctorColorFromLinearFlatGrayLightOnProjectorDomain(&m_C0Map, 0);
+    l_procam->captureOfProjecctorColorFromLinearFlatGrayLightOnProjectorDomain(&m_C0Map, 0, SLEEP_TIME, true);
     saveC0();
     MY_IMSHOW(m_C0Map);
     return true;
@@ -559,17 +559,7 @@ bool AppearanceEnhancement::saveF(const std::string& _fileName){
 }
 
 bool AppearanceEnhancement::saveAll(const cv::Mat& _C, const cv::Mat& _P, const cv::Mat& _targetC, const std::string& _fileNameC, const std::string& _fileNameP, const std::string& _fileNameTarget){
-    // get
-//    const Mat l_K = getKMap();
-//    const Mat l_F = getFMap();
-//    const Mat l_C0 = getC0Map();
-//    const Mat l_Cfull = getCfullMap();
-
     // save
-//    imwrite(C_FULL_FILE_NAME, l_Cfull);
-//    imwrite(C_0_FILE_NAME, l_C0);
-//    imwrite(K_FILE_NAME, l_K);
-//    imwrite(F_FILE_NAME, l_F);
     imwrite(_fileNameC, _C);
     imwrite(_fileNameP, _P);
     imwrite(_fileNameTarget, _targetC);
@@ -854,7 +844,6 @@ bool AppearanceEnhancement::calcTargetImage(cv::Mat* const _targetImage, const c
             for (int c = 0; c < 3; ++ c) {
                 // calc desire C
                 double l_targetImageNumber = (1 + _s) * (double)l_pCest[x][c] - _s * (double)l_pGrayCest[x];
-//                round0to255(&l_targetImageNumber);
                 roundXtoY(&l_targetImageNumber, 0, 255);
                 l_pTargetImage[x][c] = (uchar)l_targetImageNumber;
             }
