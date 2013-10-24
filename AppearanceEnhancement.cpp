@@ -1087,7 +1087,7 @@ bool AppearanceEnhancement::estimateKFByAmanoModel(const cv::Mat& _P1, const cv:
     const Size* l_camSize = l_procam->getCameraSize();
     const Mat l_Cfull = getCfullMap(), l_C0 = getC0Map();
     Mat l_C1(*l_camSize, CV_8UC3, CV_SCALAR_BLACK), l_C2(*l_camSize, CV_8UC3, CV_SCALAR_BLACK);
-    l_procam->captureOfProjecctorColorFromLinearLightOnProjectorDomain(&l_C1, _P1, SLEEP_TIME * 5);
+    l_procam->captureOfProjecctorColorFromLinearLightOnProjectorDomain(&l_C1, _P1, false, SLEEP_TIME * 5);
     l_procam->captureOfProjecctorColorFromLinearLightOnProjectorDomain(&l_C2, _P2);
     
     int rows = _P1.rows, cols = _P1.cols;
@@ -1145,7 +1145,7 @@ bool AppearanceEnhancement::estimateKFByFujiiModel(const cv::Mat& _P1, const cv:
     ProCam* l_procam = getProCam();
     const Size* l_camSize = l_procam->getCameraSize();
     Mat l_C1(*l_camSize, CV_8UC3, CV_SCALAR_BLACK), l_C2(*l_camSize, CV_8UC3, CV_SCALAR_BLACK);
-    l_procam->captureOfProjecctorColorFromLinearLightOnProjectorDomain(&l_C1, _P1, SLEEP_TIME * 5);
+    l_procam->captureOfProjecctorColorFromLinearLightOnProjectorDomain(&l_C1, _P1, false, SLEEP_TIME * 5);
     l_procam->captureOfProjecctorColorFromLinearLightOnProjectorDomain(&l_C2, _P2);
 //    Mat _P1(*l_camSize, CV_8UC3, CV_SCALAR_BLACK), _P2(*l_camSize, CV_8UC3, CV_SCALAR_BLACK);
 //    l_procam->convertColorSpaceOfProjectorToCamera(&l_P1onC, _P1);

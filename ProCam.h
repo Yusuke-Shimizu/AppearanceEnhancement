@@ -18,7 +18,7 @@ const int BUFFER_NUM = 10;
 #include "myDc1394.h"
 #include "common.h"
 
-#define GEO_CAL_CALC_FLAG       // 幾何変換を計算するフラグ
+//#define GEO_CAL_CALC_FLAG       // 幾何変換を計算するフラグ
 //#define PRJ_LINEAR_CALC_FLAG    // 線形化変換を計算するフラグ
 
 //#define SHOW_GEOMETRIC_CALIBRATION_MAP_FLAG // 幾何変換のマップを表示するフラグ
