@@ -20,10 +20,15 @@ using namespace std;
 using namespace cv;
 
 ///////////////////////////////  constructor ///////////////////////////////
+AppearanceEnhancement::AppearanceEnhancement(const double& _CMaxNum, const double& _CMinNum)
+//:m_C(3, 1, CV_8UC1), m_P(3, 1, CV_8UC1), m_K(3, 1, CV_8UC1), m_F(3, 1, CV_8UC1), m_Cfull(3, 1, CV_8UC1), m_C0(3, 1, CV_8UC1)
+{
+//    setCfull(_CMaxNum);
+//    setC0(_CMinNum);
+//    test_RadiometricModel();
+}
 AppearanceEnhancement::AppearanceEnhancement(const cv::Size& _prjSize)
 :m_procam(_prjSize){
-//    initCfull(Size(1,1));
-//    initC0(Size(1,1));
     init();
 }
 ///////////////////////////////  denstructor ///////////////////////////////
@@ -542,7 +547,8 @@ bool AppearanceEnhancement::saveC0(const std::string& _fileName){
     return true;
 }
 bool AppearanceEnhancement::saveK(const std::string& _fileName){
-    const Mat l_K = getKMap();
+    Mat l_K = getKMap();
+    l_K.convertTo(l_K, CV_8UC3, 255);
     imwrite(_fileName, l_K);
     return true;
 }
@@ -554,19 +560,23 @@ bool AppearanceEnhancement::saveF(const std::string& _fileName){
 
 bool AppearanceEnhancement::saveAll(const cv::Mat& _C, const cv::Mat& _P, const cv::Mat& _targetC, const std::string& _fileNameC, const std::string& _fileNameP, const std::string& _fileNameTarget){
     // get
-    const Mat l_K = getKMap();
-    const Mat l_F = getFMap();
-    const Mat l_C0 = getC0Map();
-    const Mat l_Cfull = getCfullMap();
+//    const Mat l_K = getKMap();
+//    const Mat l_F = getFMap();
+//    const Mat l_C0 = getC0Map();
+//    const Mat l_Cfull = getCfullMap();
 
     // save
-    imwrite(C_FULL_FILE_NAME, l_Cfull);
-    imwrite(C_0_FILE_NAME, l_C0);
-    imwrite(K_FILE_NAME, l_K);
-    imwrite(F_FILE_NAME, l_F);
+//    imwrite(C_FULL_FILE_NAME, l_Cfull);
+//    imwrite(C_0_FILE_NAME, l_C0);
+//    imwrite(K_FILE_NAME, l_K);
+//    imwrite(F_FILE_NAME, l_F);
     imwrite(_fileNameC, _C);
     imwrite(_fileNameP, _P);
     imwrite(_fileNameTarget, _targetC);
+    saveK();
+    saveF();
+    saveCfull();
+    saveC0();
     return true;
 }
 
@@ -904,6 +914,21 @@ bool AppearanceEnhancement::calcNextProjectionImage(cv::Mat* const _nextP, const
     return true;
 }
 
+// 反射率の計算
+bool AppearanceEnhancement::calcReflectance(double* const _K, const double& _nC, const double& _nP, const double& _nCMax, const double& _nCMin){
+    // calc
+    double l_nCest = (_nCMax - _nCMin) * _nP + _nCMin;
+    // avoid 0
+    l_nCest = std::max(l_nCest, 1.0/255.0);
+    const double l_nC = std::max(_nC, 1.0/255.0);
+    double l_K = l_nC / l_nCest;
+    round0to1(&l_K);
+    
+    // copy
+    *_K = l_K;
+    return true;
+}
+
 ////////////////////////////// estimate method //////////////////////////////
 //
 bool AppearanceEnhancement::estimateK(const cv::Mat& _P){
@@ -984,8 +1009,13 @@ bool AppearanceEnhancement::estimateK(const cv::Mat& _P, const cv::Mat& _C, cons
                 double l_nCMin = (double)l_pCMin[x][c] / 255.0;
                 
                 // calculation
-                l_pK[x][c] = l_nC / ((l_nCMax - l_nCMin) * l_nP + l_nCMin);
-                round0to1(&l_pK[x][c]);
+                calcReflectance(&(l_pK[x][c]), l_nC, l_nP, l_nCMax, l_nCMin);
+//                double l_nCest = (l_nCMax - l_nCMin) * l_nP + l_nCMin;
+//                // avoid 0
+//                l_nCest = std::max(l_nCest, 1.0/255.0);
+//                l_nC = std::max(l_nC, 1.0/255.0);
+//                l_pK[x][c] = l_nC / l_nCest;
+//                round0to1(&l_pK[x][c]);
             }
         }
     }
@@ -1392,6 +1422,8 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
     int prj = 255, prj2 = 30;
     Mat l_projectionImage(*l_camSize, CV_8UC3, Scalar(prj, prj, prj));
     Mat l_projectionImageBefore(*l_camSize, CV_8UC3, Scalar(prj2, prj2, prj2));
+    Mat l_projectionImage2(*l_camSize, CV_8UC3, Scalar(prj, prj, prj));
+    Mat l_projectionImageBefore2(*l_camSize, CV_8UC3, Scalar(prj2, prj2, prj2));
     Mat l_captureImage(*l_camSize, CV_8UC3, Scalar(prj, prj, prj));
     Mat l_captureImageBefore(*l_camSize, CV_8UC3, Scalar(prj2, prj2, prj2));
     Mat l_targetImage(*l_camSize, CV_8UC3, CV_SCALAR_WHITE);
@@ -1412,11 +1444,11 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
                 break;
             case 2:
                 cout << "estimate K and F by Amano model" << endl;
-                estimateKFByAmanoModel(l_projectionImage, l_projectionImageBefore);
+                estimateKFByAmanoModel(l_projectionImage2, l_projectionImageBefore2);
                 break;
             case 3:
                 cout << "estimate K and F by Fujii model" << endl;
-                estimateKFByFujiiModel(l_projectionImage, l_projectionImageBefore);
+                estimateKFByFujiiModel(l_projectionImage2, l_projectionImageBefore2);
                 break;
             case 4:
                 cout << "evaluate estimated K and F" << endl;
@@ -1484,25 +1516,31 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
             case (CV_BUTTON_a):
                 l_estTarget = 4;
                 break;
+            case (CV_BUTTON_e):
+                l_enhanceRate += 0.1;
+                _print(l_enhanceRate);
+                break;
+            case (CV_BUTTON_E):
+                l_enhanceRate -= 0.1;
+                _print(l_enhanceRate);
+                break;
             case (CV_BUTTON_UP):
-//                l_enhanceRate += 0.1;
                 l_alphaMPC += 0.1;
-                _print2(l_enhanceRate, l_alphaMPC);
+                _print(l_alphaMPC);
                 break;
             case (CV_BUTTON_DOWN):
-//                l_enhanceRate -= 0.1;
                 l_alphaMPC -= 0.1;
-                _print2(l_enhanceRate, l_alphaMPC);
+                _print(l_alphaMPC);
                 break;
             case (CV_BUTTON_RIGHT):
                 prj = std::min(prj + 10, 255);
                 _print2(prj, prj2);
-                l_projectionImage = Mat(*l_camSize, CV_8UC3, Scalar(prj, prj, prj));
+                l_projectionImage2 = Mat(*l_camSize, CV_8UC3, Scalar(prj, prj, prj));
                 break;
             case (CV_BUTTON_LEFT):
                 prj = std::max(prj - 10, 0);
                 _print2(prj, prj2);
-                l_projectionImage = Mat(*l_camSize, CV_8UC3, Scalar(prj, prj, prj));
+                l_projectionImage2 = Mat(*l_camSize, CV_8UC3, Scalar(prj, prj, prj));
                 break;
             case (CV_BUTTON_DELETE):
                 cout << "all clean" << endl;

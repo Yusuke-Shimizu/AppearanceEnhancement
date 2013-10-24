@@ -12,17 +12,22 @@
 #include "common.h"
 #include "myOpenCV.h"
 
+#define EXPERIMENT_FLAG
+
 using namespace std;
 using namespace cv;
 
 // main method
 int main(int argc, const char * argv[])
 {
+#ifdef EXPERIMENT_FLAG
     // experimentation
     AppearanceEnhancement ae(PRJ_SIZE);
     ae.doAppearanceEnhancementByAmano();
-    
+#else
     // simulation
-//    ae.test_RadiometricModel();
+    AppearanceEnhancement ae(0.8, 0.2);
+    ae.test_RadiometricModel();
+#endif
     return 0;
 }

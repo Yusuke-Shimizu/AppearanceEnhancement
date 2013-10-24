@@ -35,13 +35,17 @@ const int CV_BUTTON_UP     = 63232;
 const int CV_BUTTON_DOWN   = CV_BUTTON_UP + 1;
 const int CV_BUTTON_LEFT   = CV_BUTTON_UP + 2;
 const int CV_BUTTON_RIGHT  = CV_BUTTON_UP + 3;
-const int CV_BUTTON_c      = 99;
-const int CV_BUTTON_C      = 67;
-const int CV_BUTTON_g      = 103;
-const int CV_BUTTON_G      = 71;
-const int CV_BUTTON_f      = 102;
-const int CV_BUTTON_F      = 70;
 const int CV_BUTTON_DELETE = 127;
+const int CV_BUTTON_SMALL_TO_CAPITAL = -32;
+const int CV_BUTTON_a      = 97;
+//const int CV_BUTTON_c      = 99;
+//const int CV_BUTTON_C      = 67;
+//const int CV_BUTTON_g      = 103;
+//const int CV_BUTTON_G      = 71;
+//const int CV_BUTTON_f      = 102;
+//const int CV_BUTTON_F      = 70;
+//const int CV_BUTTON_e      = 101;
+//const int CV_BUTTON_E      = 71;
 #endif
 #ifdef LINUX
 const int CV_BUTTON_ESC     = 1048603;
@@ -51,28 +55,48 @@ const int CV_BUTTON_RIGHT   = CV_BUTTON_LEFT + 2;
 const int CV_BUTTON_DOWN    = CV_BUTTON_LEFT + 3;
 const int CV_BUTTON_DELETE  = 1113864;
 const int CV_BUTTON_SMALL_TO_CAPITAL = 65504;
-const int CV_BUTTON_c       = 1048675;
-const int CV_BUTTON_C       = CV_BUTTON_c + CV_BUTTON_SMALL_TO_CAPITAL;
-const int CV_BUTTON_g       = 1048679;
-const int CV_BUTTON_G       = CV_BUTTON_g + CV_BUTTON_SMALL_TO_CAPITAL;
-const int CV_BUTTON_f       = 1048678;
-const int CV_BUTTON_F       = CV_BUTTON_f + CV_BUTTON_SMALL_TO_CAPITAL;
-const int CV_BUTTON_r      = 1048690;
-const int CV_BUTTON_R      = CV_BUTTON_r + CV_BUTTON_SMALL_TO_CAPITAL;
-const int CV_BUTTON_l      = 1048684;
-const int CV_BUTTON_L      = CV_BUTTON_l + CV_BUTTON_SMALL_TO_CAPITAL;
-const int CV_BUTTON_a      = 1048673;
+const int CV_BUTTON_a       = 1048673;
 #endif
+const int CV_BUTTON_b       = CV_BUTTON_a + 1;
+const int CV_BUTTON_c       = CV_BUTTON_a + 2;  // 1048675
+const int CV_BUTTON_C       = CV_BUTTON_c + CV_BUTTON_SMALL_TO_CAPITAL;
+const int CV_BUTTON_d       = CV_BUTTON_a + 3;
+const int CV_BUTTON_e       = CV_BUTTON_a + 4;  // 1048677
+const int CV_BUTTON_E       = CV_BUTTON_e + CV_BUTTON_SMALL_TO_CAPITAL;
+const int CV_BUTTON_f       = CV_BUTTON_a + 5;  // 1048678;
+const int CV_BUTTON_F       = CV_BUTTON_f + CV_BUTTON_SMALL_TO_CAPITAL;
+const int CV_BUTTON_g       = CV_BUTTON_a + 6;  // 1048679;
+const int CV_BUTTON_G       = CV_BUTTON_g + CV_BUTTON_SMALL_TO_CAPITAL;
+const int CV_BUTTON_r       = 1048690;
+const int CV_BUTTON_R       = CV_BUTTON_r + CV_BUTTON_SMALL_TO_CAPITAL;
+const int CV_BUTTON_l       = 1048684;
+const int CV_BUTTON_L       = CV_BUTTON_l + CV_BUTTON_SMALL_TO_CAPITAL;
 
 // define based Color
 const cv::Vec3b CV_VEC3B_RED(0, 0, 255);
 const cv::Vec3b CV_VEC3B_GREEN(0, 255, 0);
 const cv::Vec3b CV_VEC3B_BLUE(255, 0, 0);
+const cv::Vec3b CV_VEC3B_YELLOW(0, 255, 255);
+const cv::Vec3b CV_VEC3B_CYAN(255, 255, 0);
+const cv::Vec3b CV_VEC3B_PURPLE(255, 0, 255);
 const cv::Vec3b CV_VEC3B_BLACK(0, 0, 0);
 const cv::Vec3b CV_VEC3B_WHITE(255, 255, 255);
+
+const cv::Vec3d CV_VEC3D_RED(CV_VEC3B_RED / 255);
+const cv::Vec3d CV_VEC3D_GREEN(CV_VEC3B_GREEN / 255);
+const cv::Vec3d CV_VEC3D_BLUE(CV_VEC3B_BLUE / 255);
+const cv::Vec3d CV_VEC3D_YELLOW(CV_VEC3B_YELLOW / 255);
+const cv::Vec3d CV_VEC3D_CYAN(CV_VEC3B_CYAN / 255);
+const cv::Vec3d CV_VEC3D_PURPLE(CV_VEC3B_PURPLE / 255);
+const cv::Vec3d CV_VEC3D_BLACK(0, 0, 0);
+const cv::Vec3d CV_VEC3D_WHITE(CV_VEC3B_WHITE / 255);
+
 const cv::Scalar CV_SCALAR_RED(CV_VEC3B_RED);
 const cv::Scalar CV_SCALAR_GREEN(CV_VEC3B_GREEN);
 const cv::Scalar CV_SCALAR_BLUE(CV_VEC3B_BLUE);
+const cv::Scalar CV_SCALAR_YELLOW(CV_VEC3B_YELLOW);
+const cv::Scalar CV_SCALAR_CYAN(CV_VEC3B_CYAN);
+const cv::Scalar CV_SCALAR_PURPLE(CV_VEC3B_PURPLE);
 const cv::Scalar CV_SCALAR_BLACK(CV_VEC3B_BLACK);
 const cv::Scalar CV_SCALAR_WHITE(CV_VEC3B_WHITE);
 

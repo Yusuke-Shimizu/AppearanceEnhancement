@@ -414,12 +414,6 @@ void GeometricCalibration::test_insertAccessMap(void){
     delete [] pattern;
 }
 
-// 入力された投影像を投影・撮影を行い，撮影像を出力する
-void GeometricCalibration::captureProjectionImage(Mat* const captureImage, const Mat* const projectionImage){
-    ProCam* l_procam = getProCam();
-    l_procam->captureFromLight(captureImage, *projectionImage);
-}
-
 int num = 0;
 // プロカムの空間コードを追加していく
 // spatialCodeProjector : プロジェクタの空間コード格納ポインタ

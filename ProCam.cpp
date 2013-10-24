@@ -448,11 +448,15 @@ bool ProCam::getCaptureImage(cv::Mat* const _image){
 #else
     VideoCapture* l_video = getVideoCapture();
 #ifdef BAYER_FLAG       // カメラ入力がbayer配列の場合
-    Mat l_bayerImage;
-    *l_video >> l_bayerImage;
-    cv::cvtColor(l_bayerImage, *_image, CV_BayerBG2RGB);
+    for (int i = 0; i < BUFFER_NUM; ++ i) {
+        Mat l_bayerImage;
+        *l_video >> l_bayerImage;
+        cv::cvtColor(l_bayerImage, *_image, CV_BayerBG2RGB);
+    }
 #else                   // OpenCVで処理出来る場合
-    *l_video >> *_image;
+    for (int i = 0; i < BUFFER_NUM; ++ i) {
+        *l_video >> *_image;
+    }
 #endif
 #endif
     return true;
@@ -1399,62 +1403,73 @@ bool ProCam::printProjectorResponse(const cv::Point& _pt, const cv::Mat& _prjRes
 // output / captureImage    : 撮影した画像を代入する場所
 // input / projectionImage  : 投影する画像
 // return                   : 成功したかどうか
-bool ProCam::captureFromLight(cv::Mat* const captureImage, const cv::Mat& projectionImage, const int _waitTimeNum){
+bool ProCam::captureFromLight(cv::Mat* const _captureImage, const cv::Mat& _projectionImage, const bool _denoiseFlag, const int _waitTimeNum){
     // 投影
-    imshow(WINDOW_NAME, projectionImage);
+    imshow(WINDOW_NAME, _projectionImage);
     cvMoveWindow(WINDOW_NAME, POSITION_OF_PROJECTION_IMAGE.x, POSITION_OF_PROJECTION_IMAGE.y);
     cv::waitKey(_waitTimeNum);
     
-    // バッファを捨てる
-    cv::Mat image(captureImage->rows, captureImage->cols, CV_8UC3);
-    for (int i = 0; i < BUFFER_NUM; ++ i) {
-        getCaptureImage(&image);
+    // get image
+    cv::Mat l_image(_captureImage->rows, _captureImage->cols, CV_8UC3);
+    if (_denoiseFlag) {
+        // 複数撮影し，ベクタに格納
+        std::vector<Mat> l_vCaptureImages;
+        for (int i = 0; i < 10; ++ i) {
+            cv::Mat l_tmp(_captureImage->rows, _captureImage->cols, CV_8UC3);
+            getCaptureImage(&l_tmp);
+            l_vCaptureImages.push_back(l_tmp);
+        }
+        
+        // get average
+        meanMat(&l_image, l_vCaptureImages);
+    } else {
+        // normal capture
+        getCaptureImage(&l_image);
     }
     
-    *captureImage = image.clone();
+    *_captureImage = l_image.clone();
     cv::waitKey(_waitTimeNum);
     
     return true;
 }
-
-bool ProCam::captureFromFlatLight(cv::Mat* const captureImage, const cv::Vec3b& projectionColor, const int _waitTimeNum){
+bool ProCam::captureFromFlatLight(cv::Mat* const _captureImage, const cv::Vec3b& _projectionColor, const bool _denoiseFlag, const int _waitTimeNum){
     const Size* l_prjSize = getProjectorSize();
-    const Mat l_projectionImage(*l_prjSize, CV_8UC3, Scalar(projectionColor));
-    return captureFromLight(captureImage, l_projectionImage, _waitTimeNum);
+    const Mat l_projectionImage(*l_prjSize, CV_8UC3, Scalar(_projectionColor));
+    return captureFromLight(_captureImage, l_projectionImage, _denoiseFlag, _waitTimeNum);
 }
-bool ProCam::captureFromFlatGrayLight(cv::Mat* const captureImage, const uchar& projectionNum, const int _waitTimeNum){
-    const Vec3b l_projectionColor(projectionNum, projectionNum, projectionNum);
-    return captureFromFlatLight(captureImage, l_projectionColor, _waitTimeNum);
+bool ProCam::captureFromFlatGrayLight(cv::Mat* const _captureImage, const uchar& _projectionNum, const bool _denoiseFlag, const int _waitTimeNum){
+    const Vec3b l_projectionColor(_projectionNum, _projectionNum, _projectionNum);
+    return captureFromFlatLight(_captureImage, l_projectionColor, _denoiseFlag, _waitTimeNum);
 }
 
 // 幾何変換を行ったものを投影・撮影
-bool ProCam::captureFromLightOnProjectorDomain(cv::Mat* const captureImage, const cv::Mat& projectionImage, const int _waitTimeNum){
+bool ProCam::captureFromLightOnProjectorDomain(cv::Mat* const _captureImage, const cv::Mat& _projectionImage, const bool _denoiseFlag, const int _waitTimeNum){
     // error processing
     const Size* l_camSize = getCameraSize();
-    if (projectionImage.rows != l_camSize->height || projectionImage.cols != l_camSize->width) {
+    if (_projectionImage.rows != l_camSize->height || _projectionImage.cols != l_camSize->width) {
         cout << "size is different" << endl;
-        _print_mat_propaty(projectionImage);
+        _print_mat_propaty(_projectionImage);
         _print(*l_camSize);
         exit(-1);
     }
     
     const Size* l_prjSize = getProjectorSize();
     Mat l_projectionImageOnProjectorSpace(*l_prjSize, CV_8UC3, Scalar(0, 0, 0));
-    convertProjectorDomainToCameraOne(&l_projectionImageOnProjectorSpace, projectionImage);
-    return captureFromLight(captureImage, l_projectionImageOnProjectorSpace, _waitTimeNum);
+    convertProjectorDomainToCameraOne(&l_projectionImageOnProjectorSpace, _projectionImage);
+    return captureFromLight(_captureImage, l_projectionImageOnProjectorSpace, _denoiseFlag, _waitTimeNum);
 }
-bool ProCam::captureFromFlatLightOnProjectorDomain(cv::Mat* const _captureImage, const cv::Vec3b& _projectionColor, const int _waitTimeNum){
+bool ProCam::captureFromFlatLightOnProjectorDomain(cv::Mat* const _captureImage, const cv::Vec3b& _projectionColor, const bool _denoiseFlag, const int _waitTimeNum){
     const Size* l_camSize = getCameraSize();    // カメラサイズの取得
     const Mat l_projectionImage(*l_camSize, CV_8UC3, Scalar(_projectionColor)); // 投影画像
-    return captureFromLightOnProjectorDomain(_captureImage, l_projectionImage, _waitTimeNum);
+    return captureFromLightOnProjectorDomain(_captureImage, l_projectionImage, _denoiseFlag, _waitTimeNum);
 }
-bool ProCam::captureFromFlatGrayLightOnProjectorDomain(cv::Mat* const _captureImage, const uchar _projectionNumber, const int _waitTimeNum){
+bool ProCam::captureFromFlatGrayLightOnProjectorDomain(cv::Mat* const _captureImage, const uchar _projectionNumber, const bool _denoiseFlag, const int _waitTimeNum){
     const Vec3b l_projectionColor(_projectionNumber, _projectionNumber, _projectionNumber);
-    return captureFromFlatLightOnProjectorDomain(_captureImage, l_projectionColor, _waitTimeNum);
+    return captureFromFlatLightOnProjectorDomain(_captureImage, l_projectionColor, _denoiseFlag, _waitTimeNum);
 }
 
 // 線形化したプロジェクタを用いて投影・撮影を行う
-bool ProCam::captureFromLinearLightOnProjectorDomain(cv::Mat* const _captureImage, const cv::Mat& _projectionImage, const int _waitTimeNum){
+bool ProCam::captureFromLinearLightOnProjectorDomain(cv::Mat* const _captureImage, const cv::Mat& _projectionImage, const bool _denoiseFlag, const int _waitTimeNum){
     // geometric translate
     const Size* l_prjSize = getProjectorSize();
     Mat l_projectionImageOnProjectorSpace(*l_prjSize, CV_8UC3, Scalar(0, 0, 0));
@@ -1465,46 +1480,41 @@ bool ProCam::captureFromLinearLightOnProjectorDomain(cv::Mat* const _captureImag
     
     // non linear image -> linear one
     // Pointの値を変えて，線形化LUTの参照ポイントを変更可能
-//    const Size* l_camSize = getCameraSize();
-//    Point l_referencePoint(0, 0);
-//    getPointOnPrjDomainFromPointOnCamDomain(&l_referencePoint, Point(l_camSize->width / 2, l_camSize->height / 2));
-//    convertPtoIBySomePoint(&l_linearProjectionImage, _projectionImage, l_referencePoint);
     convertPtoI(&l_linearProjectionImage, l_projectionImageOnProjectorSpace);
     
     // 幾何変換後に投影
-    return captureFromLight(_captureImage, l_linearProjectionImage, _waitTimeNum);
+    return captureFromLight(_captureImage, l_linearProjectionImage, _denoiseFlag, _waitTimeNum);
 }
-bool ProCam::captureFromLinearFlatLightOnProjectorDomain(cv::Mat* const _captureImage, const cv::Vec3b& _projectionColor, const int _waitTimeNum){
+bool ProCam::captureFromLinearFlatLightOnProjectorDomain(cv::Mat* const _captureImage, const cv::Vec3b& _projectionColor, const bool _denoiseFlag, const int _waitTimeNum){
     const Size* l_camSize = getCameraSize();    // カメラサイズの取得
     const Mat l_projectionImage(*l_camSize, CV_8UC3, Scalar(_projectionColor)); // 投影画像
-    return captureFromLinearLightOnProjectorDomain(_captureImage, l_projectionImage, _waitTimeNum);
+    return captureFromLinearLightOnProjectorDomain(_captureImage, l_projectionImage, _denoiseFlag, _waitTimeNum);
 }
-bool ProCam::captureFromLinearFlatGrayLightOnProjectorDomain(cv::Mat* const _captureImage, const uchar _projectionNumber, const int _waitTimeNum){
+bool ProCam::captureFromLinearFlatGrayLightOnProjectorDomain(cv::Mat* const _captureImage, const uchar _projectionNumber, const bool _denoiseFlag, const int _waitTimeNum){
     const Vec3b l_projectionColor(_projectionNumber, _projectionNumber, _projectionNumber);
-    return captureFromLinearFlatLightOnProjectorDomain(_captureImage, l_projectionColor, _waitTimeNum);
+    return captureFromLinearFlatLightOnProjectorDomain(_captureImage, l_projectionColor, _denoiseFlag, _waitTimeNum);
 }
 
 // 線形化した投影光をプロジェクタの色空間の画像で取得する
-bool ProCam::captureOfProjecctorColorFromLinearLightOnProjectorDomain(cv::Mat* const _captureImage, const cv::Mat& _projectionImage, const int _waitTimeNum){
+bool ProCam::captureOfProjecctorColorFromLinearLightOnProjectorDomain(cv::Mat* const _captureImage, const cv::Mat& _projectionImage, const bool _denoiseFlag, const int _waitTimeNum){
     // 投影し撮影
     Mat tmp = _captureImage->clone();
-    captureFromLinearLightOnProjectorDomain(&tmp, _projectionImage, _waitTimeNum);
+    captureFromLinearLightOnProjectorDomain(&tmp, _projectionImage, _denoiseFlag, _waitTimeNum);
     
     // convert color space camera to projector
     convertColorSpaceOfCameraToProjector(_captureImage, tmp);
     
     return true;
 }
-bool ProCam::captureOfProjecctorColorFromLinearFlatLightOnProjectorDomain(cv::Mat* const _captureImage, const cv::Vec3b& _projectionColor, const int _waitTimeNum){
+bool ProCam::captureOfProjecctorColorFromLinearFlatLightOnProjectorDomain(cv::Mat* const _captureImage, const cv::Vec3b& _projectionColor, const bool _denoiseFlag, const int _waitTimeNum){
     const Size* l_camSize = getCameraSize();    // カメラサイズの取得
     const Mat l_projectionImage(*l_camSize, CV_8UC3, Scalar(_projectionColor)); // 投影画像
-    return captureOfProjecctorColorFromLinearLightOnProjectorDomain(_captureImage, l_projectionImage, _waitTimeNum);
+    return captureOfProjecctorColorFromLinearLightOnProjectorDomain(_captureImage, l_projectionImage, _denoiseFlag, _waitTimeNum);
 }
-bool ProCam::captureOfProjecctorColorFromLinearFlatGrayLightOnProjectorDomain(cv::Mat* const _captureImage, const uchar _projectionNumber, const int _waitTimeNum){
+bool ProCam::captureOfProjecctorColorFromLinearFlatGrayLightOnProjectorDomain(cv::Mat* const _captureImage, const uchar _projectionNumber, const bool _denoiseFlag, const int _waitTimeNum){
     const Vec3b l_projectionColor(_projectionNumber, _projectionNumber, _projectionNumber);
-    return captureOfProjecctorColorFromLinearFlatLightOnProjectorDomain(_captureImage, l_projectionColor, _waitTimeNum);
+    return captureOfProjecctorColorFromLinearFlatLightOnProjectorDomain(_captureImage, l_projectionColor, _denoiseFlag, _waitTimeNum);
 }
-
 
 ///////////////////////////////  other method ///////////////////////////////
 

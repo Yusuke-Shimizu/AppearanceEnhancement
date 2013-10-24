@@ -68,7 +68,6 @@ public:
     void createBinaryMap(bool *binaryMap, const cv::Size* const mapSize, const unsigned int layerNum, const stripeDirection direction);
     void insertAccessMap(bool* accessMap, const cv::Size* const mapSize, const int bitDepth, const bool* const patternMap, const int offsetBit);
     void test_insertAccessMap(void);
-    void captureProjectionImage(cv::Mat* const captureImage, const cv::Mat* const projectionImage);
     void addSpatialCodeOfProCam(bool* const spatialCodeProjector, bool* const spatialCodeCamera, const cv::Size* const projectorSize, const cv::Size* const cameraSize, const int patternLayerNum, const int offset, const stripeDirection direction);
     void divideCode(bool* const codeX, bool* const codeY, const bool* const originalCode, const int sizeX, const int sizeY);
     void grayCode2binaryCode(bool* const binaryCode, const bool* const grayCode, const int bitNum);

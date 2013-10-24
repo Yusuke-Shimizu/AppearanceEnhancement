@@ -30,16 +30,17 @@ class ProCam;
 class AppearanceEnhancement{
 private:
     ProCam m_procam;
-    // C=K{(C_full-C_0)P + C_0 + F}に必要な行列
+    // simulation data
     cv::Mat m_C, m_P, m_K, m_F, m_Cfull, m_C0;
-    // 画面全体の反射率等
-//    cv::Mat_<Vec9d> m_KMap;
-    cv::Mat m_KMap;
-    cv::Mat m_FMap, m_CfullMap, m_C0Map;
+    // experimental data
+    cv::Mat m_KMap, m_FMap, m_CfullMap, m_C0Map;
     
     AppearanceEnhancement(const AppearanceEnhancement& ae); // コピーコンストラクタ隠し（プログラムで１つしか存在しない為）
 public:
     ///////////////////////////////  constructor ///////////////////////////////
+    // using simulation
+    AppearanceEnhancement(const double& _CMaxNum, const double& _CMinNum);
+    // using experiment
     AppearanceEnhancement(const cv::Size& _prjSize);
     ///////////////////////////////  destructor ///////////////////////////////
     ///////////////////////////////  init method ///////////////////////////////
@@ -105,6 +106,7 @@ public:
     bool calcRangeOfDesireC(cv::Mat* const _rangeTop, cv::Mat* const _rangeDown, const cv::Mat& _K, const cv::Mat& _F);
     bool calcTargetImage(cv::Mat* const _targetImage, const cv::Mat& _Cest, const double& _s, const int _enhanceType = 0);
     bool calcNextProjectionImage(cv::Mat* const _nextP, const cv::Mat& _targetImage, const cv::Mat& _C, const cv::Mat& _P, const cv::Mat& _K, const cv::Mat& _F, const cv::Mat& _Cfull, const cv::Mat& _C0, const double& _alpha = 0.1);
+    bool calcReflectance(double* const _K, const double& _nC, const double& _nP, const double& _nCMax, const double& _nCMin);
     ////////////////////////////// estimate method //////////////////////////////
     bool estimateK(const cv::Mat& _P);
     bool estimateK(const cv::Mat& _P, const cv::Mat& _C, const cv::Mat& _CMax, const cv::Mat& _CMin);
