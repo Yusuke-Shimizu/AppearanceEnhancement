@@ -1220,7 +1220,8 @@ void ProCam::convertColorSpace(cv::Mat* const _dst, const cv::Mat& _src, const b
     }
     for (int y = 0; y < rows; ++ y) {
         // init pointer
-        Vec3b* l_pDst = _dst->ptr<Vec3b>(y);
+//        Vec3b* l_pDst = _dst->ptr<Vec3b>(y);
+        Vec3d* l_pDst = _dst->ptr<Vec3d>(y);
         const Vec3b* l_pSrc = _src.ptr<Vec3b>(y);
         const Vec9d* l_pV = l_V->ptr<Vec9d>(y);
         const Vec3b* l_pF0 = g_F0.ptr<Vec3b>(y);
@@ -1233,16 +1234,18 @@ void ProCam::convertColorSpace(cv::Mat* const _dst, const cv::Mat& _src, const b
             convertVecToMat(&l_VMat, l_pV[x]);
             
             // calc
-            Mat colorMix;
+            Mat colorMix, l_dstMat;
             if (P2CFlag) {
                 colorMix = l_VMat;
+                l_dstMat = colorMix * l_srcMat;
             } else {
                 colorMix = l_VMat.inv();
+                l_dstMat = colorMix * (l_srcMat - l_F0Mat);
             }
-            Mat l_dstMat = colorMix * (l_srcMat - l_F0Mat);
             
             // mat -> vec
-            l_pDst[x] = Vec3b(l_dstMat);
+//            l_pDst[x] = Vec3b(l_dstMat);
+            l_pDst[x] = l_dstMat;
         }
     }
 }
