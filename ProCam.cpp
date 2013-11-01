@@ -1038,6 +1038,21 @@ bool ProCam::colorCalibration2(cv::Mat_<Vec12d>* const _V){
     cout << "color calibration finish!" << endl;
     return true;
 }
+bool ProCam::test_colorCalibration(void){
+    const Size* l_camSize = getCameraSize();
+    for (int prj = 0; prj < 256; ++ prj) {
+        // capture
+        Mat l_captureImage(*l_camSize, CV_8UC3, CV_SCALAR_BLACK);
+        Vec3b l_color(0, 0, prj);
+        captureOfProjecctorColorFromLinearFlatLightOnProjectorDomain(&l_captureImage, l_color);
+        
+        //
+        Vec3d l_capColor(0, 0, 0);
+        calcAverageOfImage_d(&l_capColor, l_captureImage);
+        _print_gnuplot4(std::cout, prj, l_capColor[0], l_capColor[1], l_capColor[2]);
+    }
+    return true;
+}
 
 ///////////////////////////////  convert method ///////////////////////////////
 

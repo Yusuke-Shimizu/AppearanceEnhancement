@@ -67,10 +67,12 @@ const int CV_BUTTON_f       = CV_BUTTON_a + 5;  // 1048678;
 const int CV_BUTTON_F       = CV_BUTTON_f + CV_BUTTON_SMALL_TO_CAPITAL;
 const int CV_BUTTON_g       = CV_BUTTON_a + 6;  // 1048679;
 const int CV_BUTTON_G       = CV_BUTTON_g + CV_BUTTON_SMALL_TO_CAPITAL;
-const int CV_BUTTON_r       = 1048690;
-const int CV_BUTTON_R       = CV_BUTTON_r + CV_BUTTON_SMALL_TO_CAPITAL;
-const int CV_BUTTON_l       = 1048684;
+const int CV_BUTTON_l       = CV_BUTTON_a + 11; //1048684;
 const int CV_BUTTON_L       = CV_BUTTON_l + CV_BUTTON_SMALL_TO_CAPITAL;
+const int CV_BUTTON_r       = CV_BUTTON_a + 17; //1048690;
+const int CV_BUTTON_R       = CV_BUTTON_r + CV_BUTTON_SMALL_TO_CAPITAL;
+const int CV_BUTTON_t       = CV_BUTTON_a + 19;
+const int CV_BUTTON_T       = CV_BUTTON_t + CV_BUTTON_SMALL_TO_CAPITAL;
 
 // define based Color
 const cv::Vec3b CV_VEC3B_RED(0, 0, 255);
@@ -104,6 +106,12 @@ typedef cv::Vec<double, 9> Vec9d;
 typedef cv::Vec<double, 12> Vec12d;
 
 enum ColorName{CV_RED = 2, CV_GREEN = 1, CV_BLUE = 0};
+
+// size
+const cv::Size VGA_SIZE(640, 480);
+const cv::Size XGA_SIZE(1024, 768);
+const cv::Size HDTV_720P_SIZE(1280, 720);
+const cv::Size WSXGA_PLUS_SIZE(1680, 1050);
 
 ///////////////////////////////  check method ///////////////////////////////
 bool isEqualSize(const cv::Mat& m1, const cv::Mat& m2);

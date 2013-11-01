@@ -1113,16 +1113,22 @@ void checkButton(void){
 
 // Matの平均を取得
 void meanMat(cv::Mat* const _meanMat, const std::vector<cv::Mat>& _matVec){
-    Mat l_sum(_matVec.at(0).rows, _matVec.at(0).rows, CV_64FC3, CV_SCALAR_BLACK);
-    
+    Mat l_sum(_matVec.at(0).rows, _matVec.at(0).cols, CV_64FC3, CV_SCALAR_BLACK);
     for (vector<Mat>::const_iterator l_matItr = _matVec.begin();
          l_matItr != _matVec.end();
          ++ l_matItr) {
+        // uchar -> double
         Mat l_mat64;
         l_matItr->convertTo(l_mat64, CV_64FC3);
+        
+        // add
         l_sum += l_mat64;
     }
+    // calc average
     l_sum /= _matVec.size();
+    
+    // double -> uchar
+    l_sum.convertTo(l_sum, CV_8UC3);
     
     *_meanMat = l_sum.clone();
 }
@@ -1144,4 +1150,32 @@ void test_meanMat(void){
     Mat l_meanMat(3,3,CV_8UC3, CV_SCALAR_BLACK);
     meanMat(&l_meanMat, l_vecMat);
     _print(l_meanMat);
+    
+    //////// image test
+    Mat l_image1(VGA_SIZE, CV_8UC3, CV_SCALAR_WHITE);
+    Mat l_image2(VGA_SIZE, CV_8UC3, CV_SCALAR_RED);
+    Mat l_image3(VGA_SIZE, CV_8UC3, CV_SCALAR_GREEN);
+    Mat l_image4(VGA_SIZE, CV_8UC3, CV_SCALAR_BLUE);
+    Mat l_image5(VGA_SIZE, CV_8UC3, CV_SCALAR_YELLOW);
+    Mat l_image6(VGA_SIZE, CV_8UC3, CV_SCALAR_CYAN);
+    Mat l_image7(VGA_SIZE, CV_8UC3, CV_SCALAR_PURPLE);
+    Mat l_image8(VGA_SIZE, CV_8UC3, CV_SCALAR_BLACK);
+    std::vector<Mat> l_vImage;
+    l_vImage.push_back(l_image1);
+    l_vImage.push_back(l_image2);
+    l_vImage.push_back(l_image3);
+    l_vImage.push_back(l_image4);
+    l_vImage.push_back(l_image5);
+    l_vImage.push_back(l_image6);
+    l_vImage.push_back(l_image7);
+    l_vImage.push_back(l_image8);
+    for (int i = 0; i < 10; ++ i) {
+        l_vImage.push_back(l_image8);
+    }
+    Mat l_meanImage(VGA_SIZE, CV_64FC3, CV_SCALAR_BLACK);
+    meanMat(&l_meanImage, l_vImage);
+    _print(l_image5.at<Vec3b>(0, 0));
+    _print(l_meanImage.at<Vec3b>(0, 0));
+    MY_IMSHOW(l_meanImage);
+    waitKey(-1);
 }

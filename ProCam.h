@@ -28,11 +28,6 @@ const int BUFFER_NUM = 10;
 //#define LIB_DC1394_FLAG
 
 // 定義
-const cv::Size VGA_SIZE(640, 480);
-const cv::Size XGA_SIZE(1024, 768);
-const cv::Size HDTV_720P_SIZE(1280, 720);
-const cv::Size WSXGA_PLUS_SIZE(1680, 1050);
-
 const cv::Size MAC_DISIPLAY_SIZE(1366, 768);
 const cv::Size LINUX_DISPLAY_SIZE(WSXGA_PLUS_SIZE);
 const cv::Size MAC_OTHER_DISPLAY_SIZE(WSXGA_PLUS_SIZE);
@@ -164,6 +159,7 @@ public:
     bool linearizeOfProjector(void);
     bool colorCalibration(void);
     bool colorCalibration2(cv::Mat_<Vec12d>* const _V);
+    bool test_colorCalibration(void);
     ///////////////////////////////  convert method ///////////////////////////////
     bool convertProjectorDomainToCameraOne(cv::Mat* const _psImg, const cv::Mat&  _csImg);
     bool convertNonLinearImageToLinearOne(cv::Mat* const _linearImg, const cv::Mat&  _nonLinearImg);
