@@ -441,11 +441,11 @@ bool LinearizerOfProjector::calcColorMixingMatrix(void){
     cv::Mat white_cap    (*cameraSize, depth8x3, CV_SCALAR_BLACK);
 
     // capture from some color light
-    procam->captureFromFlatLightOnProjectorDomain(&black_cap, CV_VEC3B_BLACK, true, SLEEP_TIME * 5);
-    procam->captureFromFlatLightOnProjectorDomain(&red_cap, CV_VEC3B_RED, true);
-    procam->captureFromFlatLightOnProjectorDomain(&green_cap, CV_VEC3B_GREEN, true);
-    procam->captureFromFlatLightOnProjectorDomain(&blue_cap, CV_VEC3B_BLUE, true);
-    procam->captureFromFlatLightOnProjectorDomain(&white_cap, CV_VEC3B_WHITE, true);
+    procam->captureFromLightOnProjectorDomain(&black_cap, CV_VEC3B_BLACK, true, SLEEP_TIME * 5);
+    procam->captureFromLightOnProjectorDomain(&red_cap, CV_VEC3B_RED, true);
+    procam->captureFromLightOnProjectorDomain(&green_cap, CV_VEC3B_GREEN, true);
+    procam->captureFromLightOnProjectorDomain(&blue_cap, CV_VEC3B_BLUE, true);
+    procam->captureFromLightOnProjectorDomain(&white_cap, CV_VEC3B_WHITE, true);
 
     // show image
     imshow("black_cap", black_cap);
@@ -501,11 +501,11 @@ bool LinearizerOfProjector::calcMoreDetailColorMixingMatrix(void){
     cv::Mat white_cap    (*cameraSize, depth8x3, CV_SCALAR_BLACK);
     
     // capture from some color light
-    procam->captureFromFlatLightOnProjectorDomain(&black_cap, CV_VEC3B_BLACK, true, SLEEP_TIME * 2);
-    procam->captureFromFlatLightOnProjectorDomain(&red_cap, CV_VEC3B_RED, true);
-    procam->captureFromFlatLightOnProjectorDomain(&green_cap, CV_VEC3B_GREEN, true);
-    procam->captureFromFlatLightOnProjectorDomain(&blue_cap, CV_VEC3B_BLUE, true);
-    procam->captureFromFlatLightOnProjectorDomain(&white_cap, CV_VEC3B_WHITE, true);
+    procam->captureFromLightOnProjectorDomain(&black_cap, CV_VEC3B_BLACK, true, SLEEP_TIME * 2);
+    procam->captureFromLightOnProjectorDomain(&red_cap, CV_VEC3B_RED, true);
+    procam->captureFromLightOnProjectorDomain(&green_cap, CV_VEC3B_GREEN, true);
+    procam->captureFromLightOnProjectorDomain(&blue_cap, CV_VEC3B_BLUE, true);
+    procam->captureFromLightOnProjectorDomain(&white_cap, CV_VEC3B_WHITE, true);
     
     // show image
     MY_IMSHOW(black_cap);
@@ -626,12 +626,12 @@ bool LinearizerOfProjector::calcResponseFunction(cv::Mat_<cv::Vec3b>* const _res
     // scanning all luminance[0-255] of projector
     int prjLuminance = 0;
     _print(prjLuminance);
-    l_procam->captureFromFlatGrayLightOnProjectorDomain(&camImage, prjLuminance, true, SLEEP_TIME * 2);
+    l_procam->captureFromLightOnProjectorDomain(&camImage, prjLuminance, true, SLEEP_TIME * 2);
     for (prjLuminance = 0; prjLuminance < 256; prjLuminance += PROJECTION_LUMINANCE_STEP) {
         _print(prjLuminance);
 
         // capture from projection image
-        l_procam->captureFromFlatGrayLightOnProjectorDomain(&camImage, prjLuminance, true);
+        l_procam->captureFromLightOnProjectorDomain(&camImage, prjLuminance, true);
         MY_IMSHOW(camImage);
         waitKey(1);
         
@@ -674,7 +674,7 @@ void LinearizerOfProjector::test_responseFunction(void){
     Mat l_captureImage(*l_camSize, CV_8UC3, CV_SCALAR_BLACK);
     
     for (int i = 0; i < 256; ++ i) {
-        l_procam->captureFromLinearFlatGrayLightOnProjectorDomain(&l_captureImage, i);
+        l_procam->captureFromLinearLightOnProjectorDomain(&l_captureImage, i);
         Vec3b l_color = l_captureImage.at<Vec3b>(100, 100);
         _print2(i, l_color);
     }

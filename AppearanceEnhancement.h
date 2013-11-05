@@ -75,17 +75,15 @@ public:
     const cv::Mat& getCfullMap(void);
     bool getC0(cv::Mat* const C0);
     const cv::Mat& getC0Map(void);
-//    const cv::Mat_<Vec9d>& getKMap(void);
     const cv::Mat& getKMap(void);
     const cv::Mat& getFMap(void);
     ProCam* getProCam(void);
     ///////////////////////////////  print method ///////////////////////////////
-//    bool printData(std::ofstream* ofs, const cv::Mat& data);
-//    bool printData(std::ofstream* ofs, const int index, const cv::Mat& ansK1, const cv::Mat& ansK2, const cv::Mat& estK, const cv::Mat& ansF1, const cv::Mat& ansF2, const cv::Mat& estF);
     bool printStandardDeviationOfRadiometricModel(void);
     bool printSwitchIteratorError(void);
     bool printSimultaneousIteratorError(void);
     bool printAmanoMethod(void);
+    bool printAppearanceEnhancement(void);
     ///////////////////////////////  save method ///////////////////////////////
     bool saveCfull(const std::string& _fileName = C_FULL_FILE_NAME);
     bool saveC0(const std::string& _fileName = C_0_FILE_NAME);
@@ -104,9 +102,12 @@ public:
     bool calcCameraAddedFixNoise(cv::Mat* const _C, const cv::Mat& _K, const cv::Mat& _F, const cv::Mat& _P, const double& noise);
     bool calcNextProjection(cv::Mat* const _P, const cv::Mat& _C, const cv::Mat& _K, const cv::Mat& _F);
     bool calcRangeOfDesireC(cv::Mat* const _rangeTop, cv::Mat* const _rangeDown, const cv::Mat& _K, const cv::Mat& _F);
-    bool calcTargetImage(cv::Mat* const _targetImage, const cv::Mat& _Cest, const double& _s, const int _enhanceType = 0);
-    bool calcNextProjectionImage(cv::Mat* const _nextP, const cv::Mat& _targetImage, const cv::Mat& _C, const cv::Mat& _P, const cv::Mat& _K, const cv::Mat& _F, const cv::Mat& _Cfull, const cv::Mat& _C0, const double& _alpha = 0.1);
-    bool calcReflectance(double* const _K, const double& _nC, const double& _nP, const double& _nCMax, const double& _nCMin);
+    bool calcTargetImage(cv::Mat* const _targetImage, const cv::Mat& _Cest, const double& _s = 1.3, const int _enhanceType = 0);
+    bool calcTargetImageAtPixel(double* const _targetImage, const double& _Cest, const double& _CestGray, const double& _s = 1.3, const int _enhanceType = 0);
+    bool calcNextProjectionImage(cv::Mat* const _nextP, const cv::Mat& _targetImage, const cv::Mat& _C, const cv::Mat& _P, const cv::Mat& _K, const cv::Mat& _F, const cv::Mat& _FBefore, const cv::Mat& _Cfull, const cv::Mat& _C0, const double& _alpha = 0.1);
+    bool calcNextProjectionImageAtPixel(uchar* const _nextP, const double& _targetImage, const double& _C, const double& _P, const double& _K, const double& _F, const double& _FBefore, const double& _Cfull, const double& _C0, const double& _alpha = 0.1);
+    bool calcReflectanceAtPixel(double* const _K, const double& _nC, const double& _nP, const double& _nCMax, const double& _nCMin);
+    bool calcCaptureImageAddNoise(double* const _C, const double& _P, const double& _K, const double& _F, const double& _CMax, const double& _CMin, const double& _noiseRange = NOISE_RANGE);
     ////////////////////////////// estimate method //////////////////////////////
     bool estimateK(const cv::Mat& _P);
     bool estimateK(const cv::Mat& _P, const cv::Mat& _C, const cv::Mat& _CMax, const cv::Mat& _CMin);
@@ -122,7 +123,11 @@ public:
     bool roundReflectance(cv::Mat* const _K);
     bool roundAmbient(cv::Mat* const _F);
     ///////////////////////////////  show method ///////////////////////////////
-//    bool showKMap(void);
+    bool showKMap(void);
+    bool showFMap(void);
+    bool showCfullMap(void);
+    bool showC0Map(void);
+    bool showAll(const cv::Mat& _captureImage, const cv::Mat& _projectionImage, const cv::Mat& _targetImage);
     ///////////////////////////////  other method ///////////////////////////////
     bool test_RadiometricModel(void);
     bool doAppearanceCrealy(cv::Mat* const _P, const double _s);

@@ -182,20 +182,20 @@ public:
     ///////////////////////////////  capture from light method ///////////////////////////////
     // normal method
     bool captureFromLight(cv::Mat* const _captureImage, const cv::Mat& _projectionImage, const bool _denoiseFlag = false, const int _waitTimeNum = SLEEP_TIME);
-    bool captureFromFlatLight(cv::Mat* const _captureImage, const cv::Vec3b& _projectionColor, const bool _denoiseFlag = false, const int _waitTimeNum = SLEEP_TIME);
-    bool captureFromFlatGrayLight(cv::Mat* const _captureImage, const uchar& _projectionNum, const bool _denoiseFlag = false, const int _waitTimeNum = SLEEP_TIME);
+    bool captureFromLight(cv::Mat* const _captureImage, const cv::Vec3b& _projectionColor, const bool _denoiseFlag = false, const int _waitTimeNum = SLEEP_TIME);
+    bool captureFromLight(cv::Mat* const _captureImage, const uchar& _projectionNum, const bool _denoiseFlag = false, const int _waitTimeNum = SLEEP_TIME);
     
     bool captureFromLightOnProjectorDomain(cv::Mat* const _captureImage, const cv::Mat& _projectionImage, const bool _denoiseFlag = false, const int _waitTimeNum = SLEEP_TIME);
-    bool captureFromFlatLightOnProjectorDomain(cv::Mat* const _captureImage, const cv::Vec3b& _projectionColor, const bool _denoiseFlag = false, const int _waitTimeNum = SLEEP_TIME);
-    bool captureFromFlatGrayLightOnProjectorDomain(cv::Mat* const _captureImage, const uchar _projectionNumber, const bool _denoiseFlag = false, const int _waitTimeNum = SLEEP_TIME);
+    bool captureFromLightOnProjectorDomain(cv::Mat* const _captureImage, const cv::Vec3b& _projectionColor, const bool _denoiseFlag = false, const int _waitTimeNum = SLEEP_TIME);
+    bool captureFromLightOnProjectorDomain(cv::Mat* const _captureImage, const uchar _projectionNumber, const bool _denoiseFlag = false, const int _waitTimeNum = SLEEP_TIME);
     
     bool captureFromLinearLightOnProjectorDomain(cv::Mat* const _captureImage, const cv::Mat& _projectionImage, const bool _denoiseFlag = false, const int _waitTimeNum = SLEEP_TIME);
-    bool captureFromLinearFlatLightOnProjectorDomain(cv::Mat* const _captureImage, const cv::Vec3b& _projectionColor, const bool _denoiseFlag = false, const int _waitTimeNum = SLEEP_TIME);
-    bool captureFromLinearFlatGrayLightOnProjectorDomain(cv::Mat* const _captureImage, const uchar _projectionNumber, const bool _denoiseFlag = false, const int _waitTimeNum = SLEEP_TIME);
+    bool captureFromLinearLightOnProjectorDomain(cv::Mat* const _captureImage, const cv::Vec3b& _projectionColor, const bool _denoiseFlag = false, const int _waitTimeNum = SLEEP_TIME);
+    bool captureFromLinearLightOnProjectorDomain(cv::Mat* const _captureImage, const uchar _projectionNumber, const bool _denoiseFlag = false, const int _waitTimeNum = SLEEP_TIME);
     
     bool captureOfProjecctorColorFromLinearLightOnProjectorDomain(cv::Mat* const _captureImage, const cv::Mat& _projectionImage, const bool _denoiseFlag = false, const int _waitTimeNum = SLEEP_TIME);
-    bool captureOfProjecctorColorFromLinearFlatLightOnProjectorDomain(cv::Mat* const _captureImage, const cv::Vec3b& _projectionColor, const bool _denoiseFlag = false, const int _waitTimeNum = SLEEP_TIME);
-    bool captureOfProjecctorColorFromLinearFlatGrayLightOnProjectorDomain(cv::Mat* const _captureImage, const uchar _projectionNumber, const bool _denoiseFlag = false, const int _waitTimeNum = SLEEP_TIME);
+    bool captureOfProjecctorColorFromLinearLightOnProjectorDomain(cv::Mat* const _captureImage, const cv::Vec3b& _projectionColor, const bool _denoiseFlag = false, const int _waitTimeNum = SLEEP_TIME);
+    bool captureOfProjecctorColorFromLinearLightOnProjectorDomain(cv::Mat* const _captureImage, const uchar _projectionNumber, const bool _denoiseFlag = false, const int _waitTimeNum = SLEEP_TIME);
 
     ///////////////////////////////  other method ///////////////////////////////
     bool interpolationProjectorResponseP2I(cv::Mat* const _prjRes);
