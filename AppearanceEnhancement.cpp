@@ -158,6 +158,10 @@ bool AppearanceEnhancement::setK(const cv::Mat& K){
     m_K = K;
     return true;
 }
+bool AppearanceEnhancement::setKMap(const cv::Mat& _K){
+    m_KMap = _K;
+    return true;
+}
 
 // 環境光の設定
 // input / F    : 設定する環境光
@@ -1024,7 +1028,7 @@ bool AppearanceEnhancement::estimateK(const cv::Mat& _P, const cv::Mat& _C, cons
     }
     
     // save
-    setK(l_K);
+    setKMap(l_K);
 //    saveK();
     return true;
 }

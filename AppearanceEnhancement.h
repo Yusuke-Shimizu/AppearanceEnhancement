@@ -58,6 +58,7 @@ public:
     bool setC(const cv::Mat& C);
     bool setP(const cv::Mat& P);
     bool setK(const cv::Mat& K);
+    bool setKMap(const cv::Mat& _K);
     bool setF(const cv::Mat& F);
     bool setFMap(const cv::Mat& _F);
     bool setCfull(const cv::Mat& Cfull);
