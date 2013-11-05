@@ -528,26 +528,30 @@ bool AppearanceEnhancement::printAppearanceEnhancement(void){
 }
 ///////////////////////////////  save method ///////////////////////////////
 bool AppearanceEnhancement::saveCfull(const std::string& _fileName){
-    Mat l_Cfull = getCfullMap();
-    l_Cfull.convertTo(l_Cfull, CV_8UC3);
+    const Mat l_constCfull = getCfullMap();
+    Mat l_Cfull(l_constCfull.rows, l_constCfull.cols, CV_8UC3, CV_SCALAR_BLACK);
+    l_constCfull.convertTo(l_Cfull, CV_8UC3);
     imwrite(_fileName, l_Cfull);
     return true;
 }
 bool AppearanceEnhancement::saveC0(const std::string& _fileName){
-    Mat l_C0 = getC0Map();
-    l_C0.convertTo(l_C0, CV_8UC3);
+    const Mat l_constC0 = getC0Map();
+    Mat l_C0(l_constC0.rows, l_constC0.cols, CV_8UC3, CV_SCALAR_BLACK);
+    l_constC0.convertTo(l_C0, CV_8UC3);
     imwrite(_fileName, l_C0);
     return true;
 }
 bool AppearanceEnhancement::saveK(const std::string& _fileName){
-    Mat l_K = getKMap();
-    l_K.convertTo(l_K, CV_8UC3, 255);
+    const Mat l_constK = getKMap();
+    Mat l_K(l_constK.rows, l_constK.cols, CV_8UC3, CV_SCALAR_BLACK);
+    l_constK.convertTo(l_K, CV_8UC3, 255);
     imwrite(_fileName, l_K);
     return true;
 }
 bool AppearanceEnhancement::saveF(const std::string& _fileName){
-    Mat l_F = getFMap();
-    l_F.convertTo(l_F, CV_8UC3);
+    const Mat l_constF = getFMap();
+    Mat l_F(l_constF.rows, l_constF.cols, CV_8UC3, CV_SCALAR_BLACK);
+    l_constF.convertTo(l_F, CV_8UC3);
     imwrite(_fileName, l_F);
     return true;
 }
@@ -920,7 +924,7 @@ bool AppearanceEnhancement::calcReflectanceAtPixel(double* const _K, const doubl
     l_nCest = std::max(l_nCest, 1.0/255.0);
     const double l_nC = std::max(_nC, 1.0/255.0);
     double l_K = l_nC / l_nCest;
-    round0to1(&l_K);
+//    round0to1(&l_K);
     
     // copy
     *_K = l_K;
@@ -981,7 +985,7 @@ bool AppearanceEnhancement::estimateK(const cv::Mat& _P){
     
     // set and save
     setK(l_K);
-    saveK();
+//    saveK();
     
     return true;
 }
@@ -1021,7 +1025,7 @@ bool AppearanceEnhancement::estimateK(const cv::Mat& _P, const cv::Mat& _C, cons
     
     // save
     setK(l_K);
-    saveK();
+//    saveK();
     return true;
 }
 
@@ -1142,9 +1146,9 @@ bool AppearanceEnhancement::estimateKFByAmanoModel(const cv::Mat& _P1, const cv:
     setF(l_F);
     
     // save
-    saveK();
-    saveF();
-        
+//    saveK();
+//    saveF();
+    
     return true;
 }
 bool AppearanceEnhancement::estimateKFByFujiiModel(const cv::Mat& _P1, const cv::Mat& _P2){
@@ -1201,8 +1205,8 @@ bool AppearanceEnhancement::estimateKFByFujiiModel(const cv::Mat& _P1, const cv:
     setF(l_F);
     
     // save
-    saveK();
-    saveF();
+//    saveK();
+//    saveF();
 
     return true;
 }
