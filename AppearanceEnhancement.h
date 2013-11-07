@@ -90,8 +90,8 @@ public:
     bool calcCameraAddedFixNoise(cv::Mat* const _C, const cv::Mat& _K, const cv::Mat& _F, const cv::Mat& _P, const double& noise);
     bool calcNextProjection(cv::Mat* const _P, const cv::Mat& _C, const cv::Mat& _K, const cv::Mat& _F);
     bool calcRangeOfDesireC(cv::Mat* const _rangeTop, cv::Mat* const _rangeDown, const cv::Mat& _K, const cv::Mat& _F);
-    bool calcTargetImage(cv::Mat* const _targetImage, const cv::Mat& _Cest, const double& _s = 1.3, const int _enhanceType = 0);
-    bool calcTargetImageAtPixel(double* const _targetImage, const double& _Cest, const double& _CestGray, const double& _s = 1.3, const int _enhanceType = 0);
+    bool calcTargetImage(cv::Mat* const _targetImage, const cv::Mat& _K, const cv::Mat& _F, const cv::Mat& _CMin, const double& _s = 1.3, const int _enhanceType = 0);
+    bool calcTargetImageAtPixel(double* const _targetImage, const double& _K, const double& _F, const double& _CMin, const double& _KGray, const double& _s = 1.3, const int _enhanceType = 0);
     bool calcNextProjectionImage(cv::Mat* const _nextP, const cv::Mat& _targetImage, const cv::Mat& _C, const cv::Mat& _P, const cv::Mat& _K, const cv::Mat& _F, const cv::Mat& _FBefore, const cv::Mat& _Cfull, const cv::Mat& _C0, const double& _alpha = 0.1);
     bool calcNextProjectionImageAtPixel(uchar* const _nextP, const double& _targetImage, const double& _C, const double& _P, const double& _K, const double& _F, const double& _FBefore, const double& _Cfull, const double& _C0, const double& _alpha = 0.1);
     bool calcReflectanceAtPixel(double* const _K, const double& _nC, const double& _nP, const double& _nCMax, const double& _nCMin);
@@ -115,7 +115,7 @@ public:
     bool showFMap(void);
     bool showCfullMap(void);
     bool showC0Map(void);
-    bool showAll(const cv::Mat& _captureImage, const cv::Mat& _projectionImage, const cv::Mat& _targetImage);
+    bool showAll(const cv::Mat& _captureImage, const cv::Mat& _projectionImage, const cv::Mat& _targetImage, const cv::Mat& _answerK);
     ///////////////////////////////  other method ///////////////////////////////
     bool test_RadiometricModel(void);
     bool doAppearanceCrealy(cv::Mat* const _P, const double _s);

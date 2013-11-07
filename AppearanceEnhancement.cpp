@@ -424,7 +424,7 @@ bool AppearanceEnhancement::printAppearanceEnhancement(void){
         calcReflectanceAtPixel(&l_estK, l_C, l_P, l_CMax, l_CMin);
         
         // calc target number
-        calcTargetImageAtPixel(&l_target, l_estK, l_estK * 1.2);
+        calcTargetImageAtPixel(&l_target, l_estK, l_estF, l_CMin, l_estK * 1.2);
         l_target /= 255.0;
         
         // calc next projection number
@@ -731,32 +731,34 @@ bool AppearanceEnhancement::calcRangeOfDesireC(cv::Mat* const _rangeTop, cv::Mat
 }
 
 // 見た目をどのような画像にするか決定する
-bool AppearanceEnhancement::calcTargetImage(cv::Mat* const _targetImage, const cv::Mat& _Cest, const double& _s, const int _enhanceType){
+bool AppearanceEnhancement::calcTargetImage(cv::Mat* const _targetImage, const cv::Mat& _K, const cv::Mat& _F, const cv::Mat& _CMin, const double& _s, const int _enhanceType){
     // init
-    int rows = _Cest.rows, cols = _Cest.cols;
+    int rows = _K.rows, cols = _K.cols;
     Mat l_targetImage(rows, cols, CV_64FC3, CV_SCALAR_BLACK);
     
-    // to be gray scale
+    // create gray scale
     Mat l_grayCest(rows, cols, CV_32FC1, 0);
-    Mat l_Cest(rows, cols, CV_32FC3);
-    _Cest.convertTo(l_Cest, CV_32FC3);
-    cvtColor(l_Cest, l_grayCest, CV_BGR2GRAY);
+    Mat l_K(rows, cols, CV_32FC3);
+    _K.convertTo(l_K, CV_32FC3);
+    cvtColor(l_K, l_grayCest, CV_BGR2GRAY);
     l_grayCest.convertTo(l_grayCest, CV_64FC1);
     
     // scan
-    if (isContinuous(l_targetImage, l_Cest, l_grayCest)) {
+    if (isContinuous(l_targetImage, l_K, l_grayCest)) {
         cols *= rows;
         rows = 1;
     }
     for (int y = 0; y < rows; ++ y) {
         Vec3d* l_pTargetImage = l_targetImage.ptr<Vec3d>(y);
-        const Vec3d* l_pCest = _Cest.ptr<Vec3d>(y);
+        const Vec3d* l_pK = _K.ptr<Vec3d>(y);
+        const Vec3d* l_pF = _F.ptr<Vec3d>(y);
+        const Vec3d* l_pCMin = _CMin.ptr<Vec3d>(y);
         const double* l_pGrayCest = l_grayCest.ptr<double>(y);
         
         for (int x = 0; x < cols; ++ x) {
             for (int c = 0; c < 3; ++ c) {
                 // calc desire C
-                calcTargetImageAtPixel(&(l_pTargetImage[x][c]), l_pCest[x][c], l_pGrayCest[x], _s, _enhanceType);
+                calcTargetImageAtPixel(&(l_pTargetImage[x][c]), l_pK[x][c], l_pF[x][c], l_pCMin[x][c], l_pGrayCest[x], _s, _enhanceType);
             }
         }
     }
@@ -767,8 +769,9 @@ bool AppearanceEnhancement::calcTargetImage(cv::Mat* const _targetImage, const c
     
     return true;
 }
-bool AppearanceEnhancement::calcTargetImageAtPixel(double* const _targetImage, const double& _Cest, const double& _CestGray, const double& _s, const int _enhanceType){
-    double l_targetImageNum = ((1 + _s) * _Cest - _s * _CestGray) * 255;
+bool AppearanceEnhancement::calcTargetImageAtPixel(double* const _targetImage, const double& _K, const double& _F, const double& _CMin, const double& _KGray, const double& _s, const int _enhanceType){
+//    double l_targetImageNum = ((1 + _s) * _K - _s * _KGray) * 255;
+    double l_targetImageNum = ((1 + _s) * _K - _s * _KGray) * (128 + _F + _CMin);
 //    roundXtoY(&l_targetImageNum, 0, 255);
 //    l_pTargetImage[x][c] = (uchar)l_targetImageNum;
     *_targetImage = l_targetImageNum;
@@ -1253,7 +1256,7 @@ bool AppearanceEnhancement::showC0Map(void){
     MY_IMSHOW(l_C0);
     return true;
 }
-bool AppearanceEnhancement::showAll(const cv::Mat& _captureImage, const cv::Mat& _projectionImage, const cv::Mat& _targetImage){
+bool AppearanceEnhancement::showAll(const cv::Mat& _captureImage, const cv::Mat& _projectionImage, const cv::Mat& _targetImage, const cv::Mat& _answerK){
     const Mat l_captureImage = _captureImage / 255.0;
     Mat l_projectorImage = _projectionImage;
     l_projectorImage.convertTo(l_projectorImage, CV_64FC3, 1.0/255.0);
@@ -1261,6 +1264,7 @@ bool AppearanceEnhancement::showAll(const cv::Mat& _captureImage, const cv::Mat&
     MY_IMSHOW(l_captureImage);
     MY_IMSHOW(l_projectorImage);
     MY_IMSHOW(l_targetImage);
+    MY_IMSHOW(_answerK);
     
     showKMap();
     showFMap();
@@ -1362,8 +1366,8 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
     // init
     setCfullMap();
     setC0Map();
-    Mat l_Cfull = getCfullMap();
-    Mat l_C0 = getC0Map();
+    Mat l_CMax = getCfullMap();
+    Mat l_CMin = getC0Map();
     
     //
     ProCam* l_procam = getProCam();
@@ -1388,7 +1392,7 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
             case 0:
                 cout << "estimate K" << endl;
 //                estimateK(l_projectionImage);
-                estimateK(l_projectionImage, l_captureImage, l_Cfull, l_C0);
+                estimateK(l_projectionImage, l_captureImage, l_CMax, l_CMin);
                 break;
             case 1:
                 cout << "estimate F" << endl;
@@ -1416,21 +1420,21 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
 //        _print2(l_diffK, l_diffF);
         
         // determine target image
-        calcTargetImage(&l_targetImage, l_KMap, l_enhanceRate, 0);
+        calcTargetImage(&l_targetImage, l_KMap, l_FMap, l_CMin, l_enhanceRate, 0);
 
         // To shift time
         l_projectionImageBefore = l_projectionImage.clone();
         l_captureImageBefore = l_captureImage.clone();
 
         // calc next projection image
-        calcNextProjectionImage(&l_projectionImage, l_targetImage, l_captureImageBefore, l_projectionImageBefore, l_KMap, l_FMap, l_FMapBefore, l_Cfull, l_C0, l_alphaMPC);
+        calcNextProjectionImage(&l_projectionImage, l_targetImage, l_captureImageBefore, l_projectionImageBefore, l_KMap, l_FMap, l_FMapBefore, l_CMax, l_CMin, l_alphaMPC);
         
         // projection
         l_procam->captureOfProjecctorColorFromLinearLightOnProjectorDomain(&l_captureImage, l_projectionImage);
         
         // save and show
         saveAll(l_captureImage, l_projectionImage, l_targetImage);
-        showAll(l_captureImage, l_projectionImage, l_targetImage);
+        showAll(l_captureImage, l_projectionImage, l_targetImage, l_answerK);
         
         // evaluate
         evaluateEstimationAndProjection(l_answerK, l_KMap, l_targetImage, l_captureImage);
@@ -1445,8 +1449,8 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
             case (CV_BUTTON_f):
                 setCfullMap();
                 setC0Map();
-                l_Cfull = getCfullMap();
-                l_C0 = getC0Map();
+                l_CMax = getCfullMap();
+                l_CMin = getC0Map();
                 break;
             case (CV_BUTTON_r):
                 l_estTarget = 0;
@@ -1462,6 +1466,7 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
                 break;
             case (CV_BUTTON_a):
                 // 現在推定している反射率を正解にする
+                cout << "l_answerK = l_KMap" << endl;
                 l_answerK = l_KMap;
                 break;
             case (CV_BUTTON_e):
