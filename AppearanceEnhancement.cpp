@@ -21,11 +21,12 @@ using namespace cv;
 
 ///////////////////////////////  constructor ///////////////////////////////
 AppearanceEnhancement::AppearanceEnhancement(const double& _CMaxNum, const double& _CMinNum)
-:m_C(3, 1, CV_8UC1), m_P(3, 1, CV_8UC1), m_K(3, 1, CV_8UC1), m_F(3, 1, CV_8UC1), m_Cfull(3, 1, CV_8UC1), m_C0(3, 1, CV_8UC1)
+:m_K(3, 1, CV_8UC1), m_F(3, 1, CV_8UC1), m_Cfull(3, 1, CV_8UC1), m_C0(3, 1, CV_8UC1)
 {
 //    setCfull(_CMaxNum);
 //    setC0(_CMinNum);
 //    test_RadiometricModel();
+    srand((unsigned) time(NULL));
 }
 AppearanceEnhancement::AppearanceEnhancement(const cv::Size& _prjSize)
 :m_procam(_prjSize){
@@ -35,7 +36,6 @@ AppearanceEnhancement::AppearanceEnhancement(const cv::Size& _prjSize)
 ///////////////////////////////  init method ///////////////////////////////
 // 全体の初期化
 bool AppearanceEnhancement::init(void){
-    srand((unsigned) time(NULL));
     return initRadiometricModel();
 }
 
@@ -45,8 +45,6 @@ bool AppearanceEnhancement::initRadiometricModel(void){
     initProCam();
     ProCam* l_procam = getProCam();
     const Size* l_camSize = l_procam->getCameraSize();
-    if ( !initP() ) return false;
-    if ( !initC() ) return false;
     if ( !initK(*l_camSize) ) return false;
     if ( !initF(*l_camSize) ) return false;
     if ( !initCfull(*l_camSize) ) return false;
@@ -54,26 +52,9 @@ bool AppearanceEnhancement::initRadiometricModel(void){
     return true;
 }
 
-// カメラ色(C)の初期化
-// return   : 初期化出来たかどうか
-bool AppearanceEnhancement::initC(void){
-    m_C = cv::Mat::zeros(3, 1, CV_64FC1);
-    return true;
-}
-
-// プロジェクタ色(P)の初期化
-// return   : 初期化出来たかどうか
-bool AppearanceEnhancement::initP(void){
-    m_P = cv::Mat::zeros(3, 1, CV_64FC1);
-    return true;
-}
-
 // 反射率(K)の初期化
 // return   : 初期化出来たかどうか
 bool AppearanceEnhancement::initK(const cv::Size& _camSize){
-    // init K
-    m_K = cv::Mat::eye(3, 3, CV_64FC1);
-    
     // init K map
     m_KMap = Mat(_camSize, CV_64FC3, Scalar(1.0, 1.0, 1.0));
     
@@ -83,9 +64,6 @@ bool AppearanceEnhancement::initK(const cv::Size& _camSize){
 // 環境光(F)の初期化
 // return   : 初期化出来たかどうか
 bool AppearanceEnhancement::initF(const cv::Size& _camSize){
-    m_F = cv::Mat::zeros(3, 1, CV_64FC1);
-    
-//    m_FMap = Mat(_camSize, CV_8UC3, CV_SCALAR_BLACK);
     m_FMap = Mat(_camSize, CV_64FC3, Scalar(1.0, 1.0, 1.0));
 
     return true;
@@ -94,11 +72,7 @@ bool AppearanceEnhancement::initF(const cv::Size& _camSize){
 // 最大輝度撮影色(Cfull)の初期化
 // return   : 初期化出来たかどうか
 bool AppearanceEnhancement::initCfull(const cv::Size& _camSize){
-    // init Cfull
-    m_Cfull = cv::Mat::zeros(3, 1, CV_64FC1);
-    
     // init Cfull map
-//    m_CfullMap = Mat(_camSize, CV_8UC3, CV_SCALAR_BLACK);
     m_CfullMap = Mat(_camSize, CV_64FC3, Scalar(1.0, 1.0, 1.0));
     return true;
 }
@@ -106,11 +80,7 @@ bool AppearanceEnhancement::initCfull(const cv::Size& _camSize){
 // 最小輝度撮影色(C0)の初期化
 // return   : 初期化出来たかどうか
 bool AppearanceEnhancement::initC0(const cv::Size& _camSize){
-    // init C0
-    m_C0 = cv::Mat::zeros(3, 1, CV_64FC1);
-
     // init C0 map
-//    m_C0Map = Mat(_camSize, CV_8UC3, CV_SCALAR_BLACK);
     m_C0Map = Mat(_camSize, CV_64FC3, Scalar(1.0, 1.0, 1.0));
     return true;
 }
@@ -124,40 +94,9 @@ bool AppearanceEnhancement::initProCam(void){
 }
 
 ///////////////////////////////  set method ///////////////////////////////
-// 光学モデルに必要な行列の全体設定
-bool AppearanceEnhancement::setRadiometricModel(const cv::Mat& C, const cv::Mat& P, const cv::Mat& K, const cv::Mat& F, const cv::Mat& Cfull, const cv::Mat& C0){
-    setC(C);
-    setP(P);
-    setK(K);
-    setF(F);
-    setCfull(Cfull);
-    setC0(C0);
-    return true;
-}
-
-// カメラの設定
-// input / C    : 設定する色
-// return       : 成功したかどうか
-bool AppearanceEnhancement::setC(const cv::Mat& C){
-    m_C = C;
-    return true;
-}
-
-// プロジェクタの設定
-// input / P    : 設定する色
-// return       : 成功したかどうか
-bool AppearanceEnhancement::setP(const cv::Mat& P){
-    m_P = P;
-    return true;
-}
-
 // 反射率の設定
 // input / K    : 設定する反射率
 // return       : 成功したかどうか
-bool AppearanceEnhancement::setK(const cv::Mat& K){
-    m_K = K;
-    return true;
-}
 bool AppearanceEnhancement::setKMap(const cv::Mat& _K){
     m_KMap = _K;
     return true;
@@ -166,10 +105,6 @@ bool AppearanceEnhancement::setKMap(const cv::Mat& _K){
 // 環境光の設定
 // input / F    : 設定する環境光
 // return       : 成功したかどうか
-bool AppearanceEnhancement::setF(const cv::Mat& F){
-    m_F = F;
-    return true;
-}
 bool AppearanceEnhancement::setFMap(const cv::Mat& _F){
     // error handle
     if (!isEqualSizeAndType(m_FMap, _F)) {
@@ -184,21 +119,9 @@ bool AppearanceEnhancement::setFMap(const cv::Mat& _F){
 }
 
 
-// 最大輝度撮影色の設定
+// m_CfullMapの設定
 // input / Cfull    : 設定する色
 // return           : 成功したかどうか
-bool AppearanceEnhancement::setCfull(const cv::Mat& _Cfull){
-    return setColor(&m_Cfull, _Cfull);
-}
-bool AppearanceEnhancement::setCfull(const double& red, const double& blue, const double& green){
-    Mat Cfull = (Mat_<double>(3, 1) << red, blue, green);
-    return setCfull(Cfull);
-}
-bool AppearanceEnhancement::setCfull(const double& _luminance){
-    return setCfull(_luminance, _luminance, _luminance);
-}
-
-// m_CfullMapの設定
 bool AppearanceEnhancement::setCfullMap(void){
     ProCam* l_procam = getProCam();
     l_procam->captureOfProjecctorColorFromLinearLightOnProjectorDomain(&m_CfullMap, 255, true, SLEEP_TIME);
@@ -212,22 +135,9 @@ bool AppearanceEnhancement::setCfullMap(const cv::Mat& _Cfull){
 }
 
 
-// 最小輝度撮影色の設定
+// m_C0Mapの設定
 // input / C0   : 設定する色
 // return       : 成功したかどうか
-bool AppearanceEnhancement::setC0(const cv::Mat& _C0){
-    setColor(&m_C0, _C0);
-    return true;
-}
-bool AppearanceEnhancement::setC0(const double& red, const double& blue, const double& green){
-    Mat C0 = (Mat_<double>(3, 1) << red, blue, green);
-    return setC0(C0);
-}
-bool AppearanceEnhancement::setC0(const double& luminance){
-    return setC0(luminance, luminance, luminance);
-}
-
-// m_C0Mapの設定
 bool AppearanceEnhancement::setC0Map(void){
     ProCam* l_procam = getProCam();
     l_procam->captureOfProjecctorColorFromLinearLightOnProjectorDomain(&m_C0Map, 0, true, SLEEP_TIME);
@@ -500,7 +410,7 @@ bool AppearanceEnhancement::printAmanoMethod(void){
 // 見えの強調の数値シミュレーション
 bool AppearanceEnhancement::printAppearanceEnhancement(void){
     const double l_CMax = 0.99, l_CMin = 0.02;
-    const double l_ansK = 0.5, l_ansF = 0.0;
+    const double l_ansK = 0.0, l_ansF = 0.0;
     double l_estK = 0.0, l_estF = 0.0, l_estFBefore = 0.0;
     double l_P = 0, l_C = 0, l_target = 0.0;
     uchar l_Puchar = 0;
@@ -514,7 +424,7 @@ bool AppearanceEnhancement::printAppearanceEnhancement(void){
         calcReflectanceAtPixel(&l_estK, l_C, l_P, l_CMax, l_CMin);
         
         // calc target number
-        calcTargetImageAtPixel(&l_target, l_estK, l_estK * 0.8);
+        calcTargetImageAtPixel(&l_target, l_estK, l_estK * 1.2);
         l_target /= 255.0;
         
         // calc next projection number
@@ -988,7 +898,7 @@ bool AppearanceEnhancement::estimateK(const cv::Mat& _P){
     }
     
     // set and save
-    setK(l_K);
+    setKMap(l_K);
 //    saveK();
     
     return true;
@@ -1083,7 +993,7 @@ bool AppearanceEnhancement::estimateF(const cv::Mat& _P){
     }
 
     // set and save
-    setF(l_F);
+    setFMap(l_F);
     saveF();
     
     return true;
@@ -1146,8 +1056,8 @@ bool AppearanceEnhancement::estimateKFByAmanoModel(const cv::Mat& _P1, const cv:
     }
     
     // set
-    setK(l_K);
-    setF(l_F);
+    setKMap(l_K);
+    setFMap(l_F);
     
     // save
 //    saveK();
@@ -1205,8 +1115,8 @@ bool AppearanceEnhancement::estimateKFByFujiiModel(const cv::Mat& _P1, const cv:
     }
 
     // setting
-    setK(l_K);
-    setF(l_F);
+    setKMap(l_K);
+    setFMap(l_F);
     
     // save
 //    saveK();
@@ -1245,24 +1155,18 @@ bool AppearanceEnhancement::evaluateF(const cv::Mat& _ansF){
 
     return true;
 }
-bool AppearanceEnhancement::evaluateKF(void){
-    // init
-    ProCam* l_procam = getProCam();
-    const Size* l_camSize = l_procam->getCameraSize();
+bool AppearanceEnhancement::evaluateEstimationAndProjection(const cv::Mat& _ansK, const cv::Mat& _estK, const cv::Mat& _targetImage, const cv::Mat& _captureImage){
     
-    // make answer to reflectance
-    cout << "Please shut out ambient light" << endl;
-    Mat l_ansK(*l_camSize, CV_64FC3, CV_SCALAR_BLACK);
-    l_procam->captureOfProjecctorColorFromLinearLightOnProjectorDomain(&l_ansK, 255);
+    // get mean and standard deviation
+    cv::Scalar l_estMean(0, 0, 0, 0), l_estStddev(0, 0, 0, 0);
+    cv::Scalar l_prjMean(0, 0, 0, 0), l_prjStddev(0, 0, 0, 0);
+    calcMeanStddevOfDiffImage(&l_estMean, &l_estStddev, _ansK, _estK);
+    calcMeanStddevOfDiffImage(&l_prjMean, &l_prjStddev, _targetImage, _captureImage);
     
-    // make answer to ambient light
-    cout << "Please set the standard white board" << endl;
-    Mat l_ansF(*l_camSize, CV_64FC3, CV_SCALAR_BLACK);
-    l_procam->captureOfProjecctorColorFromLinearLightOnProjectorDomain(&l_ansF, 0);
+    // print
+    _print2(l_estMean, l_estStddev);
+    _print2(l_prjMean, l_prjStddev);
     
-    // evaluation
-    evaluateK(l_ansK);
-    evaluateF(l_ansF);
     return true;
 }
 
@@ -1368,8 +1272,6 @@ bool AppearanceEnhancement::showAll(const cv::Mat& _captureImage, const cv::Mat&
 // 光学モデルのテスト ( C=K{(C_full-C_0)P + C_0 + F} )
 // return   : テストが合ってるかどうか
 bool AppearanceEnhancement::test_RadiometricModel(void){
-    setCfull(0.8);
-    setC0(0.1);
 
 //    printStandardDeviationOfRadiometricModel();
 //    printSwitchIteratorError();
@@ -1475,6 +1377,7 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
     Mat l_captureImage(*l_camSize, CV_64FC3, Scalar(prj, prj, prj));
     Mat l_captureImageBefore(*l_camSize, CV_64FC3, Scalar(prj2, prj2, prj2));
     Mat l_targetImage(*l_camSize, CV_64FC3, CV_SCALAR_WHITE);
+    Mat l_answerK(*l_camSize, CV_64FC3, CV_SCALAR_WHITE);
     double l_enhanceRate = 1.3, l_alphaMPC = 0.1;
     int l_estTarget = 0;
     
@@ -1498,10 +1401,6 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
             case 3:
                 cout << "estimate K and F by Fujii model" << endl;
                 estimateKFByFujiiModel(l_projectionImage2, l_projectionImageBefore2);
-                break;
-            case 4:
-                cout << "evaluate estimated K and F" << endl;
-                evaluateKF();
                 break;
             default:
                 break;
@@ -1533,6 +1432,9 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
         saveAll(l_captureImage, l_projectionImage, l_targetImage);
         showAll(l_captureImage, l_projectionImage, l_targetImage);
         
+        // evaluate
+        evaluateEstimationAndProjection(l_answerK, l_KMap, l_targetImage, l_captureImage);
+        
         // check key
         int key = waitKey(-1);
         switch (key) {
@@ -1559,7 +1461,8 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
                 l_estTarget = 3;
                 break;
             case (CV_BUTTON_a):
-                l_estTarget = 4;
+                // 現在推定している反射率を正解にする
+                l_answerK = l_KMap;
                 break;
             case (CV_BUTTON_e):
                 l_enhanceRate += 0.1;

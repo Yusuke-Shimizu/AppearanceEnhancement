@@ -46,29 +46,16 @@ public:
     ///////////////////////////////  init method ///////////////////////////////
     bool init(void);
     bool initRadiometricModel(void);
-    bool initC(void);
-    bool initP(void);
     bool initK(const cv::Size& _camSize);
     bool initF(const cv::Size& _camSize);
     bool initCfull(const cv::Size& _camSize);
     bool initC0(const cv::Size& _camSize);
     bool initProCam(void);
     ///////////////////////////////  set method ///////////////////////////////
-    bool setRadiometricModel(const cv::Mat& C, const cv::Mat& P, const cv::Mat& K, const cv::Mat& F, const cv::Mat& Cfull, const cv::Mat& C0);
-    bool setC(const cv::Mat& C);
-    bool setP(const cv::Mat& P);
-    bool setK(const cv::Mat& K);
     bool setKMap(const cv::Mat& _K);
-    bool setF(const cv::Mat& F);
     bool setFMap(const cv::Mat& _F);
-    bool setCfull(const cv::Mat& Cfull);
-    bool setCfull(const double& red, const double& blue, const double& green);
-    bool setCfull(const double& luminance);
     bool setCfullMap(void);
     bool setCfullMap(const cv::Mat& _Cfull);
-    bool setC0(const cv::Mat& C0);
-    bool setC0(const double& red, const double& blue, const double& green);
-    bool setC0(const double& luminance);
     bool setC0Map(void);
     bool setC0Map(const cv::Mat& _C0);
     ///////////////////////////////  get method ///////////////////////////////
@@ -118,7 +105,7 @@ public:
     ////////////////////////////// evaluate method //////////////////////////////
     bool evaluateK(const cv::Mat& _ansK);
     bool evaluateF(const cv::Mat& _ansF);
-    bool evaluateKF(void);
+    bool evaluateEstimationAndProjection(const cv::Mat& _ansK, const cv::Mat& _estK, const cv::Mat& _targetImage, const cv::Mat& _captureImage);
     ///////////////////////////////  round method ///////////////////////////////
     bool roundDesireC(cv::Mat* const _desireC, const cv::Mat& _K, const cv::Mat& _F);
     bool roundReflectance(cv::Mat* const _K);

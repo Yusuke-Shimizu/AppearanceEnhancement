@@ -12,7 +12,9 @@
 #include "common.h"
 #include "myOpenCV.h"
 
+#ifdef LINUX
 #define EXPERIMENT_FLAG
+#endif
 
 using namespace std;
 using namespace cv;

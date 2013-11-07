@@ -36,7 +36,6 @@ const int CV_BUTTON_DOWN   = CV_BUTTON_UP + 1;
 const int CV_BUTTON_LEFT   = CV_BUTTON_UP + 2;
 const int CV_BUTTON_RIGHT  = CV_BUTTON_UP + 3;
 const int CV_BUTTON_DELETE = 127;
-const int CV_BUTTON_SMALL_TO_CAPITAL = -32;
 const int CV_BUTTON_a      = 97;
 //const int CV_BUTTON_c      = 99;
 //const int CV_BUTTON_C      = 67;
@@ -223,6 +222,8 @@ bool insertMatForDeepDepthMat(cv::Mat* const _deepDepthMat, const cv::Mat& _oneL
 void checkButton(void);
 void meanMat(cv::Mat* const _meanMat, const std::vector<cv::Mat>& _matVec);
 void test_meanMat(void);
+bool calcMeanStddevOfDiffImage(cv::Scalar* const _mean, cv::Scalar* const _stddev, const cv::Mat& _mat1, const cv::Mat& _mat2);
+bool test_calcMeanStddevOfDiffImage(void);
 ///////////////////////////////  inline method ///////////////////////////////
 inline void MY_WAIT_KEY(void){
     std::cout << "push any key" << std::endl;

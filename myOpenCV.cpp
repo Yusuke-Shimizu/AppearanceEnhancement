@@ -1185,3 +1185,31 @@ void test_meanMat(void){
     MY_IMSHOW(l_meanImage);
     waitKey(-1);
 }
+
+// 二つの画像の差の平均と標準偏差を取得する
+bool calcMeanStddevOfDiffImage(cv::Scalar* const _mean, cv::Scalar* const _stddev, const cv::Mat& _mat1, const cv::Mat& _mat2){
+    Mat l_diff(_mat1.rows, _mat2.cols, CV_64FC3, Scalar(0.0, 0.0, 0.0));
+    absdiff(_mat1, _mat2, l_diff);
+    meanStdDev(l_diff, *_mean, *_stddev);
+    return true;
+}
+bool test_calcMeanStddevOfDiffImage(void){
+    const Mat l_image1(VGA_SIZE, CV_8UC3, CV_SCALAR_WHITE);
+    const Mat l_image2(VGA_SIZE, CV_8UC3, CV_SCALAR_RED);
+    const Mat l_image3(VGA_SIZE, CV_8UC3, CV_SCALAR_GREEN);
+    const Mat l_image4(VGA_SIZE, CV_8UC3, CV_SCALAR_BLUE);
+    const Mat l_image5(VGA_SIZE, CV_8UC3, CV_SCALAR_YELLOW);
+    const Mat l_image6(VGA_SIZE, CV_8UC3, CV_SCALAR_CYAN);
+    const Mat l_image7(VGA_SIZE, CV_8UC3, CV_SCALAR_PURPLE);
+    const Mat l_image8(VGA_SIZE, CV_8UC3, CV_SCALAR_BLACK);
+    
+    Scalar l_mean(0,0,0,0), l_stddev(0,0,0,0);
+    calcMeanStddevOfDiffImage(&l_mean, &l_stddev, l_image1, l_image2);
+    _print2(l_mean, l_stddev);
+    calcMeanStddevOfDiffImage(&l_mean, &l_stddev, l_image3, l_image2);
+    _print2(l_mean, l_stddev);
+    calcMeanStddevOfDiffImage(&l_mean, &l_stddev, l_image5, l_image3);
+    _print2(l_mean, l_stddev);
+    
+    return true;
+}
