@@ -885,6 +885,7 @@ bool ProCam::test_linearizeOfProjector(void){
     const Size* l_camSize = getCameraSize();
     Mat l_captureImage(*l_camSize, CV_8UC3, CV_SCALAR_BLACK);
     Mat l_captureImageNotLinear(*l_camSize, CV_8UC3, CV_SCALAR_BLACK);
+    ofstream ofs(CHECK_LINEARIZE_FILE_NAME);
     
     for (int i = 0; i < 256; ++ i) {
         // projection and capturing
@@ -897,8 +898,10 @@ bool ProCam::test_linearizeOfProjector(void){
         meanStdDev(l_captureImageNotLinear, l_meanColorNL, l_stddevColorNL);
 
         // print
-        std::cout << i << "\t";
-        _print_gnuplot_color4_l(std::cout, l_meanColor, l_stddevColor, l_meanColorNL, l_stddevColorNL);
+//        std::cout << i << "\t";
+//        _print_gnuplot_color4_l(std::cout, l_meanColor, l_stddevColor, l_meanColorNL, l_stddevColorNL);
+        ofs << i << "\t";
+        _print_gnuplot_color4_l(ofs, l_meanColor, l_stddevColor, l_meanColorNL, l_stddevColorNL);
     }
     
     return true;
@@ -1032,15 +1035,25 @@ bool ProCam::colorCalibration2(cv::Mat_<Vec12d>* const _V){
 bool ProCam::test_colorCalibration(void){
     const Size* l_camSize = getCameraSize();
     Mat l_captureImage(*l_camSize, CV_64FC3, CV_SCALAR_BLACK);
+    Mat l_captureImageNC(*l_camSize, CV_64FC3, CV_SCALAR_BLACK);
+    ofstream ofs(CHECK_COLOR_CALIBRATION_FILE_NAME);
+    
     for (int prj = 0; prj < 256; ++ prj) {
         // capture
         Vec3b l_color(0, 0, prj);
         captureOfProjecctorColorFromLinearLightOnProjectorDomain(&l_captureImage, l_color);
+        captureFromLinearLightOnProjectorDomain(&l_captureImageNC, l_color);
         
-        //
-        Vec3d l_meanColor(0, 0, 0), l_stddevColor(0, 0, 0);
+        // get mean and standard deviation
+        Vec3d l_meanColor(0, 0, 0), l_stddevColor(0, 0, 0), l_meanColorNC(0, 0, 0), l_stddevColorNC(0, 0, 0);
         meanStdDev(l_captureImage, l_meanColor, l_stddevColor);
-        _print_gnuplot4(std::cout, prj, l_meanColor[0], l_meanColor[1], l_meanColor[2]);
+        meanStdDev(l_captureImageNC, l_meanColorNC, l_stddevColorNC);
+        
+        // print
+//        std::cout << prj << "\t";
+//        _print_gnuplot_color4_l(std::cout, l_meanColor, l_stddevColor, l_meanColorNC, l_stddevColorNC);
+        ofs << prj << "\t";
+        _print_gnuplot_color4_l(ofs, l_meanColor, l_stddevColor, l_meanColorNC, l_stddevColorNC);
     }
     return true;
 }

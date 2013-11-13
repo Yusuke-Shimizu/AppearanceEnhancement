@@ -45,12 +45,6 @@ const cv::Point LINUX_PROJECTOR_DISPLAY_POS(LINUX_DISPLAY_SIZE.width, 0);
 const cv::Size PRJ_SIZE(MAC_OTHER_DISPLAY_SIZE);
 const cv::Point POSITION_OF_PROJECTION_IMAGE(MAC_OTHER_DISPLAY_POS);
 #endif
-
-#ifdef MAC_PROJECTOR
-const cv::Size PRJ_SIZE(PROJECTOR_DISPLAY_SIZE);
-const cv::Point POSITION_OF_PROJECTION_IMAGE(MAC_PROJECTOR_DISPLAY_POS);
-#endif
-
 #ifdef LINUX   // Linux
 const cv::Size PRJ_SIZE(PROJECTOR_DISPLAY_SIZE);
 const cv::Point POSITION_OF_PROJECTION_IMAGE(LINUX_PROJECTOR_DISPLAY_POS);
@@ -63,6 +57,8 @@ const cv::Point POSITION_OF_PROJECTION_IMAGE(LINUX_PROJECTOR_DISPLAY_POS);
 #define PROJECTOR_RESPONSE_AT_SOME_POINT_I2P_FILE_NAME "calibrationData/projectorResponseAtSomePointI2P.dat"
 #define PROJECTOR_RESPONSE_AT_SOME_POINT_P2I_FILE_NAME "calibrationData/projectorResponseAtSomePointP2I.dat"
 #define PROJECTOR_ALL_C_IMAGES_FILE_NAME "calibrationData/allCImages.dat"
+#define CHECK_LINEARIZE_FILE_NAME "calibrationData/checkLinearize.dat"
+#define CHECK_COLOR_CALIBRATION_FILE_NAME "calibrationData/checkColorCalibration.dat"
 #define WINDOW_NAME "projection image"
 
 const uchar INIT_RES_NUM = 0;   // 応答特性の初期値
