@@ -843,6 +843,12 @@ bool AppearanceEnhancement::calcReflectanceAtPixel(double* const _K, const doubl
     double l_K = l_nC / l_nCest;
 //    round0to1(&l_K);
     
+    if (l_K > 2.0) {
+        _print_bar;
+        cout <<l_nCest<<" = ("<<_nCMax<<" - "<<_nCMin<<") * "<<_nP<<" + "<<_nCMin<<endl;
+        cout <<l_K<<" = "<<l_nC<<" / "<<l_nCest<<endl;
+    }
+    
     // copy
     *_K = l_K;
     return true;
@@ -1393,7 +1399,6 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
         switch (l_estTarget) {
             case 0:
                 cout << "estimate K" << endl;
-//                estimateK(l_projectionImage);
                 estimateK(l_projectionImage, l_captureImage, l_CMax, l_CMin);
                 break;
             case 1:
@@ -1414,12 +1419,6 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
         
         // show
         Mat l_KMap = getKMap(), l_FMap = getFMap();
-        
-        // print average
-//        Vec3d l_diffK(0,0,0), l_diffF(0,0,0);
-//        calcAverageOfImage_d(&l_diffK, l_KMap);
-//        calcAverageOfImage_d(&l_diffF, l_FMap);
-//        _print2(l_diffK, l_diffF);
         
         // determine target image
         calcTargetImage(&l_targetImage, l_KMap, l_FMap, l_CMin, l_enhanceRate, 0);
@@ -1507,9 +1506,12 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
             case (CV_BUTTON_3):
                 l_enhanceRate = -1.0;
                 break;
-            // other
+            // check calibration
             case (CV_BUTTON_t):
                 l_procam->test_colorCalibration();
+                break;
+            case (CV_BUTTON_T):
+                l_procam->test_linearizeOfProjector();
                 break;
             case (CV_BUTTON_DELETE):
                 cout << "all clean" << endl;

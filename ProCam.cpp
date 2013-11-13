@@ -879,37 +879,28 @@ bool ProCam::linearizeOfProjector(void){
     savePrintProjectorResponseP2I(PROJECTOR_RESPONSE_AT_SOME_POINT_P2I_FILE_NAME, pt);
     savePrintProjectorResponseI2P(PROJECTOR_RESPONSE_AT_SOME_POINT_I2P_FILE_NAME, pt);
     linearPrj.saveAllC(PROJECTOR_ALL_C_IMAGES_FILE_NAME, pt);
+    return true;
+}
+bool ProCam::test_linearizeOfProjector(void){
+    const Size* l_camSize = getCameraSize();
+    Mat l_captureImage(*l_camSize, CV_8UC3, CV_SCALAR_BLACK);
+    Mat l_captureImageNotLinear(*l_camSize, CV_8UC3, CV_SCALAR_BLACK);
+    
+    for (int i = 0; i < 256; ++ i) {
+        // projection and capturing
+        captureFromLinearLightOnProjectorDomain(&l_captureImage, i);
+        captureFromLightOnProjectorDomain(&l_captureImageNotLinear, i);
+        
+        // get mean and standard deviation
+        Vec3d l_meanColor(0, 0, 0), l_stddevColor(0, 0, 0), l_meanColorNL(0, 0, 0), l_stddevColorNL(0, 0, 0);
+        meanStdDev(l_captureImage, l_meanColor, l_stddevColor);
+        meanStdDev(l_captureImageNotLinear, l_meanColorNL, l_stddevColorNL);
 
-    // test
-//    cout << "do radiometric compensation" << endl;
-//    int prjLum = 100;
-//    linearPrj.doRadiometricCompensation(prjLum);
-//    bool loopFlag = true;
-//    while (loopFlag) {
-//        linearPrj.doRadiometricCompensation(prjLum);
-////        prjLum += 1;    //1 or 10
-//
-//        char key = waitKey(-1);
-//        switch (key) {
-//            case CV_BUTTON_ESC:
-//                loopFlag = !loopFlag;
-//                break;
-//            case CV_BUTTON_RIGHT:
-//                prjLum += 10;
-//                break;
-//            case CV_BUTTON_LEFT:
-//                prjLum -= 10;
-//                break;
-//            default:
-//                break;
-//        }
-//        if (prjLum >= 256) {
-//            prjLum = 0;
-//        } else if (prjLum < 0) {
-//            prjLum = 255;
-//        }
-//    }
-//    cout << "did radiometric compensation" << endl;
+        // print
+        std::cout << i << "\t";
+        _print_gnuplot_color4_l(std::cout, l_meanColor, l_stddevColor, l_meanColorNL, l_stddevColorNL);
+    }
+    
     return true;
 }
 

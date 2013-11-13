@@ -660,24 +660,7 @@ bool LinearizerOfProjector::calcResponseFunction(cv::Mat_<cv::Vec3b>* const _res
     *_responseMap = l_responseMap.clone();          // I2P
     *_responseMapP2I = l_responseMapP2I.clone();    // P2I
     
-    //test
-    test_responseFunction();
-    
     return true;
-}
-
-// 線形化出来てるかを線形化した投影光で０から２５５まで投影し，直線になるかを確認
-void LinearizerOfProjector::test_responseFunction(void){
-    //
-    ProCam* l_procam = getProCam();
-    const Size* l_camSize = l_procam->getCameraSize();
-    Mat l_captureImage(*l_camSize, CV_8UC3, CV_SCALAR_BLACK);
-    
-    for (int i = 0; i < 256; ++ i) {
-        l_procam->captureFromLinearLightOnProjectorDomain(&l_captureImage, i);
-        Vec3b l_color = l_captureImage.at<Vec3b>(100, 100);
-        _print2(i, l_color);
-    }
 }
 
 // CからPを取得する
