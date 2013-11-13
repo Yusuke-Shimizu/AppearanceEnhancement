@@ -27,6 +27,26 @@
 #define MY_IMSHOW(img) cv::imshow(#img, img);cv::waitKey(30)
 #define _print_mat_propaty(mat) _print_name(mat);printMatPropaty(mat)
 
+// print color
+#define _print_gnuplot_color(output, var) output<<(var)[0]<<"\t"<<(var)[1]<<"\t"<<(var)[2]<<"\t"
+#define _print_gnuplot_color_l(output, var) _print_gnuplot_color(output, var);output<<std::endl
+#define _print_gnuplot_color2(output, var1, var2) _print_gnuplot_color(output,var1);_print_gnuplot_color(output,var2)
+#define _print_gnuplot_color2_l(output, var1, var2) _print_gnuplot_color2(output,var1, var2);output<<std::endl
+#define _print_gnuplot_color3(output, var1, var2, var3) _print_gnuplot_color2(output, var1, var2);_print_gnuplot_color(output, var3)
+#define _print_gnuplot_color3_l(output, var1, var2, var3) _print_gnuplot_color3(output, var1, var2, var3);output<<std::endl
+#define _print_gnuplot_color4(output, var1, var2, var3, var4) _print_gnuplot_color3(output, var1, var2, var3);_print_gnuplot_color(output, var4)
+#define _print_gnuplot_color4_l(output, var1, var2, var3, var4) _print_gnuplot_color4(output, var1, var2, var3, var4);output<<std::endl
+#define _print_gnuplot_color5(output, var1, var2, var3, var4, var5) _print_gnuplot_color4(output, var1, var2, var3, var4);_print_gnuplot_color(output, var5)
+#define _print_gnuplot_color5_l(output, var1, var2, var3, var4, var5) _print_gnuplot_color5(output, var1, var2, var3, var4, var5);output<<std::endl
+#define _print_gnuplot_color6(output, var1, var2, var3, var4, var5, var6) _print_gnuplot_color5(output, var1, var2, var3, var4, var5);_print_gnuplot_color(output, var6)
+#define _print_gnuplot_color6_l(output, var1, var2, var3, var4, var5, var6) _print_gnuplot_color6(output, var1, var2, var3, var4, var5, var6);output<<std::endl
+#define _print_gnuplot_color7(output, var1, var2, var3, var4, var5, var6, var7) _print_gnuplot_color6(output, var1, var2, var3, var4, var5, var6);_print_gnuplot_color(output, var7)
+#define _print_gnuplot_color7_l(output, var1, var2, var3, var4, var5, var6, var7) _print_gnuplot_color7(output, var1, var2, var3, var4, var5, var6, var7);output<<std::endl
+#define _print_gnuplot_color8(output, var1, var2, var3, var4, var5, var6, var7, var8) _print_gnuplot_color7(output, var1, var2, var3, var4, var5, var6, var7);_print_gnuplot_color(output, var8)
+#define _print_gnuplot_color8_l(output, var1, var2, var3, var4, var5, var6, var7, var8) _print_gnuplot_color8(output, var1, var2, var3, var4, var5, var6, var7, var8);output<<std::endl
+#define _print_gnuplot_color9(output, var1, var2, var3, var4, var5, var6, var7, var8, var9) _print_gnuplot_color8(output, var1, var2, var3, var4, var5, var6, var7, var8);_print_gnuplot_color(output, var9)
+#define _print_gnuplot_color9_l(output, var1, var2, var3, var4, var5, var6, var7, var8, var9) _print_gnuplot_color9(output, var1, var2, var3, var4, var5, var6, var7, var8, var9);output<<std::endl
+
 
 #ifdef MAC
 const int CV_BUTTON_SMALL_TO_CAPITAL = -32;
@@ -37,14 +57,6 @@ const int CV_BUTTON_LEFT   = CV_BUTTON_UP + 2;
 const int CV_BUTTON_RIGHT  = CV_BUTTON_UP + 3;
 const int CV_BUTTON_DELETE = 127;
 const int CV_BUTTON_a      = 97;
-//const int CV_BUTTON_c      = 99;
-//const int CV_BUTTON_C      = 67;
-//const int CV_BUTTON_g      = 103;
-//const int CV_BUTTON_G      = 71;
-//const int CV_BUTTON_f      = 102;
-//const int CV_BUTTON_F      = 70;
-//const int CV_BUTTON_e      = 101;
-//const int CV_BUTTON_E      = 71;
 #endif
 #ifdef LINUX
 const int CV_BUTTON_ESC     = 1048603;
@@ -83,14 +95,14 @@ const cv::Vec3b CV_VEC3B_PURPLE(255, 0, 255);
 const cv::Vec3b CV_VEC3B_BLACK(0, 0, 0);
 const cv::Vec3b CV_VEC3B_WHITE(255, 255, 255);
 
-const cv::Vec3d CV_VEC3D_RED(CV_VEC3B_RED / 255);
-const cv::Vec3d CV_VEC3D_GREEN(CV_VEC3B_GREEN / 255);
-const cv::Vec3d CV_VEC3D_BLUE(CV_VEC3B_BLUE / 255);
-const cv::Vec3d CV_VEC3D_YELLOW(CV_VEC3B_YELLOW / 255);
-const cv::Vec3d CV_VEC3D_CYAN(CV_VEC3B_CYAN / 255);
-const cv::Vec3d CV_VEC3D_PURPLE(CV_VEC3B_PURPLE / 255);
-const cv::Vec3d CV_VEC3D_BLACK(0, 0, 0);
-const cv::Vec3d CV_VEC3D_WHITE(CV_VEC3B_WHITE / 255);
+const cv::Vec3d CV_VEC3D_RED(CV_VEC3B_RED / 255.0);
+const cv::Vec3d CV_VEC3D_GREEN(CV_VEC3B_GREEN / 255.0);
+const cv::Vec3d CV_VEC3D_BLUE(CV_VEC3B_BLUE / 255.0);
+const cv::Vec3d CV_VEC3D_YELLOW(CV_VEC3B_YELLOW / 255.0);
+const cv::Vec3d CV_VEC3D_CYAN(CV_VEC3B_CYAN / 255.0);
+const cv::Vec3d CV_VEC3D_PURPLE(CV_VEC3B_PURPLE / 255.0);
+const cv::Vec3d CV_VEC3D_BLACK(CV_VEC3B_BLACK);
+const cv::Vec3d CV_VEC3D_WHITE(CV_VEC3B_WHITE / 255.0);
 
 const cv::Scalar CV_SCALAR_RED(CV_VEC3B_RED);
 const cv::Scalar CV_SCALAR_GREEN(CV_VEC3B_GREEN);

@@ -854,10 +854,10 @@ bool ProCam::linearizeOfProjector(void){
     // get projector response
     LinearizerOfProjector linearPrj(this);
 #ifdef PRJ_LINEAR_CALC_FLAG
-    loadProjectorResponseP2IForByte(PROJECTOR_RESPONSE_P2I_FILE_NAME_BYTE);
-    loadProjectorResponseForByte(PROJECTOR_RESPONSE_I2P_FILE_NAME_BYTE);
-    l_prjResponseI2P = m_projectorResponseI2P;
-    l_prjResponseP2I = m_projectorResponseP2I;
+//    loadProjectorResponseP2IForByte(PROJECTOR_RESPONSE_P2I_FILE_NAME_BYTE);
+//    loadProjectorResponseForByte(PROJECTOR_RESPONSE_I2P_FILE_NAME_BYTE);
+//    l_prjResponseI2P = m_projectorResponseI2P;
+//    l_prjResponseP2I = m_projectorResponseP2I;
     if ( !linearPrj.doLinearlize(&l_prjResponseI2P, &l_prjResponseP2I) ) return false;    // 引数消してもいいかも
 #else
     linearPrj.loadColorMixingMatrixOfByte(CMM_MAP_FILE_NAME_BYTE);
@@ -1040,16 +1040,16 @@ bool ProCam::colorCalibration2(cv::Mat_<Vec12d>* const _V){
 }
 bool ProCam::test_colorCalibration(void){
     const Size* l_camSize = getCameraSize();
+    Mat l_captureImage(*l_camSize, CV_64FC3, CV_SCALAR_BLACK);
     for (int prj = 0; prj < 256; ++ prj) {
         // capture
-        Mat l_captureImage(*l_camSize, CV_8UC3, CV_SCALAR_BLACK);
         Vec3b l_color(0, 0, prj);
         captureOfProjecctorColorFromLinearLightOnProjectorDomain(&l_captureImage, l_color);
         
         //
-        Vec3d l_capColor(0, 0, 0);
-        calcAverageOfImage_d(&l_capColor, l_captureImage);
-        _print_gnuplot4(std::cout, prj, l_capColor[0], l_capColor[1], l_capColor[2]);
+        Vec3d l_meanColor(0, 0, 0), l_stddevColor(0, 0, 0);
+        meanStdDev(l_captureImage, l_meanColor, l_stddevColor);
+        _print_gnuplot4(std::cout, prj, l_meanColor[0], l_meanColor[1], l_meanColor[2]);
     }
     return true;
 }

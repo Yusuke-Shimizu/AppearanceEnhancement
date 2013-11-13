@@ -1167,8 +1167,9 @@ bool AppearanceEnhancement::evaluateEstimationAndProjection(const cv::Mat& _ansK
     calcMeanStddevOfDiffImage(&l_prjMean, &l_prjStddev, _targetImage, _captureImage);
     
     // print
-    _print2(l_estMean, l_estStddev);
-    _print2(l_prjMean, l_prjStddev);
+//    _print2(l_estMean, l_estStddev);
+//    _print2(l_prjMean, l_prjStddev);
+    _print_gnuplot_color4_l(std::cout, l_estMean, l_estStddev, l_prjMean, l_prjStddev);
     
     return true;
 }
@@ -1382,6 +1383,7 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
     Mat l_captureImageBefore(*l_camSize, CV_64FC3, Scalar(prj2, prj2, prj2));
     Mat l_targetImage(*l_camSize, CV_64FC3, CV_SCALAR_WHITE);
     Mat l_answerK(*l_camSize, CV_64FC3, CV_SCALAR_WHITE);
+    Mat l_answerF(*l_camSize, CV_64FC3, CV_SCALAR_WHITE);
     double l_enhanceRate = 1.3, l_alphaMPC = 0.1;
     int l_estTarget = 0;
     
