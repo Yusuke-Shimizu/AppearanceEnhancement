@@ -57,6 +57,7 @@ const int CV_BUTTON_LEFT   = CV_BUTTON_UP + 2;
 const int CV_BUTTON_RIGHT  = CV_BUTTON_UP + 3;
 const int CV_BUTTON_DELETE = 127;
 const int CV_BUTTON_a      = 97;
+const int CV_BUTTON_0      = 48;
 #endif
 #ifdef LINUX
 const int CV_BUTTON_ESC     = 1048603;
@@ -67,6 +68,7 @@ const int CV_BUTTON_DOWN    = CV_BUTTON_LEFT + 3;
 const int CV_BUTTON_DELETE  = 1113864;
 const int CV_BUTTON_SMALL_TO_CAPITAL = 65504;
 const int CV_BUTTON_a       = 1048673;
+const int CV_BUTTON_0       = 1048624;
 #endif
 const int CV_BUTTON_b       = CV_BUTTON_a + 1;
 const int CV_BUTTON_c       = CV_BUTTON_a + 2;  // 1048675
@@ -84,6 +86,16 @@ const int CV_BUTTON_r       = CV_BUTTON_a + 17; //1048690;
 const int CV_BUTTON_R       = CV_BUTTON_r + CV_BUTTON_SMALL_TO_CAPITAL;
 const int CV_BUTTON_t       = CV_BUTTON_a + 19;
 const int CV_BUTTON_T       = CV_BUTTON_t + CV_BUTTON_SMALL_TO_CAPITAL;
+// number button
+const int CV_BUTTON_1       = CV_BUTTON_0 + 1;
+const int CV_BUTTON_2       = CV_BUTTON_0 + 2;
+const int CV_BUTTON_3       = CV_BUTTON_0 + 3;
+const int CV_BUTTON_4       = CV_BUTTON_0 + 4;
+const int CV_BUTTON_5       = CV_BUTTON_0 + 5;
+const int CV_BUTTON_6       = CV_BUTTON_0 + 6;
+const int CV_BUTTON_7       = CV_BUTTON_0 + 7;
+const int CV_BUTTON_8       = CV_BUTTON_0 + 8;
+const int CV_BUTTON_9       = CV_BUTTON_0 + 9;
 
 // define based Color
 const cv::Vec3b CV_VEC3B_RED(0, 0, 255);

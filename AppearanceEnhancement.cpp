@@ -1444,6 +1444,7 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
         // check key
         int key = waitKey(-1);
         switch (key) {
+            // what is calibration
             case (CV_BUTTON_g):
                 l_procam->geometricCalibration();
             case (CV_BUTTON_c): // have to get Cfull and C0 after color calibration
@@ -1454,6 +1455,7 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
                 l_CMax = getCfullMap();
                 l_CMin = getC0Map();
                 break;
+            // what is target to estimate
             case (CV_BUTTON_r):
                 l_estTarget = 0;
                 break;
@@ -1466,6 +1468,7 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
             case (CV_BUTTON_L):
                 l_estTarget = 3;
                 break;
+            // what control
             case (CV_BUTTON_a):
                 // 現在推定している反射率を正解にする
                 cout << "l_answerK = l_KMap" << endl;
@@ -1478,9 +1481,6 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
             case (CV_BUTTON_E):
                 l_enhanceRate -= 0.1;
                 _print(l_enhanceRate);
-                break;
-            case (CV_BUTTON_t):
-                l_procam->test_colorCalibration();
                 break;
             case (CV_BUTTON_UP):
                 l_alphaMPC += 0.1;
@@ -1499,6 +1499,17 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
                 prj = std::max(prj - 10, 0);
                 _print2(prj, prj2);
                 l_projectionImage2 = Mat(*l_camSize, CV_8UC3, Scalar(prj, prj, prj));
+                break;
+            // what is type of enhancement
+            case (CV_BUTTON_2):
+                l_enhanceRate = 1.3;
+                break;
+            case (CV_BUTTON_3):
+                l_enhanceRate = -1.0;
+                break;
+            // other
+            case (CV_BUTTON_t):
+                l_procam->test_colorCalibration();
                 break;
             case (CV_BUTTON_DELETE):
                 cout << "all clean" << endl;
