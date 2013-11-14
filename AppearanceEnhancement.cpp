@@ -951,6 +951,34 @@ bool AppearanceEnhancement::estimateK(const cv::Mat& _P, const cv::Mat& _C, cons
 //    saveK();
     return true;
 }
+bool AppearanceEnhancement::test_estimateK(const cv::Mat& _answerK, const cv::Mat& _CMax, const cv::Mat& _CMin, const cv::Scalar& _mask){
+    // init
+    ProCam* l_procam = getProCam();
+    const Size* l_camSize = l_procam->getCameraSize();
+    Mat l_projectionImage(*l_camSize, CV_8UC3, CV_SCALAR_BLACK);
+    Mat l_captureImage(*l_camSize, CV_64FC3, CV_SCALAR_BLACK);
+    Scalar l_mean(0,0,0,0), l_stddev(0,0,0,0);
+    ofstream ofs(ESTIMATE_K_FILE_NAME.c_str());
+    
+    for (int i = 0; i < 256; ++ i) {
+        // projection and capture
+        const Scalar l_prjColor(i * _mask[0], i * _mask[1], i * _mask[2]);
+        l_projectionImage = l_prjColor;
+        l_procam->captureOfProjecctorColorFromLinearLightOnProjectorDomain(&l_captureImage, l_projectionImage);
+        
+        // estimation
+        estimateK(l_projectionImage, l_captureImage, _CMax, _CMin);
+        Mat l_estK = getKMap();
+        
+        // calc
+        calcMeanStddevOfDiffImage(&l_mean, &l_stddev, _answerK, l_estK);
+        
+        // print
+        ofs << i << "\t";
+        _print_gnuplot_color2_l(ofs, l_mean, l_stddev);
+    }
+    return true;
+}
 
 // Fの推定
 // model : C = K * {(Cf - C0) * P + C0 + F}
@@ -1513,6 +1541,12 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
             case (CV_BUTTON_T):
                 l_procam->test_linearizeOfProjector();
                 break;
+            case (CV_BUTTON_q):
+                test_estimateK(l_answerK, l_CMax, l_CMin, Scalar(1, 1, 1));
+                break;
+            case (CV_BUTTON_Q):
+                break;
+            // other
             case (CV_BUTTON_DELETE):
                 cout << "all clean" << endl;
                 initK(*l_camSize);

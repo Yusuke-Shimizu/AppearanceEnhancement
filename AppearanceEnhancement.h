@@ -24,6 +24,7 @@ const std::string F_FILE_NAME = "data/estF.png";
 const std::string C_FILE_NAME = "data/C.png";
 const std::string P_FILE_NAME = "data/P.png";
 const std::string TARGET_FILE_NAME = "data/target.png";
+const std::string ESTIMATE_K_FILE_NAME = "calibrationData/estimate/estimateK.dat";
 
 class ProCam;
 
@@ -99,6 +100,7 @@ public:
     ////////////////////////////// estimate method //////////////////////////////
     bool estimateK(const cv::Mat& _P);
     bool estimateK(const cv::Mat& _P, const cv::Mat& _C, const cv::Mat& _CMax, const cv::Mat& _CMin);
+    bool test_estimateK(const cv::Mat& _answerK, const cv::Mat& _CMax, const cv::Mat& _CMin, const cv::Scalar& _mask = cv::Scalar(1, 1, 1, 0));
     bool estimateF(const cv::Mat& _P);
     bool estimateKFByAmanoModel(const cv::Mat& _P1, const cv::Mat& _P2);
     bool estimateKFByFujiiModel(const cv::Mat& _P1, const cv::Mat& _P2);
