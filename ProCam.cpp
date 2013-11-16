@@ -1036,13 +1036,17 @@ bool ProCam::test_colorCalibration(void){
     const Size* l_camSize = getCameraSize();
     Mat l_captureImage(*l_camSize, CV_64FC3, CV_SCALAR_BLACK);
     Mat l_captureImageNC(*l_camSize, CV_64FC3, CV_SCALAR_BLACK);
-    ofstream ofs(CHECK_COLOR_CALIBRATION_FILE_NAME);
     
     for (int i = 1; i < 8; ++ i) {
-        int l_col1 = i % 2;
-        int l_col2 = (i / 2) % 2;
-        int l_col3 = (i / 4) % 2;
+        const int l_col1 = i % 2;
+        const int l_col2 = (i / 2) % 2;
+        const int l_col3 = (i / 4) % 2;
         Vec3b l_mask(l_col3, l_col2, l_col1);
+        ostringstream oss;
+        oss <<CHECK_COLOR_CALIBRATION_FILE_NAME << l_col3 << l_col2 << l_col1 << ".dat";
+        cout << oss.str() << endl;
+        ofstream ofs(oss.str().c_str());
+
         for (int prj = 0; prj < 256; ++ prj) {
             // capture
             Vec3b l_color(prj * l_mask[0], prj * l_mask[1], prj * l_mask[2]);
@@ -1060,7 +1064,7 @@ bool ProCam::test_colorCalibration(void){
             ofs << prj << "\t";
             _print_gnuplot_color4_l(ofs, l_meanColor, l_stddevColor, l_meanColorNC, l_stddevColorNC);
         }
-
+        ofs.close();
     }
     return true;
 }
