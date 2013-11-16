@@ -154,7 +154,7 @@ public:
     bool geometricCalibration(void);
     bool linearizeOfProjector(void);
     bool test_linearizeOfProjector(void);
-    bool colorCalibration(void);
+    bool colorCalibration(const bool _denoisingFlag = false);
     bool colorCalibration2(cv::Mat_<Vec12d>* const _V);
     bool test_colorCalibration(void);
     ///////////////////////////////  convert method ///////////////////////////////

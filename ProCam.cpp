@@ -909,7 +909,7 @@ bool ProCam::test_linearizeOfProjector(void){
 
 // 光学キャリブレーションを行う
 Mat g_F0;
-bool ProCam::colorCalibration(void){
+bool ProCam::colorCalibration(const bool _denoisingFlag){
     cout << "color calibration start!" << endl;
     
     // init
@@ -923,10 +923,10 @@ bool ProCam::colorCalibration(void){
     cv::Mat blue_cap    (*cameraSize, depth8x3, CV_SCALAR_BLACK);
     
     // capture from some color light
-    captureFromLinearLightOnProjectorDomain(&black_cap, CV_VEC3B_BLACK, true, SLEEP_TIME * 5);
-    captureFromLinearLightOnProjectorDomain(&red_cap, CV_VEC3B_RED, true);
-    captureFromLinearLightOnProjectorDomain(&green_cap, CV_VEC3B_GREEN, true);
-    captureFromLinearLightOnProjectorDomain(&blue_cap, CV_VEC3B_BLUE, true);
+    captureFromLinearLightOnProjectorDomain(&black_cap, CV_VEC3B_BLACK, _denoisingFlag, SLEEP_TIME * 5);
+    captureFromLinearLightOnProjectorDomain(&red_cap, CV_VEC3B_RED, _denoisingFlag);
+    captureFromLinearLightOnProjectorDomain(&green_cap, CV_VEC3B_GREEN, _denoisingFlag);
+    captureFromLinearLightOnProjectorDomain(&blue_cap, CV_VEC3B_BLUE, _denoisingFlag);
     g_F0 = black_cap;
     
     // show image
@@ -1038,22 +1038,29 @@ bool ProCam::test_colorCalibration(void){
     Mat l_captureImageNC(*l_camSize, CV_64FC3, CV_SCALAR_BLACK);
     ofstream ofs(CHECK_COLOR_CALIBRATION_FILE_NAME);
     
-    for (int prj = 0; prj < 256; ++ prj) {
-        // capture
-        Vec3b l_color(0, 0, prj);
-        captureOfProjecctorColorFromLinearLightOnProjectorDomain(&l_captureImage, l_color);
-        captureFromLinearLightOnProjectorDomain(&l_captureImageNC, l_color);
-        
-        // get mean and standard deviation
-        Vec3d l_meanColor(0, 0, 0), l_stddevColor(0, 0, 0), l_meanColorNC(0, 0, 0), l_stddevColorNC(0, 0, 0);
-        meanStdDev(l_captureImage, l_meanColor, l_stddevColor);
-        meanStdDev(l_captureImageNC, l_meanColorNC, l_stddevColorNC);
-        
-        // print
-//        std::cout << prj << "\t";
-//        _print_gnuplot_color4_l(std::cout, l_meanColor, l_stddevColor, l_meanColorNC, l_stddevColorNC);
-        ofs << prj << "\t";
-        _print_gnuplot_color4_l(ofs, l_meanColor, l_stddevColor, l_meanColorNC, l_stddevColorNC);
+    for (int i = 1; i < 8; ++ i) {
+        int l_col1 = i % 2;
+        int l_col2 = (i / 2) % 2;
+        int l_col3 = (i / 4) % 2;
+        Vec3b l_mask(l_col3, l_col2, l_col1);
+        for (int prj = 0; prj < 256; ++ prj) {
+            // capture
+            Vec3b l_color(prj * l_mask[0], prj * l_mask[1], prj * l_mask[2]);
+            captureOfProjecctorColorFromLinearLightOnProjectorDomain(&l_captureImage, l_color);
+            captureFromLinearLightOnProjectorDomain(&l_captureImageNC, l_color);
+            
+            // get mean and standard deviation
+            Vec3d l_meanColor(0, 0, 0), l_stddevColor(0, 0, 0), l_meanColorNC(0, 0, 0), l_stddevColorNC(0, 0, 0);
+            meanStdDev(l_captureImage, l_meanColor, l_stddevColor);
+            meanStdDev(l_captureImageNC, l_meanColorNC, l_stddevColorNC);
+            
+            // print
+            std::cout << prj << "\t";
+            _print_gnuplot_color4_l(std::cout, l_meanColor, l_stddevColor, l_meanColorNC, l_stddevColorNC);
+            ofs << prj << "\t";
+            _print_gnuplot_color4_l(ofs, l_meanColor, l_stddevColor, l_meanColorNC, l_stddevColorNC);
+        }
+
     }
     return true;
 }

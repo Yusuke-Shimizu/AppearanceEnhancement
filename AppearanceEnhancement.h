@@ -55,9 +55,9 @@ public:
     ///////////////////////////////  set method ///////////////////////////////
     bool setKMap(const cv::Mat& _K);
     bool setFMap(const cv::Mat& _F);
-    bool setCfullMap(void);
+    bool setCfullMap(const bool _denoisingFlag = false);
     bool setCfullMap(const cv::Mat& _Cfull);
-    bool setC0Map(void);
+    bool setC0Map(const bool _denoisingFlag = false);
     bool setC0Map(const cv::Mat& _C0);
     ///////////////////////////////  get method ///////////////////////////////
     bool getCfull(cv::Mat* const Cfull);
@@ -96,6 +96,7 @@ public:
     bool calcNextProjectionImage(cv::Mat* const _nextP, const cv::Mat& _targetImage, const cv::Mat& _C, const cv::Mat& _P, const cv::Mat& _K, const cv::Mat& _F, const cv::Mat& _FBefore, const cv::Mat& _Cfull, const cv::Mat& _C0, const double& _alpha = 0.1);
     bool calcNextProjectionImageAtPixel(uchar* const _nextP, const double& _targetImage, const double& _C, const double& _P, const double& _K, const double& _F, const double& _FBefore, const double& _Cfull, const double& _C0, const double& _alpha = 0.1);
     bool calcReflectanceAtPixel(double* const _K, const double& _nC, const double& _nP, const double& _nCMax, const double& _nCMin);
+    bool test_calcReflectanceAtPixel(void);
     bool calcCaptureImageAddNoise(double* const _C, const double& _P, const double& _K, const double& _F, const double& _CMax, const double& _CMin, const double& _noiseRange = NOISE_RANGE);
     ////////////////////////////// estimate method //////////////////////////////
     bool estimateK(const cv::Mat& _P);

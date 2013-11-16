@@ -29,7 +29,8 @@ int main(int argc, const char * argv[])
 #else
     // simulation
     AppearanceEnhancement ae(0.8, 0.2);
-    ae.test_RadiometricModel();
+//    ae.test_RadiometricModel();
+    ae.test_calcReflectanceAtPixel();
 #endif
     return 0;
 }
