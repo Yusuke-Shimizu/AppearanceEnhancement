@@ -856,7 +856,7 @@ bool AppearanceEnhancement::calcReflectanceAtPixel(double* const _K, const doubl
     return true;
 }
 bool AppearanceEnhancement::test_calcReflectanceAtPixel(void){
-    const double l_CMax = 0.99, l_CMin = 0.02;
+    double l_CMax = 0.99, l_CMin = 0.1;
     double l_ansK = 0.5, l_ansF = 0.0;
     double l_estK = 0.0, l_estF = 0.0, l_estFBefore = 0.0;
     double l_P = 1, l_C = 0, l_target = 0.0;
@@ -867,7 +867,9 @@ bool AppearanceEnhancement::test_calcReflectanceAtPixel(void){
     _print4(l_C, l_target, l_estK, l_P);
     for (int i = 0; i < 256; ++ i) {
         // capture
-//        l_P = i / 255.0;
+        l_P = 0;//i / 255.0;
+//        l_CMin = i / 255.0;// / 10;
+        l_CMax = i / 255.0;// / 10;
 //        l_ansK = i / 255.0;
         calcCaptureImageAddNoise(&l_C, l_P, l_ansK, l_ansF, l_CMax, l_CMin);
 
@@ -879,6 +881,24 @@ bool AppearanceEnhancement::test_calcReflectanceAtPixel(void){
         _print_gnuplot3(std::cout, i, l_estK, l_ansK);
     }
     
+    return true;
+}
+bool AppearanceEnhancement::calcReflectanceAndAmbientLightAtPixel(double* const _K, double* const _F, const double& _nC1, const double& _nP1, const double& _nC2, const double& _nP2, const double& _nCMax, const double& _nCMin){
+    // set matrix
+    const Mat l_C12 = (Mat_<double>(2, 2) << _nC1, -1, _nC2, -1);
+    const Mat l_P12 = (Mat_<double>(2, 2) << _nP1, 1, _nP2, 1);
+    const Mat l_Cf0 = (Mat_<double>(2, 1) << (_nCMax - _nCMin), _nCMin);
+    
+    // calculation
+    const Mat l_nKF = l_C12.inv() * l_P12 * l_Cf0;
+    
+    // set
+    // K
+    *_K = 1 / l_nKF.at<double>(0, 0);
+    // F
+    double l_nRoundF = l_nKF.at<double>(1, 0);
+//    round0to1(&l_nRoundF);
+    *_F = l_nRoundF * 255.0;
     return true;
 }
 
@@ -1107,21 +1127,23 @@ bool AppearanceEnhancement::estimateKFByAmanoModel(const cv::Mat& _P1, const cv:
                 const double l_nC0 = l_pC0[x][c] / 255.0;
                 
                 // set matrix
-                const Mat l_C12 = (Mat_<double>(2, 2) << l_nC1, -1, l_nC2, -1);
-                const Mat l_P12 = (Mat_<double>(2, 2) << l_nP1, 1, l_nP2, 1);
-                const Mat l_Cf0 = (Mat_<double>(2, 1) << (l_nCfull - l_nC0), l_nC0);
+//                const Mat l_C12 = (Mat_<double>(2, 2) << l_nC1, -1, l_nC2, -1);
+//                const Mat l_P12 = (Mat_<double>(2, 2) << l_nP1, 1, l_nP2, 1);
+//                const Mat l_Cf0 = (Mat_<double>(2, 1) << (l_nCfull - l_nC0), l_nC0);
+//                
+//                // calculation
+//                const Mat l_nKF = l_C12.inv() * l_P12 * l_Cf0;
+//                
+//                // set
+//                // K
+//                l_pK[x][c] = 1 / l_nKF.at<double>(0, 0);
+//                // F
+//                double l_nRoundF = l_nKF.at<double>(1, 0);
+////                round0to1(&l_nRoundF);
+////                l_pF[x][c] = (uchar)(l_nRoundF * 255);
+//                l_pF[x][c] = l_nRoundF * 255.0;
                 
-                // calculation
-                const Mat l_nKF = l_C12.inv() * l_P12 * l_Cf0;
-                
-                // set
-                // K
-                l_pK[x][c] = 1 / l_nKF.at<double>(0, 0);
-                // F
-                double l_nRoundF = l_nKF.at<double>(1, 0);
-//                round0to1(&l_nRoundF);
-//                l_pF[x][c] = (uchar)(l_nRoundF * 255);
-                l_pF[x][c] = l_nRoundF * 255.0;
+                calcReflectanceAndAmbientLightAtPixel(&(l_pK[x][c]), &(l_pF[x][c]), l_nC1, l_nP1, l_nC2, l_nP2, l_nCfull, l_nC0);
             }
         }
     }
@@ -1136,6 +1158,10 @@ bool AppearanceEnhancement::estimateKFByAmanoModel(const cv::Mat& _P1, const cv:
     
     return true;
 }
+bool AppearanceEnhancement::test_estimateKFByAmanoModel(void){
+    return true;
+}
+
 bool AppearanceEnhancement::estimateKFByFujiiModel(const cv::Mat& _P1, const cv::Mat& _P2){
     // init
     ProCam* l_procam = getProCam();
