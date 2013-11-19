@@ -25,6 +25,8 @@ const std::string C_FILE_NAME = "data/C.png";
 const std::string P_FILE_NAME = "data/P.png";
 const std::string TARGET_FILE_NAME = "data/target.png";
 const std::string ESTIMATE_K_FILE_NAME = "calibrationData/estimate/estimateK.dat";
+const std::string ESTIMATE_KF_FILE_NAME = "calibrationData/estimate/estimateKF.dat";
+const std::string SIM_ESTIMATE_K_FILE_NAME = "simulationData/estimate/estK.dat";
 
 class ProCam;
 
@@ -98,6 +100,7 @@ public:
     bool calcReflectanceAtPixel(double* const _K, const double& _nC, const double& _nP, const double& _nCMax, const double& _nCMin);
     bool test_calcReflectanceAtPixel(void);
     bool calcReflectanceAndAmbientLightAtPixel(double* const _K, double* const _F, const double& _nC1, const double& _nP1, const double& _nC2, const double& _nP2, const double& _nCMax, const double& _nCMin);
+    bool test_calcReflectanceAndAmbientLightAtPixel(void);
     bool calcCaptureImageAddNoise(double* const _C, const double& _P, const double& _K, const double& _F, const double& _CMax, const double& _CMin, const double& _noiseRange = NOISE_RANGE);
     ////////////////////////////// estimate method //////////////////////////////
     bool estimateK(const cv::Mat& _P);
@@ -105,7 +108,7 @@ public:
     bool test_estimateK(const cv::Mat& _answerK, const cv::Mat& _CMax, const cv::Mat& _CMin, const cv::Scalar& _mask = cv::Scalar(1, 1, 1, 0));
     bool estimateF(const cv::Mat& _P);
     bool estimateKFByAmanoModel(const cv::Mat& _P1, const cv::Mat& _P2);
-    bool test_estimateKFByAmanoModel(void);
+    bool test_estimateKFByAmanoModel(const cv::Mat& _answerK, const cv::Scalar& _mask = cv::Scalar(1, 1, 1, 0));
     bool estimateKFByFujiiModel(const cv::Mat& _P1, const cv::Mat& _P2);
     ////////////////////////////// evaluate method //////////////////////////////
     bool evaluateK(const cv::Mat& _ansK);

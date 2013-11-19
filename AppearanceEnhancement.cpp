@@ -901,6 +901,31 @@ bool AppearanceEnhancement::calcReflectanceAndAmbientLightAtPixel(double* const 
     *_F = l_nRoundF * 255.0;
     return true;
 }
+bool AppearanceEnhancement::test_calcReflectanceAndAmbientLightAtPixel(void){
+    double l_CMax = 0.99, l_CMin = 0.1;
+    double l_ansK = 0.5, l_ansF = 0.0;
+    double l_estK = 0.0, l_estF = 0.0;
+    double l_P1 = 1, l_C1 = 0, l_P2 = 0, l_C2 = 0;
+    ofstream ofs(SIM_ESTIMATE_K_FILE_NAME.c_str());
+    
+    for (int i = 0; i < 256; ++ i) {
+        // capture
+        l_CMin = i / 255.0;
+        calcCaptureImageAddNoise(&l_C1, l_P1, l_ansK, l_ansF, l_CMax, l_CMin);
+        calcCaptureImageAddNoise(&l_C2, l_P2, l_ansK, l_ansF, l_CMax, l_CMin);
+        
+        // estimate K
+        calcReflectanceAndAmbientLightAtPixel(&l_estK, &l_estF, l_C1, l_P1, l_C2, l_P2, l_CMax, l_CMin);
+        l_estK *= 255;
+        double l_ansK255 = l_ansK * 255;
+        
+        // print
+        _print_gnuplot5(std::cout, i, l_estK, l_ansK255, l_estF, l_ansF);
+        _print_gnuplot5(ofs, i, l_estK, l_ansK255, l_estF, l_ansF);
+    }
+    
+    return true;
+}
 
 // calc capture image from C, P, K, F, CMax, and CMin
 bool AppearanceEnhancement::calcCaptureImageAddNoise(double* const _C, const double& _P, const double& _K, const double& _F, const double& _CMax, const double& _CMin, const double& _noiseRange){
@@ -1158,7 +1183,38 @@ bool AppearanceEnhancement::estimateKFByAmanoModel(const cv::Mat& _P1, const cv:
     
     return true;
 }
-bool AppearanceEnhancement::test_estimateKFByAmanoModel(void){
+bool AppearanceEnhancement::test_estimateKFByAmanoModel(const cv::Mat& _answerK, const cv::Scalar& _mask){
+    // init
+    ProCam* l_procam = getProCam();
+    const Size* l_camSize = l_procam->getCameraSize();
+    Mat l_projectionImage1(*l_camSize, CV_8UC3, CV_SCALAR_BLACK);
+    Mat l_projectionImage2(*l_camSize, CV_8UC3, CV_SCALAR_BLACK);
+    Scalar l_mean(0,0,0,0), l_stddev(0,0,0,0);
+    Scalar l_meanEstK(0,0,0,0), l_stddevEstK(0,0,0,0);
+    Scalar l_meanEstF(0,0,0,0), l_stddevEstF(0,0,0,0);
+    ofstream ofs(ESTIMATE_KF_FILE_NAME.c_str());
+    
+    for (int i = 0; i < 256; ++ i) {
+        // projection and capture
+        const Scalar l_prjColor(i * _mask[0], i * _mask[1], i * _mask[2]);
+        l_projectionImage1 = l_prjColor;
+        
+        // estimation
+        estimateKFByAmanoModel(l_projectionImage1, l_projectionImage2);
+        Mat l_estK = getKMap(), l_estF = getFMap();
+        
+        // calc
+        calcMeanStddevOfDiffImage(&l_mean, &l_stddev, _answerK, l_estK);
+        meanStdDev(l_estK, l_meanEstK, l_stddevEstK);
+        meanStdDev(l_estF, l_meanEstF, l_stddevEstF);
+        
+        // print
+        std::cout << i << "\t";
+        _print_gnuplot_color6_l(std::cout, l_mean, l_stddev, l_meanEstK, l_stddevEstK, l_meanEstF, l_stddevEstF);
+        ofs << i << "\t";
+        _print_gnuplot_color6_l(ofs, l_mean, l_stddev, l_meanEstK, l_stddevEstK, l_meanEstF, l_stddevEstF);
+    }
+
     return true;
 }
 
@@ -1615,6 +1671,9 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
                 cout << "check estimate K finish" << endl;
                 break;
             case (CV_BUTTON_Q):
+                cout << "check estimate KF start" << endl;
+                test_estimateKFByAmanoModel(l_answerK);
+                cout << "check estimate KF finish" << endl;
                 break;
             // other
             case (CV_BUTTON_DELETE):
