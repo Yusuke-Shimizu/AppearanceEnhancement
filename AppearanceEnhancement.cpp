@@ -428,7 +428,7 @@ bool AppearanceEnhancement::printAppearanceEnhancement(void){
         l_target /= 255.0;
         
         // calc next projection number
-        calcNextProjectionImageAtPixel(&l_Puchar, l_target, l_C, l_P, l_estK, l_estF, l_estFBefore, l_CMax, l_CMin);
+        calcNextProjectionImageAtPixel(&l_Puchar, l_target, l_target, l_C, l_P, l_estK, l_estF, l_estFBefore, l_CMax, l_CMin);
         l_P = (double)l_Puchar / 255.0;
         l_P = i / 255.0;
         
@@ -792,11 +792,11 @@ bool AppearanceEnhancement::calcTargetImageAtPixel(double* const _targetImage, c
 }
 
 // 次に投影する画像を決定
-bool AppearanceEnhancement::calcNextProjectionImage(cv::Mat* const _nextP, const cv::Mat& _targetImage, const cv::Mat& _C, const cv::Mat& _P, const cv::Mat& _K, const cv::Mat& _F, const cv::Mat& _FBefore, const cv::Mat& _Cfull, const cv::Mat& _C0, const double& _alpha){
+bool AppearanceEnhancement::calcNextProjectionImage(cv::Mat* const _nextP, const cv::Mat& _targetImage, const cv::Mat& _targetImageBefore, const cv::Mat& _C, const cv::Mat& _P, const cv::Mat& _K, const cv::Mat& _F, const cv::Mat& _FBefore, const cv::Mat& _Cfull, const cv::Mat& _C0, const double& _alpha){
     
     // init
     int rows = _targetImage.rows, cols = _targetImage.cols, channel = _targetImage.channels();
-    if (isContinuous(*_nextP, _targetImage, _C, _P, _K, _F, _FBefore, _Cfull, _C0)) {
+    if (isContinuous(*_nextP, _targetImage, _targetImageBefore, _C, _P, _K, _F, _FBefore, _Cfull, _C0)) {
         cols *= rows;
         rows = 1;
     }
@@ -805,6 +805,7 @@ bool AppearanceEnhancement::calcNextProjectionImage(cv::Mat* const _nextP, const
     for (int y = 0; y < rows; ++ y) {
         Vec3b* l_pNextP = _nextP->ptr<Vec3b>(y);
         const Vec3d* l_pTargetImage = _targetImage.ptr<Vec3d>(y);
+        const Vec3d* l_pTargetImageBefore = _targetImageBefore.ptr<Vec3d>(y);
         const Vec3d* l_pC = _C.ptr<Vec3d>(y);
         const Vec3b* l_pP = _P.ptr<Vec3b>(y);
         const Vec3d* l_pK = _K.ptr<Vec3d>(y);
@@ -817,6 +818,7 @@ bool AppearanceEnhancement::calcNextProjectionImage(cv::Mat* const _nextP, const
             for (int c = 0; c < channel; ++ c) {
                 // normalize
                 const double l_nTargetImage = l_pTargetImage[x][c] / 255.0;
+                const double l_nTargetImageBefore = l_pTargetImageBefore[x][c] / 255.0;
                 const double l_nC = l_pC[x][c] / 255.0;
                 const double l_nP = l_pP[x][c] / 255.0;
                 const double l_nK = l_pK[x][c];
@@ -826,17 +828,18 @@ bool AppearanceEnhancement::calcNextProjectionImage(cv::Mat* const _nextP, const
                 const double l_nC0 = l_pC0[x][c] / 255.0;
                 
                 // calculation
-                calcNextProjectionImageAtPixel(&(l_pNextP[x][c]), l_nTargetImage, l_nC, l_nP, l_nK, l_nF, l_nFBefore, l_nCfull, l_nC0);
+                calcNextProjectionImageAtPixel(&(l_pNextP[x][c]), l_nTargetImage, l_nTargetImageBefore, l_nC, l_nP, l_nK, l_nF, l_nFBefore, l_nCfull, l_nC0);
             }
         }
     }
 //    MY_IMSHOW(*_nextP);
     return true;
 }
-bool AppearanceEnhancement::calcNextProjectionImageAtPixel(uchar* const _nextP, const double& _targetImage, const double& _C, const double& _P, const double& _K, const double& _F, const double& _FBefore, const double& _Cfull, const double& _C0, const double& _alpha){
+bool AppearanceEnhancement::calcNextProjectionImageAtPixel(uchar* const _nextP, const double& _targetImage, const double& _targetImageBefore, const double& _C, const double& _P, const double& _K, const double& _F, const double& _FBefore, const double& _Cfull, const double& _C0, const double& _alpha){
     // calculation
 //    double l_nNextP = (1 - _alpha) * (l_nTargetImage - l_nC) / (l_nK * (l_nCfull - l_nC0)) + l_nP;
-    double l_nNextP = ((1 - _alpha) * ((_targetImage - _C) / _K) - _F + _FBefore) / (_Cfull - _C0) + _P;
+//    double l_nNextP = ((1 - _alpha) * ((_targetImage - _C) / _K) - _F + _FBefore) / (_Cfull - _C0) + _P;
+    double l_nNextP = ((1 - _alpha) * (_targetImage - _C) - _targetImageBefore - _C0 * _K) / ((_Cfull - _C0) * _K);
 //    cout << l_nNextP<<" = ((1 - "<<_alpha<<") * (("<<_targetImage<<" - "<<_C<<") / "<<_K<<") - "<<_F<<" + "<<_FBefore<<") / ("<<_Cfull<<" - "<<_C0<<") + "<<_P << endl;
     round0to1(&l_nNextP);
     
@@ -1526,6 +1529,7 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
     Mat l_captureImage(*l_camSize, CV_64FC3, Scalar(prj, prj, prj));
     Mat l_captureImageBefore(*l_camSize, CV_64FC3, Scalar(prj2, prj2, prj2));
     Mat l_targetImage(*l_camSize, CV_64FC3, CV_SCALAR_WHITE);
+    Mat l_targetImageBefore(*l_camSize, CV_64FC3, CV_SCALAR_WHITE);
     Mat l_answerK(*l_camSize, CV_64FC3, CV_SCALAR_WHITE);
     Mat l_answerF(*l_camSize, CV_64FC3, CV_SCALAR_WHITE);
     double l_enhanceRate = 1.3, l_alphaMPC = 0.1;
@@ -1559,6 +1563,7 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
         const Mat l_KMap = getKMap(), l_FMap = getFMap();
         
         // determine target image
+        l_targetImageBefore = l_targetImage;
         calcTargetImage(&l_targetImage, l_KMap, l_FMap, l_CMin, l_enhanceRate, l_enhanceType);
 
         // To shift time
@@ -1566,7 +1571,7 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
         l_captureImageBefore = l_captureImage.clone();
 
         // calc next projection image
-        calcNextProjectionImage(&l_projectionImage, l_targetImage, l_captureImageBefore, l_projectionImageBefore, l_KMap, l_FMap, l_FMapBefore, l_CMax, l_CMin, l_alphaMPC);
+        calcNextProjectionImage(&l_projectionImage, l_targetImage, l_targetImageBefore, l_captureImageBefore, l_projectionImageBefore, l_KMap, l_FMap, l_FMapBefore, l_CMax, l_CMin, l_alphaMPC);
         
         // projection
         l_procam->captureOfProjecctorColorFromLinearLightOnProjectorDomain(&l_captureImage, l_projectionImage);
