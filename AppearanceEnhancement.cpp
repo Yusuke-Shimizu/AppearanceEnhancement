@@ -772,7 +772,17 @@ bool AppearanceEnhancement::calcTargetImage(cv::Mat* const _targetImage, const c
     return true;
 }
 bool AppearanceEnhancement::calcTargetImageAtPixel(double* const _targetImage, const double& _K, const double& _F, const double& _CMin, const double& _KGray, const double& _s, const int _enhanceType){
-    double l_targetImageNum = ((1 + _s) * _K - _s * _KGray) * 255;
+    double l_targetImageNum = 0;
+    switch (_enhanceType) {
+        case 0:
+            l_targetImageNum = ((1 + _s) * _K - _s * _KGray) * 255;
+            break;
+        case 1:
+            l_targetImageNum = 256 / 2;
+            break;
+        default:
+            break;
+    }
 //    double l_targetImageNum = ((1 + _s) * _K - _s * _KGray) * (128 + _F + _CMin);
 //    roundXtoY(&l_targetImageNum, 0, 255);
 //    l_pTargetImage[x][c] = (uchar)l_targetImageNum;
@@ -859,26 +869,26 @@ bool AppearanceEnhancement::test_calcReflectanceAtPixel(void){
     double l_CMax = 0.99, l_CMin = 0.1;
     double l_ansK = 0.5, l_ansF = 0.0;
     double l_estK = 0.0, l_estF = 0.0, l_estFBefore = 0.0;
-    double l_P = 1, l_C = 0, l_target = 0.0;
-    uchar l_Puchar = 0;
+    double l_P = 1, l_C = 0;
+    double l_noise = NOISE_RANGE;
+    ofstream ofs(SIM_ESTIMATE_K_FILE_NAME.c_str());
     
-    calcCaptureImageAddNoise(&l_C, l_P, l_ansK, l_ansF, l_CMax, l_CMin);
-    cout << (int)l_Puchar << endl;
-    _print4(l_C, l_target, l_estK, l_P);
     for (int i = 0; i < 256; ++ i) {
         // capture
-        l_P = 0;//i / 255.0;
-//        l_CMin = i / 255.0;// / 10;
-        l_CMax = i / 255.0;// / 10;
-//        l_ansK = i / 255.0;
-        calcCaptureImageAddNoise(&l_C, l_P, l_ansK, l_ansF, l_CMax, l_CMin);
+        l_P = i / 255.0;
+//        l_noise = i / 255.0;
+        calcCaptureImageAddNoise(&l_C, l_P, l_ansK, l_ansF, l_CMax, l_CMin, l_noise);
 
         // estimate K
         l_estFBefore = l_estF;
         calcReflectanceAtPixel(&l_estK, l_C, l_P, l_CMax, l_CMin);
         
+        if (l_estK <= 0.01) {
+            _print_gnuplot6(std::cout, l_estK, l_C, l_P, l_CMax, l_CMin, l_noise);
+        }
         // print
-        _print_gnuplot3(std::cout, i, l_estK, l_ansK);
+//        _print_gnuplot3(std::cout, i, l_estK, l_ansK);
+        _print_gnuplot3(ofs, i, l_estK, l_ansK);
     }
     
     return true;
@@ -903,14 +913,14 @@ bool AppearanceEnhancement::calcReflectanceAndAmbientLightAtPixel(double* const 
 }
 bool AppearanceEnhancement::test_calcReflectanceAndAmbientLightAtPixel(void){
     double l_CMax = 0.99, l_CMin = 0.1;
-    double l_ansK = 0.5, l_ansF = 0.0;
+    double l_ansK = 1, l_ansF = 0.0;
     double l_estK = 0.0, l_estF = 0.0;
     double l_P1 = 1, l_C1 = 0, l_P2 = 0, l_C2 = 0;
-    ofstream ofs(SIM_ESTIMATE_K_FILE_NAME.c_str());
+    ofstream ofs(SIM_ESTIMATE_KF_FILE_NAME.c_str());
     
     for (int i = 0; i < 256; ++ i) {
         // capture
-        l_CMin = i / 255.0;
+        l_P1 = i / 255.0;
         calcCaptureImageAddNoise(&l_C1, l_P1, l_ansK, l_ansF, l_CMax, l_CMin);
         calcCaptureImageAddNoise(&l_C2, l_P2, l_ansK, l_ansF, l_CMax, l_CMin);
         
@@ -1151,23 +1161,7 @@ bool AppearanceEnhancement::estimateKFByAmanoModel(const cv::Mat& _P1, const cv:
                 const double l_nCfull = l_pCfull[x][c] / 255.0;
                 const double l_nC0 = l_pC0[x][c] / 255.0;
                 
-                // set matrix
-//                const Mat l_C12 = (Mat_<double>(2, 2) << l_nC1, -1, l_nC2, -1);
-//                const Mat l_P12 = (Mat_<double>(2, 2) << l_nP1, 1, l_nP2, 1);
-//                const Mat l_Cf0 = (Mat_<double>(2, 1) << (l_nCfull - l_nC0), l_nC0);
-//                
-//                // calculation
-//                const Mat l_nKF = l_C12.inv() * l_P12 * l_Cf0;
-//                
-//                // set
-//                // K
-//                l_pK[x][c] = 1 / l_nKF.at<double>(0, 0);
-//                // F
-//                double l_nRoundF = l_nKF.at<double>(1, 0);
-////                round0to1(&l_nRoundF);
-////                l_pF[x][c] = (uchar)(l_nRoundF * 255);
-//                l_pF[x][c] = l_nRoundF * 255.0;
-                
+                // calculation
                 calcReflectanceAndAmbientLightAtPixel(&(l_pK[x][c]), &(l_pF[x][c]), l_nC1, l_nP1, l_nC2, l_nP2, l_nCfull, l_nC0);
             }
         }
@@ -1201,7 +1195,7 @@ bool AppearanceEnhancement::test_estimateKFByAmanoModel(const cv::Mat& _answerK,
         
         // estimation
         estimateKFByAmanoModel(l_projectionImage1, l_projectionImage2);
-        Mat l_estK = getKMap(), l_estF = getFMap();
+        Mat l_estK = getKMap(), l_estF = getFMap() / 255.0;
         
         // calc
         calcMeanStddevOfDiffImage(&l_mean, &l_stddev, _answerK, l_estK);
@@ -1535,7 +1529,7 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
     Mat l_answerK(*l_camSize, CV_64FC3, CV_SCALAR_WHITE);
     Mat l_answerF(*l_camSize, CV_64FC3, CV_SCALAR_WHITE);
     double l_enhanceRate = 1.3, l_alphaMPC = 0.1;
-    int l_estTarget = 0;
+    int l_estTarget = 0, l_enhanceType = 0;
     
     while (loopFlag) {
         // estimate
@@ -1565,7 +1559,7 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
         const Mat l_KMap = getKMap(), l_FMap = getFMap();
         
         // determine target image
-        calcTargetImage(&l_targetImage, l_KMap, l_FMap, l_CMin, l_enhanceRate, 0);
+        calcTargetImage(&l_targetImage, l_KMap, l_FMap, l_CMin, l_enhanceRate, l_enhanceType);
 
         // To shift time
         l_projectionImageBefore = l_projectionImage.clone();
@@ -1653,10 +1647,16 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
                 break;
             // what is type of enhancement
             case (CV_BUTTON_2):
+                l_enhanceType = 0;
                 l_enhanceRate = 1.3;
                 break;
             case (CV_BUTTON_3):
+                l_enhanceType = 0;
                 l_enhanceRate = -1.0;
+                break;
+            case (CV_BUTTON_4):
+                l_enhanceType = 1;
+//                l_enhanceRate = -1.0;
                 break;
             // check calibration
             case (CV_BUTTON_t):
@@ -1667,7 +1667,7 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
                 break;
             case (CV_BUTTON_q):
                 cout << "check estimate K start" << endl;
-                test_estimateK(l_answerK, l_CMax, l_CMin, Scalar(1, 1, 1));
+                test_estimateK(l_answerK, l_CMax, l_CMin);
                 cout << "check estimate K finish" << endl;
                 break;
             case (CV_BUTTON_Q):

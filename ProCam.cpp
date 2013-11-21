@@ -329,28 +329,22 @@ bool ProCam::setV(const cv::Mat& _diffBB, const cv::Mat& _diffGB, const cv::Mat&
         Vec9d* l_pV = m_V.ptr<Vec9d>(y);
         
         for (int x = 0; x < cols; ++ x) {
+            for (int i = 0; i < 3; ++ i) {
+                l_pV[x][i * 3 + 0] = l_pDiffBB[x][i];
+                l_pV[x][i * 3 + 1] = l_pDiffGB[x][i];
+                l_pV[x][i * 3 + 2] = l_pDiffRB[x][i];
+            }
 //            l_pV[x][0] = l_pDiffBB[x][0];
-//            l_pV[x][1] = l_pDiffBB[x][1];
-//            l_pV[x][2] = l_pDiffBB[x][2];
+//            l_pV[x][1] = l_pDiffGB[x][0];
+//            l_pV[x][2] = l_pDiffRB[x][0];
 //            
-//            l_pV[x][3] = l_pDiffGB[x][0];
+//            l_pV[x][3] = l_pDiffBB[x][1];
 //            l_pV[x][4] = l_pDiffGB[x][1];
-//            l_pV[x][5] = l_pDiffGB[x][2];
+//            l_pV[x][5] = l_pDiffRB[x][1];
 //            
-//            l_pV[x][6] = l_pDiffRB[x][0];
-//            l_pV[x][7] = l_pDiffRB[x][1];
+//            l_pV[x][6] = l_pDiffBB[x][2];
+//            l_pV[x][7] = l_pDiffGB[x][2];
 //            l_pV[x][8] = l_pDiffRB[x][2];
-            l_pV[x][0] = l_pDiffBB[x][0];
-            l_pV[x][1] = l_pDiffGB[x][0];
-            l_pV[x][2] = l_pDiffRB[x][0];
-            
-            l_pV[x][3] = l_pDiffBB[x][1];
-            l_pV[x][4] = l_pDiffGB[x][1];
-            l_pV[x][5] = l_pDiffRB[x][1];
-            
-            l_pV[x][6] = l_pDiffBB[x][2];
-            l_pV[x][7] = l_pDiffGB[x][2];
-            l_pV[x][8] = l_pDiffRB[x][2];
         }
     }
     
@@ -948,6 +942,9 @@ bool ProCam::colorCalibration(const bool _denoisingFlag){
     Mat diffRedAndBlack = red_cap - black_cap;
     Mat diffGreenAndBlack = green_cap - black_cap;
     Mat diffBlueAndBlack = blue_cap - black_cap;
+//    Mat diffRedAndBlack = red_cap;
+//    Mat diffGreenAndBlack = green_cap;
+//    Mat diffBlueAndBlack = blue_cap;
     
     // set V
     setV(diffBlueAndBlack, diffGreenAndBlack, diffRedAndBlack);
@@ -1256,6 +1253,7 @@ void ProCam::convertColorSpace(cv::Mat* const _dst, const cv::Mat& _src, const b
             } else {
                 colorMix = l_VMat.inv();
                 l_dstMat = colorMix * (l_srcMat - l_F0Mat);
+//                l_dstMat = colorMix * l_srcMat;
             }
             
             // mat -> vec

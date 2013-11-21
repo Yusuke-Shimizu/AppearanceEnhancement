@@ -14,7 +14,7 @@
 #include "ProCam.h"
 #include "myOpenCV.h"
 
-const double NOISE_RANGE = 0.01;
+const double NOISE_RANGE = 10 / 255.0;
 //#define NOISE_RANGE 0.05
 
 const std::string C_FULL_FILE_NAME = "data/cfull.png";
@@ -26,7 +26,8 @@ const std::string P_FILE_NAME = "data/P.png";
 const std::string TARGET_FILE_NAME = "data/target.png";
 const std::string ESTIMATE_K_FILE_NAME = "calibrationData/estimate/estimateK.dat";
 const std::string ESTIMATE_KF_FILE_NAME = "calibrationData/estimate/estimateKF.dat";
-const std::string SIM_ESTIMATE_K_FILE_NAME = "simulationData/estimate/estK.dat";
+const std::string SIM_ESTIMATE_K_FILE_NAME = "simulationData/estimate/estimateK.dat";
+const std::string SIM_ESTIMATE_KF_FILE_NAME = "simulationData/estimate/estimateKF.dat";
 
 class ProCam;
 
