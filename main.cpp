@@ -31,7 +31,8 @@ int main(int argc, const char * argv[])
     AppearanceEnhancement ae(0.8, 0.2);
 //    ae.test_RadiometricModel();
 //    ae.test_calcReflectanceAtPixel();
-    ae.test_calcReflectanceAndAmbientLightAtPixel();
+//    ae.test_calcReflectanceAndAmbientLightAtPixel();
+    ae.test_calcNextProjectionImageAtPixel();
 #endif
     return 0;
 }

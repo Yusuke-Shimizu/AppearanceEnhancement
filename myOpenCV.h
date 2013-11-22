@@ -86,8 +86,13 @@ const int CV_BUTTON_q       = CV_BUTTON_a + 16; //1048690;
 const int CV_BUTTON_Q       = CV_BUTTON_q + CV_BUTTON_SMALL_TO_CAPITAL;
 const int CV_BUTTON_r       = CV_BUTTON_a + 17; //1048690;
 const int CV_BUTTON_R       = CV_BUTTON_r + CV_BUTTON_SMALL_TO_CAPITAL;
+const int CV_BUTTON_s       = CV_BUTTON_a + 18;
+const int CV_BUTTON_S       = CV_BUTTON_s + CV_BUTTON_SMALL_TO_CAPITAL;
 const int CV_BUTTON_t       = CV_BUTTON_a + 19;
 const int CV_BUTTON_T       = CV_BUTTON_t + CV_BUTTON_SMALL_TO_CAPITAL;
+const int CV_BUTTON_w       = CV_BUTTON_a + 22;
+const int CV_BUTTON_W       = CV_BUTTON_w + CV_BUTTON_SMALL_TO_CAPITAL;
+
 // number button
 const int CV_BUTTON_1       = CV_BUTTON_0 + 1;
 const int CV_BUTTON_2       = CV_BUTTON_0 + 2;

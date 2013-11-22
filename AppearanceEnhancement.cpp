@@ -835,16 +835,88 @@ bool AppearanceEnhancement::calcNextProjectionImage(cv::Mat* const _nextP, const
 //    MY_IMSHOW(*_nextP);
     return true;
 }
+bool AppearanceEnhancement::test_calcNextProjectionImage(const cv::Mat& _answerK, const cv::Mat& _answerF, const cv::Mat& _CMax, const cv::Mat& _CMin, const cv::Scalar& _mask){
+    // init
+    ProCam* l_procam = getProCam();
+    const Size* l_camSize = l_procam->getCameraSize();
+    Mat l_projectionImage(*l_camSize, CV_8UC3, CV_SCALAR_BLACK);
+    Mat l_projectionImageBefore(*l_camSize, CV_8UC3, CV_SCALAR_BLACK);
+    Mat l_captureImage(*l_camSize, CV_64FC3, CV_SCALAR_BLACK);
+    Mat l_captureImageBefore(*l_camSize, CV_64FC3, CV_SCALAR_BLACK);
+    Mat l_targetImage(*l_camSize, CV_64FC3, CV_SCALAR_BLACK);
+    Mat l_targetImageBefore(*l_camSize, CV_64FC3, CV_SCALAR_BLACK);
+    Scalar l_mean(0,0,0,0), l_stddev(0,0,0,0);
+    Scalar l_meanCap(0,0,0,0), l_stddevCap(0,0,0,0);
+    Scalar l_meanAns(0,0,0,0), l_stddevAns(0,0,0,0);
+    double l_enhanceRate = 1.3, l_alphaMPC = 0.1;
+    int l_enhanceType = 0;
+    ofstream ofs(ESTIMATE_K_FILE_NAME.c_str());
+    
+    for (int i = 0; i < 256; ++ i) {
+        // set target
+        l_targetImage = Scalar(i, i, i);
+        
+        // determine target image
+        l_targetImageBefore = l_targetImage;
+        calcTargetImage(&l_targetImage, _answerK, _answerF, _CMin, l_enhanceRate, l_enhanceType);
+        
+        // To shift time
+        l_projectionImageBefore = l_projectionImage.clone();
+        l_captureImageBefore = l_captureImage.clone();
+        
+        // calc next projection image
+        calcNextProjectionImage(&l_projectionImage, l_targetImage, l_targetImageBefore, l_captureImageBefore, l_projectionImageBefore, _answerK, _answerF, _answerF, _CMax, _CMin, l_alphaMPC);
+        
+        // projection
+        l_procam->captureOfProjecctorColorFromLinearLightOnProjectorDomain(&l_captureImage, l_projectionImage);
+        
+        // calc
+        calcMeanStddevOfDiffImage(&l_mean, &l_stddev, l_captureImage, l_targetImage);
+        meanStdDev(l_captureImage, l_meanCap, l_stddevCap);
+        meanStdDev(l_targetImage, l_meanAns, l_stddevAns);
+        
+        // print
+        std::cout << i << "\t";
+        _print_gnuplot_color6_l(std::cout, l_mean, l_stddev, l_meanCap, l_stddevCap, l_meanAns, l_stddevAns);
+        ofs << i << "\t";
+        _print_gnuplot_color6_l(ofs, l_mean, l_stddev, l_meanCap, l_stddevCap, l_meanAns, l_stddevAns);
+    }
+    return true;
+}
+
 bool AppearanceEnhancement::calcNextProjectionImageAtPixel(uchar* const _nextP, const double& _targetImage, const double& _targetImageBefore, const double& _C, const double& _P, const double& _K, const double& _F, const double& _FBefore, const double& _Cfull, const double& _C0, const double& _alpha){
     // calculation
-//    double l_nNextP = (1 - _alpha) * (l_nTargetImage - l_nC) / (l_nK * (l_nCfull - l_nC0)) + l_nP;
-//    double l_nNextP = ((1 - _alpha) * ((_targetImage - _C) / _K) - _F + _FBefore) / (_Cfull - _C0) + _P;
-    double l_nNextP = ((1 - _alpha) * (_targetImage - _C) - _targetImageBefore - _C0 * _K) / ((_Cfull - _C0) * _K);
+    double l_nNextP = ((1 - _alpha) * ((_targetImage - _C) / _K) - _F + _FBefore) / (_Cfull - _C0) + _P;
 //    cout << l_nNextP<<" = ((1 - "<<_alpha<<") * (("<<_targetImage<<" - "<<_C<<") / "<<_K<<") - "<<_F<<" + "<<_FBefore<<") / ("<<_Cfull<<" - "<<_C0<<") + "<<_P << endl;
     round0to1(&l_nNextP);
     
     // unnormalize
-    *_nextP = (uchar)(l_nNextP * 255);
+    *_nextP = std::max((uchar)(l_nNextP * 255), (uchar)50);
+    return true;
+}
+bool AppearanceEnhancement::test_calcNextProjectionImageAtPixel(void){
+    double l_CMax = 0.99, l_CMin = 0.1;
+    double l_ansK = 0.5, l_ansF = 0.0;
+    double l_P = 1, l_PBefore = 1, l_C = 0;
+    double l_noise = NOISE_RANGE * 5;
+    double l_target = 0.1;
+    ofstream ofs(SIM_PROJECTION_FILE_NAME.c_str());
+    
+    for (int i = 0; i < 10; ++ i) {
+        //
+        l_PBefore = l_P;
+        uchar l_ucP = 0;
+        calcNextProjectionImageAtPixel(&l_ucP, l_target, l_target, l_C, l_PBefore, l_ansK, l_ansF, l_ansF, l_CMax, l_CMin, 0.1);
+        l_P = (double)l_ucP / 255.0;
+        
+        // capture
+        calcCaptureImageAddNoise(&l_C, l_P, l_ansK, l_ansF, l_CMax, l_CMin, l_noise);
+        
+        // print
+        _print_gnuplot4(std::cout, i, l_C, l_target, l_P);
+        _print_gnuplot4(ofs, i, l_C, l_target, l_P);
+    }
+    
     return true;
 }
 
@@ -1533,8 +1605,12 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
     Mat l_answerK(*l_camSize, CV_64FC3, CV_SCALAR_WHITE);
     Mat l_answerF(*l_camSize, CV_64FC3, CV_SCALAR_WHITE);
     double l_enhanceRate = 1.3, l_alphaMPC = 0.1;
-    int l_estTarget = 0, l_enhanceType = 0;
+    int l_estTarget = 0, l_enhanceType = 0, l_stopTime = -1;
     
+    // init
+    l_procam->captureOfProjecctorColorFromLinearLightOnProjectorDomain(&l_captureImage, l_projectionImage);
+
+    // loop
     while (loopFlag) {
         // estimate
         Mat l_KMapBefore = getKMap(), l_FMapBefore = getFMap();
@@ -1584,7 +1660,7 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
         evaluateEstimationAndProjection(l_answerK, l_KMap, l_targetImage, l_captureImage);
         
         // check key
-        int key = waitKey(-1);
+        int key = waitKey(l_stopTime);
         switch (key) {
             // what is calibration
             case (CV_BUTTON_g):
@@ -1661,7 +1737,6 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
                 break;
             case (CV_BUTTON_4):
                 l_enhanceType = 1;
-//                l_enhanceRate = -1.0;
                 break;
             // check calibration
             case (CV_BUTTON_t):
@@ -1680,13 +1755,25 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
                 test_estimateKFByAmanoModel(l_answerK);
                 cout << "check estimate KF finish" << endl;
                 break;
+            case (CV_BUTTON_w):
+                l_answerK = Scalar(1.0, 1.0, 1.0, 0.0);
+                l_answerF = Scalar(0, 0, 0, 0);
+                test_calcNextProjectionImage(l_answerK, l_answerF, l_CMax, l_CMin);
+                break;
             // other
+            case (CV_BUTTON_s):
+                if (l_stopTime == -1) {
+                    l_stopTime = 30;
+                } else {
+                    l_stopTime = -1;
+                }
+                break;
             case (CV_BUTTON_DELETE):
                 cout << "all clean" << endl;
                 initK(*l_camSize);
                 initF(*l_camSize);
                 l_projectionImage = Mat(*l_camSize, CV_8UC3, CV_SCALAR_WHITE);
-                l_captureImage = Mat(*l_camSize, CV_64FC3, CV_SCALAR_WHITE);
+                l_procam->captureOfProjecctorColorFromLinearLightOnProjectorDomain(&l_captureImage, l_projectionImage);
                 l_targetImage = Mat(*l_camSize, CV_64FC3, CV_SCALAR_WHITE);
                 prj = 255;
                 break;
