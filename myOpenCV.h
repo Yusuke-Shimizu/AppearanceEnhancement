@@ -17,11 +17,11 @@
 #define OPENCV_VERSION_CODE OPENCV_VERSION(CV_MAJOR_VERSION, CV_MINOR_VERSION, CV_SUBMINOR_VERSION)
 
 // 符号有無Nビットの範囲
-#define UCHAR_MIN 0
-#define DEPTH_U8BIT_MIN 0
-#define DEPTH_U8BIT_MAX 255
-#define DEPTH_S16BIT_MIN -32768
-#define DEPTH_S16BIT_MAX 32767
+const uchar UCHAR_MIN = 0;
+const int DEPTH_U8BIT_MIN = 0;
+const int DEPTH_U8BIT_MAX = 255;
+const float DEPTH_S16BIT_MIN = -32768;
+const float DEPTH_S16BIT_MAX = 32767;
 
 #define _print_vector(vec) std::cout<<#vec<<"[b, g, r] = "<<(vec)<<" ("<<&(vec)<<") ("<<__FUNCTION__<<")"<<std::endl
 #define MY_IMSHOW(img) cv::imshow(#img, img);cv::waitKey(30)

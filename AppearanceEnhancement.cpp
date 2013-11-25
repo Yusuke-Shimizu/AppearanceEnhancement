@@ -848,17 +848,13 @@ bool AppearanceEnhancement::test_calcNextProjectionImage(const cv::Mat& _answerK
     Scalar l_mean(0,0,0,0), l_stddev(0,0,0,0);
     Scalar l_meanCap(0,0,0,0), l_stddevCap(0,0,0,0);
     Scalar l_meanAns(0,0,0,0), l_stddevAns(0,0,0,0);
-    double l_enhanceRate = 1.3, l_alphaMPC = 0.1;
-    int l_enhanceType = 0;
+    double l_alphaMPC = 0.1;
     ofstream ofs(ESTIMATE_K_FILE_NAME.c_str());
     
     for (int i = 0; i < 256; ++ i) {
         // set target
-        l_targetImage = Scalar(i, i, i);
-        
-        // determine target image
         l_targetImageBefore = l_targetImage;
-        calcTargetImage(&l_targetImage, _answerK, _answerF, _CMin, l_enhanceRate, l_enhanceType);
+        l_targetImage = Scalar(i, i, i);
         
         // To shift time
         l_projectionImageBefore = l_projectionImage.clone();
@@ -886,7 +882,9 @@ bool AppearanceEnhancement::test_calcNextProjectionImage(const cv::Mat& _answerK
 
 bool AppearanceEnhancement::calcNextProjectionImageAtPixel(uchar* const _nextP, const double& _targetImage, const double& _targetImageBefore, const double& _C, const double& _P, const double& _K, const double& _F, const double& _FBefore, const double& _Cfull, const double& _C0, const double& _alpha){
     // calculation
-    double l_nNextP = ((1 - _alpha) * ((_targetImage - _C) / _K) - _F + _FBefore) / (_Cfull - _C0) + _P;
+//    double l_nNextP = ((1 - _alpha) * ((_targetImage - _C) / _K) - _F + _FBefore) / (_Cfull - _C0) + _P;
+    double l_nNextP = ((1 - _alpha) * (_targetImage - _C) / _K) / (_Cfull - _C0) + _P;
+//    double l_nNextP = (_targetImage - _C0 * _K) / ((_Cfull - _C0) * _K);
 //    cout << l_nNextP<<" = ((1 - "<<_alpha<<") * (("<<_targetImage<<" - "<<_C<<") / "<<_K<<") - "<<_F<<" + "<<_FBefore<<") / ("<<_Cfull<<" - "<<_C0<<") + "<<_P << endl;
     round0to1(&l_nNextP);
     
@@ -899,14 +897,17 @@ bool AppearanceEnhancement::test_calcNextProjectionImageAtPixel(void){
     double l_ansK = 0.5, l_ansF = 0.0;
     double l_P = 1, l_PBefore = 1, l_C = 0;
     double l_noise = NOISE_RANGE * 5;
-    double l_target = 0.1;
+    double l_target = 0.25, l_alpha = 0.5;
     ofstream ofs(SIM_PROJECTION_FILE_NAME.c_str());
     
-    for (int i = 0; i < 10; ++ i) {
+    for (int i = 0; i < 256; ++ i) {
+//        if (i % 10 == 0) {
+//            l_target += 10.0 / 256.0;
+//        }
         //
         l_PBefore = l_P;
         uchar l_ucP = 0;
-        calcNextProjectionImageAtPixel(&l_ucP, l_target, l_target, l_C, l_PBefore, l_ansK, l_ansF, l_ansF, l_CMax, l_CMin, 0.1);
+        calcNextProjectionImageAtPixel(&l_ucP, l_target, l_target, l_C, l_PBefore, l_ansK, l_ansF, l_ansF, l_CMax, l_CMin, l_alpha);
         l_P = (double)l_ucP / 255.0;
         
         // capture
@@ -1504,6 +1505,48 @@ bool AppearanceEnhancement::test_RadiometricModel(void){
     
     printAppearanceEnhancement();
     
+    return true;
+}
+
+bool AppearanceEnhancement::test_CMaxMin(const cv::Mat& _CMax, const cv::Mat& _CMin){
+    // init
+    ProCam* l_procam = getProCam();
+    const Size* l_camSize = l_procam->getCameraSize();
+    Mat l_captureImage(*l_camSize, CV_64FC3, CV_SCALAR_BLACK);
+    const Mat l_diffCMaxMin = _CMax - _CMin;
+    const Mat l_stepDiff = l_diffCMaxMin / 255.0;
+    Mat l_CestPrj = _CMin;
+    
+    for (int i = 7; i < 8; ++ i) {
+        const int l_col1 = i % 2;
+        const int l_col2 = (i / 2) % 2;
+        const int l_col3 = (i / 4) % 2;
+        Vec3b l_mask(l_col3, l_col2, l_col1);
+        ostringstream oss;
+        oss <<CHECK_CMAX_MIN_FILE_NAME << l_col3 << l_col2 << l_col1 << ".dat";
+        cout << oss.str() << endl;
+        ofstream ofs(oss.str().c_str());
+        
+        for (int prj = 0; prj < 256; ++ prj) {
+            // capture
+            Vec3b l_color(prj * l_mask[0], prj * l_mask[1], prj * l_mask[2]);
+            l_procam->captureOfProjecctorColorFromLinearLightOnProjectorDomain(&l_captureImage, l_color);
+            
+            // get mean and standard deviation
+            Vec3d l_meanCap(0, 0, 0), l_stddevCap(0, 0, 0), l_meanPrjCap(0, 0, 0), l_stddevPrjCap(0, 0, 0);
+            meanStdDev(l_captureImage, l_meanCap, l_stddevCap);
+            meanStdDev(l_CestPrj, l_meanPrjCap, l_stddevPrjCap);
+            
+            // print
+            std::cout << prj << "\t";
+            _print_gnuplot_color4_l(std::cout, l_meanCap, l_stddevCap, l_meanPrjCap, l_stddevPrjCap);
+            ofs << prj << "\t";
+            _print_gnuplot_color4_l(ofs, l_meanCap, l_stddevCap, l_meanPrjCap, l_stddevPrjCap);
+            
+            l_CestPrj += l_stepDiff;
+        }
+        ofs.close();
+    }
     return true;
 }
 

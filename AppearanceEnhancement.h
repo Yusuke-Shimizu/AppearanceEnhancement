@@ -14,7 +14,7 @@
 #include "ProCam.h"
 #include "myOpenCV.h"
 
-const double NOISE_RANGE = 10 / 255.0;
+const double NOISE_RANGE = 5 / 255.0;
 //#define NOISE_RANGE 0.05
 
 const std::string C_FULL_FILE_NAME = "data/cfull.png";
@@ -29,6 +29,7 @@ const std::string ESTIMATE_KF_FILE_NAME = "calibrationData/estimate/estimateKF.d
 const std::string SIM_ESTIMATE_K_FILE_NAME = "simulationData/estimate/estimateK.dat";
 const std::string SIM_ESTIMATE_KF_FILE_NAME = "simulationData/estimate/estimateKF.dat";
 const std::string SIM_PROJECTION_FILE_NAME = "simulationData/projection/projection.dat";
+const std::string CHECK_CMAX_MIN_FILE_NAME = "calibrationData/checkCMax_CMin";
 
 class ProCam;
 
@@ -130,6 +131,7 @@ public:
     bool showAll(const cv::Mat& _captureImage, const cv::Mat& _projectionImage, const cv::Mat& _targetImage, const cv::Mat& _answerK);
     ///////////////////////////////  other method ///////////////////////////////
     bool test_RadiometricModel(void);
+    bool test_CMaxMin(const cv::Mat& _CMax, const cv::Mat& _CMin);
     bool doAppearanceCrealy(cv::Mat* const _P, const double _s);
     bool doAppearanceEnhancementByAmano(void);
 };
