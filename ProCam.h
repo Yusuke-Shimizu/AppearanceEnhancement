@@ -27,6 +27,9 @@ const int BUFFER_NUM = 10;
 //#define BAYER_FLAG
 //#define LIB_DC1394_FLAG
 
+const bool COLOR_CALIB_2003 = false;
+const bool COLOR_CALIB_2004 = !COLOR_CALIB_2003;
+
 // 定義
 const cv::Size MAC_DISIPLAY_SIZE(1366, 768);
 const cv::Size LINUX_DISPLAY_SIZE(WSXGA_PLUS_SIZE);

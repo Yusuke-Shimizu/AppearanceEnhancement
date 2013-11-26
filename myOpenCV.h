@@ -24,8 +24,28 @@ const float DEPTH_S16BIT_MIN = -32768;
 const float DEPTH_S16BIT_MAX = 32767;
 
 #define _print_vector(vec) std::cout<<#vec<<"[b, g, r] = "<<(vec)<<" ("<<&(vec)<<") ("<<__FUNCTION__<<")"<<std::endl
-#define MY_IMSHOW(img) cv::imshow(#img, img);cv::waitKey(30)
 #define _print_mat_propaty(mat) _print_name(mat);printMatPropaty(mat)
+
+// show
+#define MY_IMSHOW(img) cv::imshow(#img, img);cv::waitKey(30)
+#define MY_IMSHOW_(img) cv::imshow(#img, img)
+#define MY_IMSHOW2(img1, img2) MY_IMSHOW_(img1);MY_IMSHOW(img2)
+#define MY_IMSHOW2_(img1, img2) MY_IMSHOW_(img1);MY_IMSHOW_(img2)
+#define MY_IMSHOW3(img1, img2, img3) MY_IMSHOW2_(img1, img2);MY_IMSHOW(img3)
+#define MY_IMSHOW3_(img1, img2, img3) MY_IMSHOW2_(img1, img2);MY_IMSHOW_(img3)
+#define MY_IMSHOW4(img1, img2, img3, img4) MY_IMSHOW3_(img1, img2, img3);MY_IMSHOW(img4)
+#define MY_IMSHOW4_(img1, img2, img3, img4) MY_IMSHOW3_(img1, img2, img3);MY_IMSHOW_(img4)
+#define MY_IMSHOW5(img1, img2, img3, img4, img5) MY_IMSHOW4_(img1, img2, img3, img4);MY_IMSHOW(img5)
+#define MY_IMSHOW5_(img1, img2, img3, img4, img5) MY_IMSHOW4_(img1, img2, img3, img4);MY_IMSHOW_(img5)
+#define MY_IMSHOW6(img1, img2, img3, img4, img5, img6) MY_IMSHOW5_(img1, img2, img3, img4, img5);MY_IMSHOW(img6)
+#define MY_IMSHOW6_(img1, img2, img3, img4, img5, img6) MY_IMSHOW5_(img1, img2, img3, img4, img5);MY_IMSHOW_(img6)
+#define MY_IMSHOW7(img1, img2, img3, img4, img5, img6, img7) MY_IMSHOW6_(img1, img2, img3, img4, img5, img6);MY_IMSHOW(img7)
+#define MY_IMSHOW8(img1, img2, img3, img4, img5, img6, img7, img8) MY_IMSHOW7_(img1, img2, img3, img4, img5, img6, img7);MY_IMSHOW(img8)
+#define MY_IMSHOW8_(img1, img2, img3, img4, img5, img6, img7, img8) MY_IMSHOW7_(img1, img2, img3, img4, img5, img6, img7);MY_IMSHOW_(img8)
+#define MY_IMSHOW9(img1, img2, img3, img4, img5, img6, img7, img8, img9) MY_IMSHOW8_(img1, img2, img3, img4, img5, img6, img7, img8);MY_IMSHOW(img9)
+#define MY_IMSHOW9_(img1, img2, img3, img4, img5, img6, img7, img8, img9) MY_IMSHOW8_(img1, img2, img3, img4, img5, img6, img7, img8);MY_IMSHOW_(img9)
+#define MY_IMSHOW10(img1, img2, img3, img4, img5, img6, img7, img8, img9, img10) MY_IMSHOW9_(img1, img2, img3, img4, img5, img6, img7, img8, img9);MY_IMSHOW(img10)
+#define MY_IMSHOW10_(img1, img2, img3, img4, img5, img6, img7, img8, img9, img10) MY_IMSHOW9_(img1, img2, img3, img4, img5, img6, img7, img8, img9);MY_IMSHOW_(img10)
 
 // print color
 #define _print_gnuplot_color(output, var) output<<(var)[0]<<"\t"<<(var)[1]<<"\t"<<(var)[2]<<"\t"

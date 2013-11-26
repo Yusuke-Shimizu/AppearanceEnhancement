@@ -792,11 +792,11 @@ bool AppearanceEnhancement::calcTargetImageAtPixel(double* const _targetImage, c
 }
 
 // 次に投影する画像を決定
-bool AppearanceEnhancement::calcNextProjectionImage(cv::Mat* const _nextP, const cv::Mat& _targetImage, const cv::Mat& _targetImageBefore, const cv::Mat& _C, const cv::Mat& _P, const cv::Mat& _K, const cv::Mat& _F, const cv::Mat& _FBefore, const cv::Mat& _Cfull, const cv::Mat& _C0, const double& _alpha){
+bool AppearanceEnhancement::calcNextProjectionImage(cv::Mat* const _nextP, const cv::Mat& _targetImage, const cv::Mat& _targetImageBefore, const cv::Mat& _C, const cv::Mat& _P, const cv::Mat& _K, const cv::Mat& _F, const cv::Mat& _FBefore, const cv::Mat& _CMax, const cv::Mat& _CMin, const double& _alpha){
     
     // init
     int rows = _targetImage.rows, cols = _targetImage.cols, channel = _targetImage.channels();
-    if (isContinuous(*_nextP, _targetImage, _targetImageBefore, _C, _P, _K, _F, _FBefore, _Cfull, _C0)) {
+    if (isContinuous(*_nextP, _targetImage, _targetImageBefore, _C, _P, _K, _F, _FBefore, _CMax, _CMin)) {
         cols *= rows;
         rows = 1;
     }
@@ -811,8 +811,8 @@ bool AppearanceEnhancement::calcNextProjectionImage(cv::Mat* const _nextP, const
         const Vec3d* l_pK = _K.ptr<Vec3d>(y);
         const Vec3d* l_pF = _F.ptr<Vec3d>(y);
         const Vec3d* l_pFBefore = _FBefore.ptr<Vec3d>(y);
-        const Vec3d* l_pCfull = _Cfull.ptr<Vec3d>(y);
-        const Vec3d* l_pC0 = _C0.ptr<Vec3d>(y);
+        const Vec3d* l_pCfull = _CMax.ptr<Vec3d>(y);
+        const Vec3d* l_pC0 = _CMin.ptr<Vec3d>(y);
         
         for (int x = 0; x < cols; ++ x) {
             for (int c = 0; c < channel; ++ c) {
@@ -842,14 +842,13 @@ bool AppearanceEnhancement::test_calcNextProjectionImage(const cv::Mat& _answerK
     Mat l_projectionImage(*l_camSize, CV_8UC3, CV_SCALAR_BLACK);
     Mat l_projectionImageBefore(*l_camSize, CV_8UC3, CV_SCALAR_BLACK);
     Mat l_captureImage(*l_camSize, CV_64FC3, CV_SCALAR_BLACK);
-    Mat l_captureImageBefore(*l_camSize, CV_64FC3, CV_SCALAR_BLACK);
     Mat l_targetImage(*l_camSize, CV_64FC3, CV_SCALAR_BLACK);
     Mat l_targetImageBefore(*l_camSize, CV_64FC3, CV_SCALAR_BLACK);
     Scalar l_mean(0,0,0,0), l_stddev(0,0,0,0);
     Scalar l_meanCap(0,0,0,0), l_stddevCap(0,0,0,0);
-    Scalar l_meanAns(0,0,0,0), l_stddevAns(0,0,0,0);
+    Scalar l_meanTarget(0,0,0,0), l_stddeTarget(0,0,0,0);
     double l_alphaMPC = 0.1;
-    ofstream ofs(ESTIMATE_K_FILE_NAME.c_str());
+    ofstream ofs(TEST_PROJECTION_FILE_NAME.c_str());
     
     for (int i = 0; i < 256; ++ i) {
         // set target
@@ -858,10 +857,9 @@ bool AppearanceEnhancement::test_calcNextProjectionImage(const cv::Mat& _answerK
         
         // To shift time
         l_projectionImageBefore = l_projectionImage.clone();
-        l_captureImageBefore = l_captureImage.clone();
         
         // calc next projection image
-        calcNextProjectionImage(&l_projectionImage, l_targetImage, l_targetImageBefore, l_captureImageBefore, l_projectionImageBefore, _answerK, _answerF, _answerF, _CMax, _CMin, l_alphaMPC);
+        calcNextProjectionImage(&l_projectionImage, l_targetImage, l_targetImageBefore, l_captureImage, l_projectionImageBefore, _answerK, _answerF, _answerF, _CMax, _CMin, l_alphaMPC);
         
         // projection
         l_procam->captureOfProjecctorColorFromLinearLightOnProjectorDomain(&l_captureImage, l_projectionImage);
@@ -869,22 +867,24 @@ bool AppearanceEnhancement::test_calcNextProjectionImage(const cv::Mat& _answerK
         // calc
         calcMeanStddevOfDiffImage(&l_mean, &l_stddev, l_captureImage, l_targetImage);
         meanStdDev(l_captureImage, l_meanCap, l_stddevCap);
-        meanStdDev(l_targetImage, l_meanAns, l_stddevAns);
+        meanStdDev(l_targetImage, l_meanTarget, l_stddeTarget);
         
         // print
         std::cout << i << "\t";
-        _print_gnuplot_color6_l(std::cout, l_mean, l_stddev, l_meanCap, l_stddevCap, l_meanAns, l_stddevAns);
+        _print_gnuplot_color6_l(std::cout, l_mean, l_stddev, l_meanCap, l_stddevCap, l_meanTarget, l_stddeTarget);
         ofs << i << "\t";
-        _print_gnuplot_color6_l(ofs, l_mean, l_stddev, l_meanCap, l_stddevCap, l_meanAns, l_stddevAns);
+        _print_gnuplot_color6_l(ofs, l_mean, l_stddev, l_meanCap, l_stddevCap, l_meanTarget, l_stddeTarget);
     }
     return true;
 }
 
 bool AppearanceEnhancement::calcNextProjectionImageAtPixel(uchar* const _nextP, const double& _targetImage, const double& _targetImageBefore, const double& _C, const double& _P, const double& _K, const double& _F, const double& _FBefore, const double& _Cfull, const double& _C0, const double& _alpha){
     // calculation
-//    double l_nNextP = ((1 - _alpha) * ((_targetImage - _C) / _K) - _F + _FBefore) / (_Cfull - _C0) + _P;
-    double l_nNextP = ((1 - _alpha) * (_targetImage - _C) / _K) / (_Cfull - _C0) + _P;
+//    double l_nNextP = (((1 - _alpha) * (_targetImage - _C) - _F + _FBefore) / (_Cfull - _C0) + _P * _K) / _K;
+    double l_nNextP = ((1 - _alpha) * ((_targetImage - _C) / _K) - _F + _FBefore) / (_Cfull - _C0) + _P;
+//    double l_nNextP = ((1 - _alpha) * (_targetImage - _C) / _K) / (_Cfull - _C0) + _P;
 //    double l_nNextP = (_targetImage - _C0 * _K) / ((_Cfull - _C0) * _K);
+//    double l_nNextP = _targetImage;
 //    cout << l_nNextP<<" = ((1 - "<<_alpha<<") * (("<<_targetImage<<" - "<<_C<<") / "<<_K<<") - "<<_F<<" + "<<_FBefore<<") / ("<<_Cfull<<" - "<<_C0<<") + "<<_P << endl;
     round0to1(&l_nNextP);
     
@@ -1516,6 +1516,7 @@ bool AppearanceEnhancement::test_CMaxMin(const cv::Mat& _CMax, const cv::Mat& _C
     const Mat l_diffCMaxMin = _CMax - _CMin;
     const Mat l_stepDiff = l_diffCMaxMin / 255.0;
     Mat l_CestPrj = _CMin;
+    MY_WAIT_KEY();
     
     for (int i = 7; i < 8; ++ i) {
         const int l_col1 = i % 2;
@@ -1543,6 +1544,8 @@ bool AppearanceEnhancement::test_CMaxMin(const cv::Mat& _CMax, const cv::Mat& _C
             ofs << prj << "\t";
             _print_gnuplot_color4_l(ofs, l_meanCap, l_stddevCap, l_meanPrjCap, l_stddevPrjCap);
             
+            MY_IMSHOW(l_captureImage);
+            // step up
             l_CestPrj += l_stepDiff;
         }
         ofs.close();
@@ -1716,6 +1719,8 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
                 l_CMax = getCfullMap();
                 l_CMin = getC0Map();
                 break;
+            case (CV_BUTTON_G):
+                l_procam->geometricCalibration();
             case (CV_BUTTON_C): // have to get Cfull and C0 after color calibration
                 l_procam->colorCalibration(true);
             case (CV_BUTTON_F):
@@ -1802,6 +1807,10 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
                 l_answerK = Scalar(1.0, 1.0, 1.0, 0.0);
                 l_answerF = Scalar(0, 0, 0, 0);
                 test_calcNextProjectionImage(l_answerK, l_answerF, l_CMax, l_CMin);
+                break;
+            case (CV_BUTTON_W):
+                cout << "check CMax and CMin" << endl;
+                test_CMaxMin(l_CMax, l_CMin);
                 break;
             // other
             case (CV_BUTTON_s):

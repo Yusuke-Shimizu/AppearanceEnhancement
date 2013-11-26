@@ -939,12 +939,14 @@ bool ProCam::colorCalibration(const bool _denoisingFlag){
     blue_cap.convertTo(blue_cap, depth64x3, rate);
     
     // calc difference[-1-1]
-    Mat diffRedAndBlack = red_cap - black_cap;
-    Mat diffGreenAndBlack = green_cap - black_cap;
-    Mat diffBlueAndBlack = blue_cap - black_cap;
-//    Mat diffRedAndBlack = red_cap;
-//    Mat diffGreenAndBlack = green_cap;
-//    Mat diffBlueAndBlack = blue_cap;
+    Mat diffRedAndBlack = red_cap;
+    Mat diffGreenAndBlack = green_cap;
+    Mat diffBlueAndBlack = blue_cap;
+    if (COLOR_CALIB_2004) {
+        diffRedAndBlack -= black_cap;
+        diffGreenAndBlack -= black_cap;
+        diffBlueAndBlack -= black_cap;
+    }
     
     // set V
     setV(diffBlueAndBlack, diffGreenAndBlack, diffRedAndBlack);
@@ -1253,7 +1255,9 @@ void ProCam::convertColorSpace(cv::Mat* const _dst, const cv::Mat& _src, const b
             } else {
                 colorMix = l_VMat.inv();
                 l_dstMat = colorMix * (l_srcMat - l_F0Mat);
-//                l_dstMat = colorMix * l_srcMat;
+                if (COLOR_CALIB_2003) {
+                    l_dstMat = colorMix * l_srcMat;
+                }
             }
             
             // mat -> vec
