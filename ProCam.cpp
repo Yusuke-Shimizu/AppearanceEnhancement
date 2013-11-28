@@ -302,6 +302,26 @@ bool ProCam::setProjectorResponseP2IAtOutOfCameraArea(void){
     return interpolateProjectorResponseP2IAtOutOfCameraArea(&m_projectorResponseP2I);
 }
 
+// 画像をプロジェクタ応答マップに挿入
+bool ProCam::setImageProjectorResponseP2I(cv::Mat* const _responseMap, const cv::Mat& _responseImage, const int _index){
+    const int rows = _responseImage.rows, cols = _responseImage.cols;
+    for (int y = 0; y < rows; ++ y) {
+        // init pointer
+        Vec3b* l_pPrjResP2I = _responseMap->ptr<Vec3b>(y);
+        const Vec3b* l_pResImg = _responseImage.ptr<Vec3b>(y);
+        
+        for (int x = 0; x < cols; ++ x) {
+            l_pPrjResP2I[x * 256 + _index] = l_pResImg[x];
+        }
+    }
+
+    return true;
+}
+bool ProCam::setImageProjectorResponseP2I(const cv::Mat& _responseImage, const int _index){
+    setImageProjectorResponseP2I(&m_projectorResponseP2I, _responseImage, _index);
+    return true;
+}
+
 // Vのセッティング
 bool ProCam::setV(const cv::Mat& _diffBB, const cv::Mat& _diffGB, const cv::Mat& _diffRB){
     // error handle
@@ -868,8 +888,8 @@ bool ProCam::linearizeOfProjector(void){
     
     // print
     Point pt(cols*0.6/256, rows*0.6);
-    printProjectorResponseP2I(pt);
-    printProjectorResponseI2P(pt);
+//    printProjectorResponseP2I(pt);
+//    printProjectorResponseI2P(pt);
     savePrintProjectorResponseP2I(PROJECTOR_RESPONSE_AT_SOME_POINT_P2I_FILE_NAME, pt);
     savePrintProjectorResponseI2P(PROJECTOR_RESPONSE_AT_SOME_POINT_I2P_FILE_NAME, pt);
     linearPrj.saveAllC(PROJECTOR_ALL_C_IMAGES_FILE_NAME, pt);
@@ -1935,3 +1955,28 @@ void ProCam::getProjectionImage(cv::Mat* const _P, const cv::Mat& _desireC, cons
     }
 }
 
+// 応答特性にメディアンフィルタをかける
+bool ProCam::medianBlurForProjectorResponseP2I(cv::Mat* const _dst, const cv::Mat& _src){
+    cout << "start median" << endl;
+    Mat l_image(_src.rows, _src.cols / 256, CV_8UC3, CV_SCALAR_BLACK);
+    for (int i = 0; i < 256; ++ i) {
+        getImageProjectorResponseP2I(&l_image, _src, i);
+        medianBlur(l_image, l_image, 7);
+        ostringstream oss;
+        oss << PROJECTOR_RESPONSE_P2I_IMAGE_PATH << i << ".png" << endl;
+        imwrite(oss.str().c_str(), l_image);
+        setImageProjectorResponseP2I(_dst, l_image, i);
+    }
+    cout << "finished median" << endl;
+    return true;
+}
+bool ProCam::test_medianBlurForProjectorResponseP2I(void){
+    Mat l_imageMap(10, 2560, CV_8UC3, CV_SCALAR_BLACK);
+    for (int i = 0; i < 2560; ++ i) {
+        l_imageMap.at<Vec3b>(i % 10, i) = CV_VEC3B_WHITE;
+    }
+    imshow("before", l_imageMap);
+    medianBlurForProjectorResponseP2I(&l_imageMap, l_imageMap);
+    imshow("after", l_imageMap);
+    return true;
+}

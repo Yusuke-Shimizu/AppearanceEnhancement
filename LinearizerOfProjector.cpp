@@ -633,6 +633,9 @@ bool LinearizerOfProjector::calcResponseFunction(cv::Mat_<cv::Vec3b>* const _res
         // capture from projection image
         l_procam->captureFromLightOnProjectorDomain(&camImage, prjLuminance, true);
         MY_IMSHOW(camImage);
+        ostringstream oss;
+        oss << PROJECTOR_RESPONSE_C_IMAGE_PATH << prjLuminance << ".png" << endl;
+        imwrite(oss.str().c_str(), camImage);
         waitKey(1);
         
         // set inverce response function(P2I and I2P)
@@ -645,6 +648,7 @@ bool LinearizerOfProjector::calcResponseFunction(cv::Mat_<cv::Vec3b>* const _res
     // interpolation projector response P to I
     l_procam->interpolationProjectorResponseP2I(&l_responseMapP2I);
     l_procam->interpolateProjectorResponseP2IAtOutOfCameraArea(&l_responseMapP2I);
+    l_procam->medianBlurForProjectorResponseP2I(&l_responseMapP2I, l_responseMapP2I);
     
     // set and save
     // P2I

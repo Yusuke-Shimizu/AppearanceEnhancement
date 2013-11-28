@@ -1648,7 +1648,7 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
     Mat l_captureImageBefore(*l_camSize, CV_64FC3, Scalar(prj2, prj2, prj2));
     Mat l_targetImage(*l_camSize, CV_64FC3, CV_SCALAR_WHITE);
     Mat l_targetImageBefore(*l_camSize, CV_64FC3, CV_SCALAR_WHITE);
-    Mat l_answerK(*l_camSize, CV_64FC3, CV_SCALAR_WHITE);
+    Mat l_answerK(*l_camSize, CV_64FC3, CV_SCALAR_D_WHITE);
     Mat l_answerF(*l_camSize, CV_64FC3, CV_SCALAR_WHITE);
     double l_enhanceRate = 1.3, l_alphaMPC = 0.1;
     int l_estTarget = 0, l_enhanceType = 0, l_stopTime = -1;

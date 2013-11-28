@@ -17,8 +17,10 @@
 #define CMM_MAP_FILE_NAME "calibrationData/cmmMap.dat"
 #define CMM_MAP_FILE_NAME_BYTE "calibrationData/cmmMap_byte.dat"
 const char ALL_C_IMAGES_FILE_NAME_BYTE[256] = "calibrationData/allCImages_byte.dat";
+const std::string PROJECTOR_RESPONSE_C_IMAGE_PATH = "calibrationData/linearlize/img/C/";
 
 const int PROJECTION_LUMINANCE_STEP = 1;
+
 
 // 先攻宣言
 class ProCam;

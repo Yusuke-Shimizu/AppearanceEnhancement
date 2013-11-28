@@ -19,10 +19,6 @@
 using namespace std;
 using namespace cv;
 
-inline void PRINT_TEST(ostream os, int i){
-    os << i << std::endl;
-}
-
 // main method
 int main(int argc, const char * argv[])
 {

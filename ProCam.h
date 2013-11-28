@@ -63,6 +63,7 @@ const cv::Point POSITION_OF_PROJECTION_IMAGE(LINUX_PROJECTOR_DISPLAY_POS);
 #define CHECK_LINEARIZE_FILE_NAME "calibrationData/checkLinearize.dat"
 #define CHECK_COLOR_CALIBRATION_FILE_NAME "calibrationData/checkColorCalibration"
 #define WINDOW_NAME "projection image"
+const std::string PROJECTOR_RESPONSE_P2I_IMAGE_PATH = "calibrationData/linearlize/img/P2I/";
 
 const uchar INIT_RES_NUM = 0;   // 応答特性の初期値
 
@@ -121,6 +122,8 @@ public:
     bool setProjectorResponse(const cv::Mat_<cv::Vec3b>& _response);
     bool setProjectorResponseP2I(const cv::Mat_<cv::Vec3b>& _response);
     bool setProjectorResponseP2IAtOutOfCameraArea(void);
+    bool setImageProjectorResponseP2I(cv::Mat* const _responseMap, const cv::Mat& _responseImage, const int _index);
+    bool setImageProjectorResponseP2I(const cv::Mat& _responseImage, const int _index);
     bool setV(const cv::Mat& _diffBB, const cv::Mat& _diffGB, const cv::Mat& _diffRB);
     void setF(const cv::Mat& _P);
     ///////////////////////////////  get method ///////////////////////////////
@@ -210,6 +213,8 @@ public:
     bool doRadiometricCompensationByYoshidaMethod(const cv::Mat& _desiredImage, const int _waitTimeNum = SLEEP_TIME);
     bool doRadiometricCompensationByAmanoMethod(const cv::Mat& _desiredImage, const int _waitTimeNum = SLEEP_TIME);
     void getProjectionImage(cv::Mat* const _P, const cv::Mat& _desireC, const cv::Mat_<Vec12d>& _K);
+    bool medianBlurForProjectorResponseP2I(cv::Mat* const _dst, const cv::Mat& _src);
+    bool test_medianBlurForProjectorResponseP2I(void);
 };
 
 #endif /* defined(__cameraBase03__ProCam__) */

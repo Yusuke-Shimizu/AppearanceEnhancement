@@ -152,6 +152,15 @@ const cv::Scalar CV_SCALAR_PURPLE(CV_VEC3B_PURPLE);
 const cv::Scalar CV_SCALAR_BLACK(CV_VEC3B_BLACK);
 const cv::Scalar CV_SCALAR_WHITE(CV_VEC3B_WHITE);
 
+const cv::Scalar CV_SCALAR_D_RED(CV_VEC3D_RED);
+const cv::Scalar CV_SCALAR_D_GREEN(CV_VEC3D_GREEN);
+const cv::Scalar CV_SCALAR_D_BLUE(CV_VEC3D_BLUE);
+const cv::Scalar CV_SCALAR_D_YELLOW(CV_VEC3D_YELLOW);
+const cv::Scalar CV_SCALAR_D_CYAN(CV_VEC3D_CYAN);
+const cv::Scalar CV_SCALAR_D_PURPLE(CV_VEC3D_PURPLE);
+const cv::Scalar CV_SCALAR_D_BLACK(CV_VEC3D_BLACK);
+const cv::Scalar CV_SCALAR_D_WHITE(CV_VEC3D_WHITE);
+
 typedef cv::Vec<double, 9> Vec9d;
 typedef cv::Vec<double, 12> Vec12d;
 
