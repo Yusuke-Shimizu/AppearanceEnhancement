@@ -1056,6 +1056,7 @@ bool ProCam::test_colorCalibration(void){
     const Size* l_camSize = getCameraSize();
     Mat l_captureImage(*l_camSize, CV_64FC3, CV_SCALAR_BLACK);
     Mat l_captureImageNC(*l_camSize, CV_64FC3, CV_SCALAR_BLACK);
+    Mat l_captureImageNCNL(*l_camSize, CV_64FC3, CV_SCALAR_BLACK);
     
     for (int i = 1; i < 8; ++ i) {
         if (i == 3 || i >= 5) {
@@ -1075,17 +1076,20 @@ bool ProCam::test_colorCalibration(void){
             Vec3b l_color(prj * l_mask[0], prj * l_mask[1], prj * l_mask[2]);
             captureOfProjecctorColorFromLinearLightOnProjectorDomain(&l_captureImage, l_color);
             captureFromLinearLightOnProjectorDomain(&l_captureImageNC, l_color);
+            captureFromLightOnProjectorDomain(&l_captureImageNCNL, l_color);
+            MY_IMSHOW3(l_captureImage, l_captureImageNC, l_captureImageNCNL);
             
             // get mean and standard deviation
-            Vec3d l_meanColor(0, 0, 0), l_stddevColor(0, 0, 0), l_meanColorNC(0, 0, 0), l_stddevColorNC(0, 0, 0);
+            Vec3d l_meanColor(0, 0, 0), l_stddevColor(0, 0, 0), l_meanColorNC(0, 0, 0), l_stddevColorNC(0, 0, 0), l_meanColorNCNL(0, 0, 0), l_stddevColorNCNL(0, 0, 0);
             meanStdDev(l_captureImage, l_meanColor, l_stddevColor);
             meanStdDev(l_captureImageNC, l_meanColorNC, l_stddevColorNC);
+            meanStdDev(l_captureImageNCNL, l_meanColorNCNL, l_stddevColorNCNL);
             
             // print
             std::cout << prj << "\t";
-            _print_gnuplot_color4_l(std::cout, l_meanColor, l_stddevColor, l_meanColorNC, l_stddevColorNC);
+            _print_gnuplot6(std::cout, l_meanColor, l_stddevColor, l_meanColorNC, l_stddevColorNC, l_meanColorNCNL, l_stddevColorNCNL);
             ofs << prj << "\t";
-            _print_gnuplot_color4_l(ofs, l_meanColor, l_stddevColor, l_meanColorNC, l_stddevColorNC);
+            _print_gnuplot_color6_l(ofs, l_meanColor, l_stddevColor, l_meanColorNC, l_stddevColorNC, l_meanColorNCNL, l_stddevColorNCNL);
         }
         ofs.close();
     }

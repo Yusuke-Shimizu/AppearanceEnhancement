@@ -75,9 +75,13 @@ public:
     bool showVMap(void);
     bool showAllCImages(void);
     ///////////////////////////////  caprj method ///////////////////////////////
-    bool captureFromLightOnGeoP_ColP(cv::Mat* const _captureImage, const cv::Mat& _projectionImage, ProCam& _procam, const bool _denoiseFlag = false, const int _waitTimeNum = SLEEP_TIME);
-    bool captureFromLightOnGeoP_ColP(cv::Mat* const _captureImage, const cv::Vec3b& _projectionColor, ProCam& _procam, const bool _denoiseFlag = false, const int _waitTimeNum = SLEEP_TIME);
-    bool captureFromLightOnGeoP_ColP(cv::Mat* const _captureImage, const uchar _projectionNumber, ProCam& _procam, const bool _denoiseFlag = false, const int _waitTimeNum = SLEEP_TIME);
+    bool captureFromLightOnGeoP_ColP(cv::Mat* const _captureImage, const cv::Mat& _projectionImage, ProCam* _procam, const bool _denoiseFlag = false, const int _waitTimeNum = SLEEP_TIME);
+    bool captureFromLightOnGeoP_ColP(cv::Mat* const _captureImage, const cv::Vec3b& _projectionColor, ProCam* _procam, const bool _denoiseFlag = false, const int _waitTimeNum = SLEEP_TIME);
+    bool captureFromLightOnGeoP_ColP(cv::Mat* const _captureImage, const uchar _projectionNumber, ProCam* _procam, const bool _denoiseFlag = false, const int _waitTimeNum = SLEEP_TIME);
+    
+    bool captureFromLinearLightOnGeoP_ColP(cv::Mat* const _captureImage, const cv::Mat& _projectionImage, ProCam* _procam, const bool _denoiseFlag = false, const int _waitTimeNum = SLEEP_TIME);
+    bool captureFromLinearLightOnGeoP_ColP(cv::Mat* const _captureImage, const cv::Vec3b& _projectionColor, ProCam* _procam, const bool _denoiseFlag = false, const int _waitTimeNum = SLEEP_TIME);
+    bool captureFromLinearLightOnGeoP_ColP(cv::Mat* const _captureImage, const uchar _projectionNumber, ProCam* _procam, const bool _denoiseFlag = false, const int _waitTimeNum = SLEEP_TIME);
     ///////////////////////////////  other method ///////////////////////////////
     bool doLinearlize(cv::Mat_<cv::Vec3b>* const _responseMap, cv::Mat_<cv::Vec3b>* const _responseMapP2I);
     bool calcColorMixingMatrix(void);
