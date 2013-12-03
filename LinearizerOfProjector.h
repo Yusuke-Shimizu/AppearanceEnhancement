@@ -17,7 +17,12 @@
 #define CMM_MAP_FILE_NAME "calibrationData/cmmMap.dat"
 #define CMM_MAP_FILE_NAME_BYTE "calibrationData/cmmMap_byte.dat"
 const char ALL_C_IMAGES_FILE_NAME_BYTE[256] = "calibrationData/allCImages_byte.dat";
-const std::string PROJECTOR_RESPONSE_C_IMAGE_PATH = "calibrationData/linearize/img/C/";
+const std::string PRJ_LINEAR_PATH = "calibrationData/linearize/";
+const std::string LIN_IMG_PATH = PRJ_LINEAR_PATH + "img/";
+const std::string PROJECTOR_RESPONSE_C_IMAGE_PATH = LIN_IMG_PATH + "C/";
+const std::string P2I_IMAGE_PATH = LIN_IMG_PATH + "P2I/";
+const std::string LIN_DATA_PATH = PRJ_LINEAR_PATH + "data/";
+const std::string LIN_TEST_DATA_PATH = LIN_DATA_PATH + "linearCheck.dat";
 
 const int PROJECTION_LUMINANCE_STEP = 1;
 

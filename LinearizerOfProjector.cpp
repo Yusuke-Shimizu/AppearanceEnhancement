@@ -415,7 +415,7 @@ bool LinearizerOfProjector::captureFromLightOnGeoP_ColP(cv::Mat* const _captureI
     return true;
 }
 bool LinearizerOfProjector::captureFromLightOnGeoP_ColP(cv::Mat* const _captureImage, const cv::Vec3b& _projectionColor, ProCam& _procam, const bool _denoiseFlag, const int _waitTimeNum){
-    const Size* l_prjSize = _procam.getProjectorSize();
+    const Size* l_prjSize = _procam.getCameraSize();
     const Mat l_projectionImage(*l_prjSize, CV_8UC3, Scalar(_projectionColor));
     return captureFromLightOnGeoP_ColP(_captureImage, l_projectionImage, _procam, _denoiseFlag, _waitTimeNum);
 }
@@ -698,7 +698,8 @@ void LinearizerOfProjector::test_responseFunction(void){
     ProCam* l_procam = getProCam();
     const Size* l_camSize = l_procam->getCameraSize();
     Mat l_captureImage(*l_camSize, CV_8UC3, CV_SCALAR_BLACK);
-    
+    ofstream ofs(LIN_TEST_DATA_PATH.c_str());
+
     for (int i = 0; i < 256; ++ i) {
         Vec3d l_mean(0,0,0), l_stddev(0,0,0);
         captureFromLightOnGeoP_ColP(&l_captureImage, i, *l_procam);
@@ -706,7 +707,11 @@ void LinearizerOfProjector::test_responseFunction(void){
         
         // output
         std::cout << i << "\t";
-        _print_gnuplot_color2(std::cout, l_mean, l_stddev);
+        _print_gnuplot_color2_l(std::cout, l_mean, l_stddev);
+        
+        // save
+        ofs << i << "\t";
+        _print_gnuplot_color2_l(ofs, l_mean, l_stddev);
     }
 }
 
