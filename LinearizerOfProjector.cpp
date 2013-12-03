@@ -92,11 +92,13 @@ bool LinearizerOfProjector::setResponseMap(cv::Mat_<cv::Vec3b>* const _responseM
         exit(-1);
     }
     
+    // Color Convert
     // calc P on Camera Space
     Mat l_PImageOnCameraSpace(*l_camSize, CV_8UC3, CV_SCALAR_BLACK);    // カメラ座標系におけるP（=V^{-1}C）
     convertCameraImageToProjectorOne(&l_PImageOnCameraSpace, _CImage);
     MY_IMSHOW(l_PImageOnCameraSpace);
     
+    // Geometric Convert
     // convert P on Camera Space to Projector Space
     Mat l_PImageOnProjectorSpace(*l_prjSize, CV_8UC3, CV_SCALAR_BLACK);    // カメラ座標系におけるP（=V^{-1}C）
     l_procam->convertProjectorDomainToCameraOne(&l_PImageOnProjectorSpace, l_PImageOnCameraSpace);
@@ -402,6 +404,26 @@ bool LinearizerOfProjector::showAllCImages(void){
     return true;
 }
 
+///////////////////////////////  caprj method ///////////////////////////////
+bool LinearizerOfProjector::captureFromLightOnGeoP_ColP(cv::Mat* const _captureImage, const cv::Mat& _projectionImage, ProCam& _procam, const bool _denoiseFlag, const int _waitTimeNum){
+    // capture from projection image
+    Mat l_captureImage(_captureImage->rows, _captureImage->cols, CV_8UC3, CV_SCALAR_BLACK);
+    _procam.captureFromLightOnProjectorDomain(&l_captureImage, _projectionImage, true, _waitTimeNum);
+    
+    // Color Convert
+    convertCameraImageToProjectorOne(_captureImage, l_captureImage);
+    return true;
+}
+bool LinearizerOfProjector::captureFromLightOnGeoP_ColP(cv::Mat* const _captureImage, const cv::Vec3b& _projectionColor, ProCam& _procam, const bool _denoiseFlag, const int _waitTimeNum){
+    const Size* l_prjSize = _procam.getProjectorSize();
+    const Mat l_projectionImage(*l_prjSize, CV_8UC3, Scalar(_projectionColor));
+    return captureFromLightOnGeoP_ColP(_captureImage, l_projectionImage, _procam, _denoiseFlag, _waitTimeNum);
+}
+bool LinearizerOfProjector::captureFromLightOnGeoP_ColP(cv::Mat* const _captureImage, const uchar _projectionNumber, ProCam& _procam, const bool _denoiseFlag, const int _waitTimeNum){
+    const Vec3b l_projectionColor(_projectionNumber, _projectionNumber, _projectionNumber);
+    return captureFromLightOnGeoP_ColP(_captureImage, l_projectionColor, _procam, _denoiseFlag, _waitTimeNum);
+}
+
 ///////////////////////////////  other method ///////////////////////////////
 // プロジェクタの線形化を行うメソッド
 // input / responseOfProjector  : 線形化のルックアップテーブルを入れる配列
@@ -665,22 +687,26 @@ bool LinearizerOfProjector::calcResponseFunction(cv::Mat_<cv::Vec3b>* const _res
     *_responseMapP2I = l_responseMapP2I.clone();    // P2I
     
     //test
-//    test_responseFunction();
+    test_responseFunction();
     
     return true;
 }
 
 // 線形化出来てるかを線形化した投影光で０から２５５まで投影し，直線になるかを確認
 void LinearizerOfProjector::test_responseFunction(void){
-    //
+    // init
     ProCam* l_procam = getProCam();
     const Size* l_camSize = l_procam->getCameraSize();
     Mat l_captureImage(*l_camSize, CV_8UC3, CV_SCALAR_BLACK);
     
     for (int i = 0; i < 256; ++ i) {
-        l_procam->captureFromLinearLightOnProjectorDomain(&l_captureImage, i);
-        Vec3b l_color = l_captureImage.at<Vec3b>(100, 100);
-        _print2(i, l_color);
+        Vec3d l_mean(0,0,0), l_stddev(0,0,0);
+        captureFromLightOnGeoP_ColP(&l_captureImage, i, *l_procam);
+        meanStdDev(l_captureImage, l_mean, l_stddev);
+        
+        // output
+        std::cout << i << "\t";
+        _print_gnuplot_color2(std::cout, l_mean, l_stddev);
     }
 }
 

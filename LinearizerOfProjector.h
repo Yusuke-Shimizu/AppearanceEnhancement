@@ -17,9 +17,13 @@
 #define CMM_MAP_FILE_NAME "calibrationData/cmmMap.dat"
 #define CMM_MAP_FILE_NAME_BYTE "calibrationData/cmmMap_byte.dat"
 const char ALL_C_IMAGES_FILE_NAME_BYTE[256] = "calibrationData/allCImages_byte.dat";
-const std::string PROJECTOR_RESPONSE_C_IMAGE_PATH = "calibrationData/linearlize/img/C/";
+const std::string PROJECTOR_RESPONSE_C_IMAGE_PATH = "calibrationData/linearize/img/C/";
 
 const int PROJECTION_LUMINANCE_STEP = 1;
+
+// 最初に線形化を計算するかどうか
+const bool CALC_LINEAR_FLAG_AT_INIT = false;
+const bool SHOW_LINEAR_FLAG_AT_INIT = false;
 
 
 // 先攻宣言
@@ -65,6 +69,10 @@ public:
     ///////////////////////////////  show method ///////////////////////////////
     bool showVMap(void);
     bool showAllCImages(void);
+    ///////////////////////////////  caprj method ///////////////////////////////
+    bool captureFromLightOnGeoP_ColP(cv::Mat* const _captureImage, const cv::Mat& _projectionImage, ProCam& _procam, const bool _denoiseFlag = false, const int _waitTimeNum = SLEEP_TIME);
+    bool captureFromLightOnGeoP_ColP(cv::Mat* const _captureImage, const cv::Vec3b& _projectionColor, ProCam& _procam, const bool _denoiseFlag = false, const int _waitTimeNum = SLEEP_TIME);
+    bool captureFromLightOnGeoP_ColP(cv::Mat* const _captureImage, const uchar _projectionNumber, ProCam& _procam, const bool _denoiseFlag = false, const int _waitTimeNum = SLEEP_TIME);
     ///////////////////////////////  other method ///////////////////////////////
     bool doLinearlize(cv::Mat_<cv::Vec3b>* const _responseMap, cv::Mat_<cv::Vec3b>* const _responseMapP2I);
     bool calcColorMixingMatrix(void);

@@ -44,7 +44,6 @@ ProCam::ProCam(const int _size)
 // デストラクタ
 ProCam::~ProCam(void){
     cout << "deleting ProCam (" << this <<")" << endl;
-//    destroyWindow(WINDOW_NAME);     // 投影に使用したウィンドウを削除
     destroyAllWindows();    // ウィンドウの全削除]
 #ifdef LIB_DC1394_FLAG
     DCam_stop_capture(m_dcam);
@@ -820,7 +819,7 @@ bool ProCam::allCalibration(void){
 #endif
     
     // linearized projector
-    if ( !linearizeOfProjector() ) {
+    if ( !linearizeOfProjector(CALC_LINEAR_FLAG_AT_INIT, SHOW_LINEAR_FLAG_AT_INIT) ) {
         cerr << "linearized error of projector" << endl;
         exit(-1);
     }
@@ -856,7 +855,7 @@ bool ProCam::geometricCalibration(void){
 
 // プロジェクタの線形化を行う
 // return   : 成功したかどうか
-bool ProCam::linearizeOfProjector(void){
+bool ProCam::linearizeOfProjector(const bool _calcLinearFlag, const bool _showLinearFlag){
     // init
     const Mat* l_prjRes = getProjectorResponseI2P();
     int rows = l_prjRes->rows, cols = l_prjRes->cols;
@@ -867,32 +866,34 @@ bool ProCam::linearizeOfProjector(void){
     
     // get projector response
     LinearizerOfProjector linearPrj(this);
-#ifdef PRJ_LINEAR_CALC_FLAG
-//    loadProjectorResponseP2IForByte(PROJECTOR_RESPONSE_P2I_FILE_NAME_BYTE);
-//    loadProjectorResponseForByte(PROJECTOR_RESPONSE_I2P_FILE_NAME_BYTE);
-//    l_prjResponseI2P = m_projectorResponseI2P;
-//    l_prjResponseP2I = m_projectorResponseP2I;
-    if ( !linearPrj.doLinearlize(&l_prjResponseI2P, &l_prjResponseP2I) ) return false;    // 引数消してもいいかも
-#else
-    linearPrj.loadColorMixingMatrixOfByte(CMM_MAP_FILE_NAME_BYTE);
-    loadProjectorResponseP2IForByte(PROJECTOR_RESPONSE_P2I_FILE_NAME_BYTE);
-    loadProjectorResponseForByte(PROJECTOR_RESPONSE_I2P_FILE_NAME_BYTE);
-    linearPrj.loadAllCImages();
-#endif
+    if (_calcLinearFlag) {
+        // 引数消してもいいかも
+        if ( !linearPrj.doLinearlize(&l_prjResponseI2P, &l_prjResponseP2I) ) {
+            return false;
+        }
+    } else {
+        linearPrj.loadColorMixingMatrixOfByte(CMM_MAP_FILE_NAME_BYTE);
+        loadProjectorResponseP2IForByte(PROJECTOR_RESPONSE_P2I_FILE_NAME_BYTE);
+        loadProjectorResponseForByte(PROJECTOR_RESPONSE_I2P_FILE_NAME_BYTE);
+        linearPrj.loadAllCImages();
+        linearPrj.test_responseFunction();
+    }
+
+    // show and print
+    if (_showLinearFlag) {
+        // show
+        showProjectorResponseP2I();
+        showProjectorResponseI2P();
+        
+        // print
+        Point pt(cols*0.6/256, rows*0.6);
+        printProjectorResponseP2I(pt);
+        printProjectorResponseI2P(pt);
+        savePrintProjectorResponseP2I(PROJECTOR_RESPONSE_AT_SOME_POINT_P2I_FILE_NAME, pt);
+        savePrintProjectorResponseI2P(PROJECTOR_RESPONSE_AT_SOME_POINT_I2P_FILE_NAME, pt);
+        linearPrj.saveAllC(PROJECTOR_ALL_C_IMAGES_FILE_NAME, pt);
+    }
     
-#ifdef SHOW_LINEAR_FLAG
-    // show
-    showProjectorResponseP2I();
-    showProjectorResponseI2P();
-#endif
-    
-    // print
-    Point pt(cols*0.6/256, rows*0.6);
-//    printProjectorResponseP2I(pt);
-//    printProjectorResponseI2P(pt);
-    savePrintProjectorResponseP2I(PROJECTOR_RESPONSE_AT_SOME_POINT_P2I_FILE_NAME, pt);
-    savePrintProjectorResponseI2P(PROJECTOR_RESPONSE_AT_SOME_POINT_I2P_FILE_NAME, pt);
-    linearPrj.saveAllC(PROJECTOR_ALL_C_IMAGES_FILE_NAME, pt);
     return true;
 }
 bool ProCam::test_linearizeOfProjector(void){
@@ -1057,6 +1058,9 @@ bool ProCam::test_colorCalibration(void){
     Mat l_captureImageNC(*l_camSize, CV_64FC3, CV_SCALAR_BLACK);
     
     for (int i = 1; i < 8; ++ i) {
+        if (i == 3 || i >= 5) {
+            continue;
+        }
         const int l_col1 = i % 2;
         const int l_col2 = (i / 2) % 2;
         const int l_col3 = (i / 4) % 2;

@@ -102,6 +102,10 @@ const int CV_BUTTON_g       = CV_BUTTON_a + 6;  // 1048679;
 const int CV_BUTTON_G       = CV_BUTTON_g + CV_BUTTON_SMALL_TO_CAPITAL;
 const int CV_BUTTON_l       = CV_BUTTON_a + 11; //1048684;
 const int CV_BUTTON_L       = CV_BUTTON_l + CV_BUTTON_SMALL_TO_CAPITAL;
+const int CV_BUTTON_n       = CV_BUTTON_a + 13;
+const int CV_BUTTON_N       = CV_BUTTON_n + CV_BUTTON_SMALL_TO_CAPITAL;
+const int CV_BUTTON_p       = CV_BUTTON_a + 15;
+const int CV_BUTTON_P       = CV_BUTTON_p + CV_BUTTON_SMALL_TO_CAPITAL;
 const int CV_BUTTON_q       = CV_BUTTON_a + 16; //1048690;
 const int CV_BUTTON_Q       = CV_BUTTON_q + CV_BUTTON_SMALL_TO_CAPITAL;
 const int CV_BUTTON_r       = CV_BUTTON_a + 17; //1048690;
@@ -112,6 +116,8 @@ const int CV_BUTTON_t       = CV_BUTTON_a + 19;
 const int CV_BUTTON_T       = CV_BUTTON_t + CV_BUTTON_SMALL_TO_CAPITAL;
 const int CV_BUTTON_w       = CV_BUTTON_a + 22;
 const int CV_BUTTON_W       = CV_BUTTON_w + CV_BUTTON_SMALL_TO_CAPITAL;
+const int CV_BUTTON_y       = CV_BUTTON_a + 24;
+const int CV_BUTTON_Y       = CV_BUTTON_y + CV_BUTTON_SMALL_TO_CAPITAL;
 
 // number button
 const int CV_BUTTON_1       = CV_BUTTON_0 + 1;
@@ -216,6 +222,7 @@ bool isPosiNum(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3);
 bool isPosiNum(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4);
 
 bool isEqualPoint(const cv::Point* const p1, const cv::Point* const p2, const int length);
+bool yes_no(void);
 ///////////////////////////////  set method ///////////////////////////////
 void setColor(const cv::MatIterator_<cv::Vec3b> it, const uchar red, const uchar green, const uchar blue);
 void setColor(const cv::MatIterator_<cv::Vec3b> it, const uchar luminance);

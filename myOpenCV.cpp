@@ -161,6 +161,23 @@ bool isEqualPoint(const cv::Point* const p1, const cv::Point* const p2, const in
     return true;
 }
 
+// check button of y or n
+bool yes_no(void){
+    while (true) {
+        int l_key = cv::waitKey(-1);
+        switch (l_key) {
+            case CV_BUTTON_y:
+            case CV_BUTTON_Y:
+                return true;
+            case CV_BUTTON_n:
+            case CV_BUTTON_N:
+                return false;
+        }
+    }
+    return false;
+}
+
+
 ///////////////////////////////  set method ///////////////////////////////
 // 色のセッティング
 // it -> (red, green, blue)

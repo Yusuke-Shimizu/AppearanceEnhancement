@@ -924,11 +924,12 @@ bool AppearanceEnhancement::test_calcNextProjectionImageAtPixel(void){
 // 反射率の計算
 bool AppearanceEnhancement::calcReflectanceAtPixel(double* const _K, const double& _nC, const double& _nP, const double& _nCMax, const double& _nCMin){
     // calc
-    double l_nCest = (_nCMax - _nCMin) * _nP + _nCMin;
+    // normalized linear interpolation P
+    double l_nliP = (_nCMax - _nCMin) * _nP + _nCMin;
     // avoid 0
-    l_nCest = std::max(l_nCest, 1.0/255.0);
+    l_nliP = std::max(l_nliP, 1.0/255.0);
     const double l_nC = std::max(_nC, 1.0/255.0);
-    double l_K = l_nC / l_nCest;
+    double l_K = l_nC / l_nliP;
 //    round0to1(&l_K);
     
 //    if (l_K > 2.0) {
@@ -1708,7 +1709,13 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
         // check key
         int key = waitKey(l_stopTime);
         switch (key) {
-            // what is calibration
+            // what does calibrate
+            case (CV_BUTTON_p):
+                cout << "本当にプロジェクタを線形化しますか？(y/n)" << endl;
+                if (yes_no()) {
+                    l_procam->linearizeOfProjector(true, true);
+                }
+                break;
             case (CV_BUTTON_g):
                 l_procam->geometricCalibration();
             case (CV_BUTTON_c): // have to get Cfull and C0 after color calibration
