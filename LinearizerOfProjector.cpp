@@ -717,10 +717,11 @@ void LinearizerOfProjector::test_responseFunction(void){
         Vec3d l_mean(0,0,0), l_stddev(0,0,0);
         captureFromLightOnGeoP_ColP(&l_captureImage, i, l_procam);
         meanStdDev(l_captureImage, l_mean, l_stddev);
+        MY_IMSHOW(l_captureImage);
         
         // output
         std::cout << i << "\t";
-        _print_gnuplot_color2_l(std::cout, l_mean, l_stddev);
+        _print_gnuplot2(std::cout, l_mean, l_stddev);
         
         // save
         ofs << i << "\t";
@@ -847,9 +848,9 @@ bool LinearizerOfProjector::doRadiometricCompensation(const cv::Mat& _desiredIma
 
 bool LinearizerOfProjector::doRadiometricCompensation(const cv::Vec3b& _desiredColor, const int _waitTimeNum){
     ProCam* l_procam = getProCam();
-    const Size* l_camSize = l_procam->getCameraSize();
+    const Size l_camSize = l_procam->getCameraSize_();
     const Scalar l_color(_desiredColor);
-    Mat l_image(*l_camSize, CV_8UC3, l_color);
+    Mat l_image(l_camSize, CV_8UC3, l_color);
     return doRadiometricCompensation(l_image, _waitTimeNum);
 }
 bool LinearizerOfProjector::doRadiometricCompensation(const uchar& _desiredColorNumber, const int _waitTimeNum){

@@ -86,10 +86,7 @@ bool AppearanceEnhancement::initC0(const cv::Size& _camSize){
 }
 
 bool AppearanceEnhancement::initProCam(void){
-//    Size prjSize(PRJ_SIZE);
-//    m_procam(PRJ_SIZE);
     m_procam.allCalibration();
-//    procam.doRadiometricCompensation(100);
     return true;
 }
 

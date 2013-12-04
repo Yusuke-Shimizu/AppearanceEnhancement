@@ -19,7 +19,6 @@ const int BUFFER_NUM = 10;
 #include "common.h"
 
 //#define GEO_CAL_CALC_FLAG       // 幾何変換を計算するフラグ
-//#define PRJ_LINEAR_CALC_FLAG    // 線形化変換を計算するフラグ
 
 //#define SHOW_GEOMETRIC_CALIBRATION_MAP_FLAG // 幾何変換のマップを表示するフラグ
 //#define SHOW_LINEAR_FLAG                    // プロジェクタ線形化を表示するフラグ
@@ -129,8 +128,10 @@ public:
     ///////////////////////////////  get method ///////////////////////////////
     DCam getDCam(void);
     cv::Size* getCameraSize(void);
+    const cv::Size& getCameraSize_(void);
     int getPixelsOfCamera(void);
     cv::Size* getProjectorSize(void);
+    const cv::Size& getProjectorSize_(void);
     bool getCaptureImage(cv::Mat* const _image);
     cv::VideoCapture* getVideoCapture(void);
     const cv::Mat_<cv::Vec2i>* getAccessMapCam2Prj(void);

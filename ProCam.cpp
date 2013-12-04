@@ -438,6 +438,9 @@ DCam ProCam::getDCam(void){
 cv::Size* ProCam::getCameraSize(void){
     return &m_cameraSize;
 }
+const cv::Size& ProCam::getCameraSize_(void){
+    return m_cameraSize;
+}
 
 // カメラのピクセル数を返す
 // return   : カメラの全ピクセル数
@@ -449,6 +452,9 @@ int ProCam::getPixelsOfCamera(void){
 // m_projectorSizeの取得
 cv::Size* ProCam::getProjectorSize(void){
     return &m_projectorSize;
+}
+const cv::Size& ProCam::getProjectorSize_(void){
+    return m_projectorSize;
 }
 
 // m_videoから撮影画像を取得
@@ -1077,7 +1083,8 @@ bool ProCam::test_colorCalibration(void){
             captureOfProjecctorColorFromLinearLightOnProjectorDomain(&l_captureImage, l_color);
             captureFromLinearLightOnProjectorDomain(&l_captureImageNC, l_color);
             captureFromLightOnProjectorDomain(&l_captureImageNCNL, l_color);
-            MY_IMSHOW3(l_captureImage, l_captureImageNC, l_captureImageNCNL);
+            const Mat l_captureImage_ = l_captureImage / 255.0;
+            MY_IMSHOW3(l_captureImage_, l_captureImageNC, l_captureImageNCNL);
             
             // get mean and standard deviation
             Vec3d l_meanColor(0, 0, 0), l_stddevColor(0, 0, 0), l_meanColorNC(0, 0, 0), l_stddevColorNC(0, 0, 0), l_meanColorNCNL(0, 0, 0), l_stddevColorNCNL(0, 0, 0);
