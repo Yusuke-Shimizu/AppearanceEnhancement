@@ -686,6 +686,7 @@ bool LinearizerOfProjector::calcResponseFunction(cv::Mat_<cv::Vec3b>* const _res
     l_procam->medianBlurForProjectorResponseP2I(&l_responseMapP2I, l_responseMapP2I);
     
     // set and save
+    cout << "saving response function" << endl;
     // P2I
     l_procam->setProjectorResponseP2I(l_responseMapP2I);
     l_procam->saveProjectorResponseP2IForByte(PROJECTOR_RESPONSE_P2I_FILE_NAME_BYTE);
@@ -698,9 +699,10 @@ bool LinearizerOfProjector::calcResponseFunction(cv::Mat_<cv::Vec3b>* const _res
     // deep copy
     *_responseMap = l_responseMap.clone();          // I2P
     *_responseMapP2I = l_responseMapP2I.clone();    // P2I
+    cout << "finished saving response function" << endl;
     
     //test
-    test_responseFunction();
+//    test_responseFunction();
     
     return true;
 }
@@ -711,11 +713,11 @@ void LinearizerOfProjector::test_responseFunction(void){
     ProCam* l_procam = getProCam();
     const Size* l_camSize = l_procam->getCameraSize();
     Mat l_captureImage(*l_camSize, CV_8UC3, CV_SCALAR_BLACK);
+    
     ofstream ofs(LIN_TEST_DATA_PATH.c_str());
-
     for (int i = 0; i < 256; ++ i) {
         Vec3d l_mean(0,0,0), l_stddev(0,0,0);
-        captureFromLightOnGeoP_ColP(&l_captureImage, i, l_procam);
+        captureFromLightOnGeoP_ColP(&l_captureImage, Vec3b(i, 0, 0), l_procam);
         meanStdDev(l_captureImage, l_mean, l_stddev);
         MY_IMSHOW(l_captureImage);
         

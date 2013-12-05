@@ -62,13 +62,24 @@ const cv::Point POSITION_OF_PROJECTION_IMAGE(LINUX_PROJECTOR_DISPLAY_POS);
 #define CHECK_LINEARIZE_FILE_NAME "calibrationData/checkLinearize.dat"
 #define CHECK_COLOR_CALIBRATION_FILE_NAME "calibrationData/checkColorCalibration"
 #define WINDOW_NAME "projection image"
-const std::string PROJECTOR_RESPONSE_P2I_IMAGE_PATH = "calibrationData/linearize/img/P2I/";
+
+// 後で調整する（linear classと重複宣言してる）
+const std::string PRJ_LINEAR_PATH_ = "calibrationData/linearize/";
+const std::string LIN_IMG_PATH_ = PRJ_LINEAR_PATH_ + "img/";
+const std::string PROJECTOR_RESPONSE_C_IMAGE_PATH_ = LIN_IMG_PATH_ + "C/";
+const std::string P2I_IMAGE_PATH_ = LIN_IMG_PATH_ + "P2I/";
+const std::string LIN_DATA_PATH_ = PRJ_LINEAR_PATH_ + "data/";
+const std::string LIN_TEST_DATA_PATH_ = LIN_DATA_PATH_ + "linearCheck.dat";
+
+const std::string PROJECTOR_RESPONSE_P2I_IMAGE_PATH = LIN_IMG_PATH_ + "P2I/";
+const std::string P2I_DATA_PATH = LIN_DATA_PATH_ + "P2I.dat";
 
 const uchar INIT_RES_NUM = 0;   // 応答特性の初期値
 
 // 先攻宣言
 class GeometricCalibration;
 class LinearizerOfProjector;
+
 
 class ProCam{
 private:
@@ -151,6 +162,7 @@ public:
     bool savePrintProjectorResponse(const char* fileName, const cv::Point& _pt, const cv::Mat& _prjRes);
     bool savePrintProjectorResponseI2P(const char* fileName, const cv::Point& _pt);
     bool savePrintProjectorResponseP2I(const char* fileName, const cv::Point& _pt);
+    bool saveRelationP_I(void);
     ///////////////////////////////  load method ///////////////////////////////
 //    bool loadAccessMapCam2Pro(void);
     bool loadAccessMapCam2Prj(void);

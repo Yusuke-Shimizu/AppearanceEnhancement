@@ -711,6 +711,27 @@ bool ProCam::savePrintProjectorResponseP2I(const char* fileName, const cv::Point
     return savePrintProjectorResponse(fileName, _pt, *l_responseMap);
 }
 
+// PとIの関係を出力
+bool ProCam::saveRelationP_I(void){
+    const Size l_cameraSize = getCameraSize_();
+    Mat l_P(l_cameraSize, CV_8UC3, CV_SCALAR_BLACK), l_I(l_cameraSize, CV_8UC3, CV_SCALAR_BLACK);
+    Scalar l_mean(0,0,0,0), l_stddev(0,0,0,0);
+    ofstream ofs(P2I_DATA_PATH.c_str());
+    
+    for (int i = 0; i < 256; ++ i) {
+        l_P = cv::Scalar(i, i, i, 0);
+        convertPtoI(&l_I, l_P);
+        meanStdDev(l_I, l_mean, l_stddev);
+        
+        // output
+        std::cout << i << "\t";
+        _print_gnuplot2(std::cout, l_mean, l_stddev);
+        ofs << i << "\t";
+        _print_gnuplot_color2_l(ofs, l_mean, l_stddev);
+    }
+    return true;
+}
+
 ///////////////////////////////  load method ///////////////////////////////
 bool ProCam::loadAccessMapCam2Prj(void){
     cout << "loading look up table..." << endl;
@@ -1978,7 +1999,7 @@ bool ProCam::medianBlurForProjectorResponseP2I(cv::Mat* const _dst, const cv::Ma
         getImageProjectorResponseP2I(&l_image, _src, i);
         medianBlur(l_image, l_image, 7);
         ostringstream oss;
-        oss << PROJECTOR_RESPONSE_P2I_IMAGE_PATH << i << ".png" << endl;
+        oss << PROJECTOR_RESPONSE_P2I_IMAGE_PATH << i << ".png";
         imwrite(oss.str().c_str(), l_image);
         setImageProjectorResponseP2I(_dst, l_image, i);
     }
@@ -1987,6 +2008,11 @@ bool ProCam::medianBlurForProjectorResponseP2I(cv::Mat* const _dst, const cv::Ma
 }
 bool ProCam::test_medianBlurForProjectorResponseP2I(void){
     Mat l_imageMap(10, 2560, CV_8UC3, CV_SCALAR_BLACK);
+    for (int y = 0; y < 10; ++ y) {
+        for (int x = 0; x < 10; ++ x) {
+            l_imageMap.at<Vec3b>(x, y * 256 + 5) = CV_VEC3B_BLUE;
+        }
+    }
     for (int i = 0; i < 2560; ++ i) {
         l_imageMap.at<Vec3b>(i % 10, i) = CV_VEC3B_WHITE;
     }
