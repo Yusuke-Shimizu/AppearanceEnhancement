@@ -712,7 +712,7 @@ bool ProCam::savePrintProjectorResponseP2I(const char* fileName, const cv::Point
 }
 
 // PとIの関係を出力
-bool ProCam::saveRelationP_I(void){
+bool ProCam::saveRelationP2I(void){
     const Size l_cameraSize = getCameraSize_();
     Mat l_P(l_cameraSize, CV_8UC3, CV_SCALAR_BLACK), l_I(l_cameraSize, CV_8UC3, CV_SCALAR_BLACK);
     Scalar l_mean(0,0,0,0), l_stddev(0,0,0,0);
@@ -903,7 +903,8 @@ bool ProCam::linearizeOfProjector(const bool _calcLinearFlag, const bool _showLi
         loadProjectorResponseP2IForByte(PROJECTOR_RESPONSE_P2I_FILE_NAME_BYTE);
         loadProjectorResponseForByte(PROJECTOR_RESPONSE_I2P_FILE_NAME_BYTE);
         linearPrj.loadAllCImages();
-        linearPrj.test_responseFunction();
+//        linearPrj.test_responseFunction();
+        linearPrj.saveEstimatedC();
     }
 
     // show and print

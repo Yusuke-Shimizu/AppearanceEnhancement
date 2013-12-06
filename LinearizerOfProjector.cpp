@@ -299,6 +299,46 @@ bool LinearizerOfProjector::saveAllCImages(const char* _fileName){
     return true;
 }
 
+// C=VPからVPを計算し推定したCを出力
+bool LinearizerOfProjector::saveEstimatedC(void){
+    ProCam* l_procam = getProCam();
+    const Size l_camSize = l_procam->getCameraSize_();
+    Mat l_estimatedC(l_camSize, CV_64FC3, CV_SCALAR_BLACK);
+    
+    for (int i = 1; i < 8; ++ i) {
+        if (i == 3 || i >= 5) {
+            continue;
+        }
+        const int l_col1 = i % 2;
+        const int l_col2 = (i / 2) % 2;
+        const int l_col3 = (i / 4) % 2;
+        Vec3b l_mask(l_col3, l_col2, l_col1);
+        ostringstream oss;
+        oss <<EST_C_DATA_PATH << l_col3 << l_col2 << l_col1 << ".dat";
+        cout << oss.str() << endl;
+        ofstream ofs(oss.str().c_str());
+        
+        for (int prj = 0; prj < 256; ++ prj) {
+            // make C
+            Vec3b l_color(prj * l_mask[0], prj * l_mask[1], prj * l_mask[2]);
+            estimateC(&l_estimatedC, l_color);
+            
+            // get mean and standard deviation
+            Vec3d l_mean(0, 0, 0), l_stddev(0, 0, 0);
+            meanStdDev(l_estimatedC, l_mean, l_stddev);
+            
+            // print
+            std::cout << prj << "\t";
+            _print_gnuplot2(std::cout, l_mean, l_stddev);
+            ofs << prj << "\t";
+            _print_gnuplot_color2_l(ofs, l_mean, l_stddev);
+        }
+        ofs.close();
+    }
+
+    return true;
+}
+
 ///////////////////////////////  load method ///////////////////////////////
 //
 bool LinearizerOfProjector::loadColorMixingMatrixOfByte(const char* fileName){
@@ -436,6 +476,151 @@ bool LinearizerOfProjector::captureFromLinearLightOnGeoP_ColP(cv::Mat* const _ca
     return true;
 }
 
+//////////////////////////////  convert method //////////////////////////////
+bool LinearizerOfProjector::convertColorSpace(cv::Mat* const _dst, const cv::Mat& _src, const bool _useVFlag){
+    // init
+    const Mat_<Vec9d>* l_VMap = getColorMixMatMap();
+    
+    // error processing
+    if (!isEqualSize(*_dst, _src, *l_VMap)) {
+        cerr << "different size or type" << endl;
+        _print_mat_propaty(*_dst);
+        _print_mat_propaty(_src);
+        _print_mat_propaty(*l_VMap);
+        exit(-1);
+    }
+    
+    // scanning all pixel
+    Mat l_prjImg(_dst->rows, _dst->cols, CV_8UC3, CV_SCALAR_BLACK);
+    int rows = _src.rows, cols = _src.cols;
+    if (isContinuous(*_dst, _src)) {
+        cols *= rows;
+        rows = 1;
+    }
+    for (int y = 0; y < rows; ++ y) {
+        Vec3b* l_pPrjImg = l_prjImg.ptr<Vec3b>(y);
+        const Vec3b* l_pCamImg = _src.ptr<Vec3b>(y);
+        const Vec9d* l_pVMap = l_VMap->ptr<Vec9d>(y);
+        
+        for (int x = 0; x < cols; ++ x) {
+            // bgr -> rgb
+            Vec3b l_rgbC(0, 0, 0);
+            convertBGRtoRGB(&l_rgbC, l_pCamImg[x]);
+            
+            // Vec -> Mat
+            Mat_<double> l_V(3, 3, CV_64FC1);
+            convertVecToMat(&l_V, l_pVMap[x]);
+            Mat l_C(l_rgbC);
+            
+            // uchar -> double
+            l_C.convertTo(l_C, CV_64FC1, 1.0 / 255.0);
+            
+            // get convert matrix
+            Mat l_convertMat = l_V.inv();
+            if (_useVFlag) {
+                l_convertMat = l_V;
+            }
+            
+            // P = V^{-1}C
+            Mat l_P(3, 1, CV_64FC1);
+            l_P = l_convertMat * l_C;
+            
+            // double -> uchar
+            l_P.convertTo(l_P, CV_8UC1, 255);
+            
+            // Mat -> Vec
+            Vec3b l_vecP(l_P);
+            
+            // rgb -> bgr
+            Vec3b l_bgrP(0, 0, 0);
+            convertRGBtoBGR(&l_bgrP, l_vecP);
+            
+            // copy
+            l_pPrjImg[x] = l_bgrP;
+        }
+    }
+    
+    // deep copy
+    *_dst = l_prjImg.clone();
+    
+    return true;
+}
+
+// P = V^{-1} * C を計算して，CからPを算出する
+// output / _prjImg : P
+// input / _camImg  : C
+// return           : 成功したかどうか
+bool LinearizerOfProjector::convertCameraImageToProjectorOne(cv::Mat* const _prjImg, const cv::Mat&  _camImg){
+    // init
+    const Mat_<Vec9d>* l_VMap = getColorMixMatMap();
+    
+    // error processing
+    if (!isEqualSize(*_prjImg, _camImg, *l_VMap)) {
+        cerr << "different size or type" << endl;
+        _print_mat_propaty(*_prjImg);
+        _print_mat_propaty(_camImg);
+        _print_mat_propaty(*l_VMap);
+        exit(-1);
+    }
+    
+    // scanning all pixel
+    Mat l_prjImg(_prjImg->rows, _prjImg->cols, CV_8UC3, CV_SCALAR_BLACK);
+    int rows = _camImg.rows, cols = _camImg.cols;
+    if (isContinuous(*_prjImg, _camImg)) {
+        cols *= rows;
+        rows = 1;
+    }
+    for (int y = 0; y < rows; ++ y) {
+        Vec3b* l_pPrjImg = l_prjImg.ptr<Vec3b>(y);
+        const Vec3b* l_pCamImg = _camImg.ptr<Vec3b>(y);
+        const Vec9d* l_pVMap = l_VMap->ptr<Vec9d>(y);
+        
+        for (int x = 0; x < cols; ++ x) {
+            // bgr -> rgb
+            Vec3b l_rgbC(0, 0, 0);
+            convertBGRtoRGB(&l_rgbC, l_pCamImg[x]);
+            
+            // Vec -> Mat
+            Mat_<double> l_V(3, 3, CV_64FC1);
+            convertVecToMat(&l_V, l_pVMap[x]);
+            Mat l_C(l_rgbC);
+            
+            // uchar -> double
+            l_C.convertTo(l_C, CV_64FC1, 1.0 / 255.0);
+            
+            // get inverse V
+            Mat l_invV = l_V.inv();
+            
+            // P = V^{-1}C
+            Mat l_P(3, 1, CV_64FC1);
+            l_P = l_invV * l_C;
+            
+            // double -> uchar
+            l_P.convertTo(l_P, CV_8UC1, 255);
+            
+            // Mat -> Vec
+            Vec3b l_vecP(l_P);
+            
+            // rgb -> bgr
+            Vec3b l_bgrP(0, 0, 0);
+            convertRGBtoBGR(&l_bgrP, l_vecP);
+            
+            // copy
+            l_pPrjImg[x] = l_bgrP;
+        }
+    }
+    
+    // deep copy
+    *_prjImg = l_prjImg.clone();
+    
+    return true;
+}
+
+//
+bool LinearizerOfProjector::convertColorSpaceUseV(cv::Mat* const _dst, const cv::Mat& _src){
+    convertColorSpace(_dst, _src, true);
+    return true;
+}
 
 ///////////////////////////////  other method ///////////////////////////////
 // プロジェクタの線形化を行うメソッド
@@ -695,6 +880,8 @@ bool LinearizerOfProjector::calcResponseFunction(cv::Mat_<cv::Vec3b>* const _res
     l_procam->saveProjectorResponseForByte(PROJECTOR_RESPONSE_I2P_FILE_NAME_BYTE);
     // all C images
     saveAllCImages();
+    // estimated C
+    saveEstimatedC();
     
     // deep copy
     *_responseMap = l_responseMap.clone();          // I2P
@@ -859,72 +1046,12 @@ bool LinearizerOfProjector::doRadiometricCompensation(const uchar& _desiredColor
     return doRadiometricCompensation(Vec3b(_desiredColorNumber, _desiredColorNumber, _desiredColorNumber), _waitTimeNum);
 }
 
-// P = V^{-1} * C を計算して，CからPを算出する
-// output / _prjImg : P
-// input / _camImg  : C
-// return           : 成功したかどうか
-bool LinearizerOfProjector::convertCameraImageToProjectorOne(cv::Mat* const _prjImg, const cv::Mat&  _camImg){
-    // init
-    const Mat_<Vec9d>* l_VMap = getColorMixMatMap();
-    
-    // error processing
-    if (!isEqualSize(*_prjImg, _camImg, *l_VMap)) {
-        cerr << "different size or type" << endl;
-        _print_mat_propaty(*_prjImg);
-        _print_mat_propaty(_camImg);
-        _print_mat_propaty(*l_VMap);
-        exit(-1);
-    }
-    
-    // scanning all pixel
-    Mat l_prjImg(_prjImg->rows, _prjImg->cols, CV_8UC3, CV_SCALAR_BLACK);
-    int rows = _camImg.rows, cols = _camImg.cols;
-    if (isContinuous(*_prjImg, _camImg)) {
-        cols *= rows;
-        rows = 1;
-    }
-    for (int y = 0; y < rows; ++ y) {
-        Vec3b* l_pPrjImg = l_prjImg.ptr<Vec3b>(y);
-        const Vec3b* l_pCamImg = _camImg.ptr<Vec3b>(y);
-        const Vec9d* l_pVMap = l_VMap->ptr<Vec9d>(y);
-        
-        for (int x = 0; x < cols; ++ x) {
-            // bgr -> rgb
-            Vec3b l_rgbC(0, 0, 0);
-            convertBGRtoRGB(&l_rgbC, l_pCamImg[x]);
-            
-            // Vec -> Mat
-            Mat_<double> l_V(3, 3, CV_64FC1);
-            convertVecToMat(&l_V, l_pVMap[x]);
-            Mat l_C(l_rgbC);
-            
-            // uchar -> double
-            l_C.convertTo(l_C, CV_64FC1, 1.0 / 255.0);
-            
-            // get inverse V
-            Mat l_invV = l_V.inv();
-
-            // P = V^{-1}C
-            Mat l_P(3, 1, CV_64FC1);
-            l_P = l_invV * l_C;
-            
-            // double -> uchar
-            l_P.convertTo(l_P, CV_8UC1, 255);
-            
-            // Mat -> Vec
-            Vec3b l_vecP(l_P);
-            
-            // rgb -> bgr
-            Vec3b l_bgrP(0, 0, 0);
-            convertRGBtoBGR(&l_bgrP, l_vecP);
-            
-            // copy
-            l_pPrjImg[x] = l_bgrP;
-        }
-    }
-    
-    // deep copy
-    *_prjImg = l_prjImg.clone();
-    
-    return true;
+bool LinearizerOfProjector::estimateC(cv::Mat* const _estC, const cv::Vec3b& _P){
+    ProCam* l_procam = getProCam();
+    const Size l_camSize = l_procam->getCameraSize_();
+    const Mat l_PImage(l_camSize, CV_8UC3, cv::Scalar(_P));
+    return estimateC(_estC, l_PImage);
+}
+bool LinearizerOfProjector::estimateC(cv::Mat* const _estC, const cv::Mat& _P){
+    return convertColorSpaceUseV(_estC, _P);
 }

@@ -162,7 +162,7 @@ public:
     bool savePrintProjectorResponse(const char* fileName, const cv::Point& _pt, const cv::Mat& _prjRes);
     bool savePrintProjectorResponseI2P(const char* fileName, const cv::Point& _pt);
     bool savePrintProjectorResponseP2I(const char* fileName, const cv::Point& _pt);
-    bool saveRelationP_I(void);
+    bool saveRelationP2I(void);
     ///////////////////////////////  load method ///////////////////////////////
 //    bool loadAccessMapCam2Pro(void);
     bool loadAccessMapCam2Prj(void);

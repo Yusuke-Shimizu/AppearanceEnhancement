@@ -23,6 +23,7 @@ const std::string PROJECTOR_RESPONSE_C_IMAGE_PATH = LIN_IMG_PATH + "C/";
 const std::string P2I_IMAGE_PATH = LIN_IMG_PATH + "P2I/";
 const std::string LIN_DATA_PATH = PRJ_LINEAR_PATH + "data/";
 const std::string LIN_TEST_DATA_PATH = LIN_DATA_PATH + "linearCheck.dat";
+const std::string EST_C_DATA_PATH = LIN_DATA_PATH + "estC.dat";
 
 const int PROJECTION_LUMINANCE_STEP = 1;
 
@@ -68,6 +69,7 @@ public:
     bool saveColorMixingMatrixOfByte(const char* _fileName);
     bool saveAllC(const char* _fileName, const cv::Point& _pt);
     bool saveAllCImages(const char* _fileName = ALL_C_IMAGES_FILE_NAME_BYTE);
+    bool saveEstimatedC(void);
     ///////////////////////////////  load method ///////////////////////////////
     bool loadColorMixingMatrixOfByte(const char* fileName);
     bool loadAllCImages(const char* _fileName = ALL_C_IMAGES_FILE_NAME_BYTE);
@@ -82,6 +84,10 @@ public:
     bool captureFromLinearLightOnGeoP_ColP(cv::Mat* const _captureImage, const cv::Mat& _projectionImage, ProCam* _procam, const bool _denoiseFlag = false, const int _waitTimeNum = SLEEP_TIME);
     bool captureFromLinearLightOnGeoP_ColP(cv::Mat* const _captureImage, const cv::Vec3b& _projectionColor, ProCam* _procam, const bool _denoiseFlag = false, const int _waitTimeNum = SLEEP_TIME);
     bool captureFromLinearLightOnGeoP_ColP(cv::Mat* const _captureImage, const uchar _projectionNumber, ProCam* _procam, const bool _denoiseFlag = false, const int _waitTimeNum = SLEEP_TIME);
+    //////////////////////////////  convert method //////////////////////////////
+    bool convertColorSpace(cv::Mat* const _dst, const cv::Mat& _src, const bool _useVFlag);
+    bool convertCameraImageToProjectorOne(cv::Mat* const _prjImg, const cv::Mat&  _camImg);
+    bool convertColorSpaceUseV(cv::Mat* const _dst, const cv::Mat& _src);
     ///////////////////////////////  other method ///////////////////////////////
     bool doLinearlize(cv::Mat_<cv::Vec3b>* const _responseMap, cv::Mat_<cv::Vec3b>* const _responseMapP2I);
     bool calcColorMixingMatrix(void);
@@ -95,7 +101,8 @@ public:
     bool doRadiometricCompensation(const cv::Mat& _desiredImage, const int _waitTimeNum = SLEEP_TIME);
     bool doRadiometricCompensation(const cv::Vec3b& _desiredColor, const int _waitTimeNum = SLEEP_TIME);
     bool doRadiometricCompensation(const uchar& _desiredColorNumber, const int _waitTimeNum = SLEEP_TIME);
-    bool convertCameraImageToProjectorOne(cv::Mat* const _prjImg, const cv::Mat&  _camImg);
+    bool estimateC(cv::Mat* const _estC, const cv::Vec3b& _P);
+    bool estimateC(cv::Mat* const _estC, const cv::Mat& _P);
 };
 
 #endif /* defined(__cameraBase03__LinearizerOfProjector__) */
