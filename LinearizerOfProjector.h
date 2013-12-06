@@ -23,7 +23,7 @@ const std::string PROJECTOR_RESPONSE_C_IMAGE_PATH = LIN_IMG_PATH + "C/";
 const std::string P2I_IMAGE_PATH = LIN_IMG_PATH + "P2I/";
 const std::string LIN_DATA_PATH = PRJ_LINEAR_PATH + "data/";
 const std::string LIN_TEST_DATA_PATH = LIN_DATA_PATH + "linearCheck.dat";
-const std::string EST_C_DATA_PATH = LIN_DATA_PATH + "estC.dat";
+const std::string EST_C_DATA_PATH = LIN_DATA_PATH + "estC";
 
 const int PROJECTION_LUMINANCE_STEP = 1;
 

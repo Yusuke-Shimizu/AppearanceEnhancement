@@ -732,6 +732,46 @@ bool ProCam::saveRelationP2I(void){
     return true;
 }
 
+bool ProCam::saveRelationI2C(void){
+    const Size* l_camSize = getCameraSize();
+    Mat l_captureImage(*l_camSize, CV_64FC3, CV_SCALAR_BLACK);
+    Mat l_captureImageNC(*l_camSize, CV_64FC3, CV_SCALAR_BLACK);
+    Mat l_captureImageNCNL(*l_camSize, CV_64FC3, CV_SCALAR_BLACK);
+    
+    for (int i = 1; i < 8; ++ i) {
+        if (i == 3 || i >= 5) {
+            continue;
+        }
+        const int l_col1 = i % 2;
+        const int l_col2 = (i / 2) % 2;
+        const int l_col3 = (i / 4) % 2;
+        Vec3b l_mask(l_col3, l_col2, l_col1);
+        ostringstream oss;
+        oss <<I2C_DATA_PATH << l_col3 << l_col2 << l_col1 << ".dat";
+        cout << oss.str() << endl;
+        ofstream ofs(oss.str().c_str());
+        
+        for (int prj = 0; prj < 256; ++ prj) {
+            // capture
+            Vec3b l_color(prj * l_mask[0], prj * l_mask[1], prj * l_mask[2]);
+            captureFromLightOnProjectorDomain(&l_captureImageNCNL, l_color);
+            MY_IMSHOW(l_captureImageNCNL);
+            
+            // get mean and standard deviation
+            Vec3d l_meanColor(0, 0, 0), l_stddevColor(0, 0, 0);
+            meanStdDev(l_captureImageNCNL, l_meanColor, l_stddevColor);
+            
+            // print
+            std::cout << prj << "\t";
+            _print_gnuplot2(std::cout, l_meanColor, l_stddevColor);
+            ofs << prj << "\t";
+            _print_gnuplot_color2_l(ofs, l_meanColor, l_stddevColor);
+        }
+        ofs.close();
+    }
+    return true;
+}
+
 ///////////////////////////////  load method ///////////////////////////////
 bool ProCam::loadAccessMapCam2Prj(void){
     cout << "loading look up table..." << endl;

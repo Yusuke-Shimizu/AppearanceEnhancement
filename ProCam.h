@@ -60,11 +60,17 @@ const cv::Point POSITION_OF_PROJECTION_IMAGE(LINUX_PROJECTOR_DISPLAY_POS);
 #define PROJECTOR_RESPONSE_AT_SOME_POINT_P2I_FILE_NAME "calibrationData/projectorResponseAtSomePointP2I.dat"
 #define PROJECTOR_ALL_C_IMAGES_FILE_NAME "calibrationData/allCImages.dat"
 #define CHECK_LINEARIZE_FILE_NAME "calibrationData/checkLinearize.dat"
-#define CHECK_COLOR_CALIBRATION_FILE_NAME "calibrationData/checkColorCalibration"
+//#define CHECK_COLOR_CALIBRATION_FILE_NAME "calibrationData/checkColorCalibration"
 #define WINDOW_NAME "projection image"
 
+const std::string CALIB_DATA_PATH = "calibrationData/";
+const std::string COLOR_CALIB_PATH = CALIB_DATA_PATH + "colorCalibration/";
+const std::string CHECK_COLOR_CALIBRATION_FILE_NAME = COLOR_CALIB_PATH + "checkColorCalibration";
+
+const std::string I2C_DATA_PATH = CALIB_DATA_PATH + "I2C";
+
 // 後で調整する（linear classと重複宣言してる）
-const std::string PRJ_LINEAR_PATH_ = "calibrationData/linearize/";
+const std::string PRJ_LINEAR_PATH_ = CALIB_DATA_PATH + "linearize/";
 const std::string LIN_IMG_PATH_ = PRJ_LINEAR_PATH_ + "img/";
 const std::string PROJECTOR_RESPONSE_C_IMAGE_PATH_ = LIN_IMG_PATH_ + "C/";
 const std::string P2I_IMAGE_PATH_ = LIN_IMG_PATH_ + "P2I/";
@@ -163,6 +169,7 @@ public:
     bool savePrintProjectorResponseI2P(const char* fileName, const cv::Point& _pt);
     bool savePrintProjectorResponseP2I(const char* fileName, const cv::Point& _pt);
     bool saveRelationP2I(void);
+    bool saveRelationI2C(void);
     ///////////////////////////////  load method ///////////////////////////////
 //    bool loadAccessMapCam2Pro(void);
     bool loadAccessMapCam2Prj(void);

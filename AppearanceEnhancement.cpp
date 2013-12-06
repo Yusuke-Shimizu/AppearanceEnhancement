@@ -1788,6 +1788,9 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
             case (CV_BUTTON_4):
                 l_enhanceType = 1;
                 break;
+            case (CV_BUTTON_9):
+                l_procam->saveRelationI2C();
+                break;
             // check calibration
             case (CV_BUTTON_t):
                 l_procam->test_colorCalibration();
