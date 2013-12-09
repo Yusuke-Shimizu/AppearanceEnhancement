@@ -1709,7 +1709,7 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
             case (CV_BUTTON_p):
                 cout << "本当にプロジェクタを線形化しますか？(y/n)" << endl;
                 if (yes_no()) {
-                    l_procam->linearizeOfProjector(true, true);
+                    l_procam->linearizeOfProjector(true, false);
                 }
                 break;
             case (CV_BUTTON_g):

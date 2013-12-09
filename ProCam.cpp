@@ -875,9 +875,16 @@ bool ProCam::loadProjectorResponseP2IForByte(const char* fileName){
 bool ProCam::allCalibration(void){
     // geometri calibration
 #ifdef GEO_CAL_CALC_FLAG
-    if ( !geometricCalibration() ) {
-        cerr << "geometric calibration error" << endl;
-        return false;
+    while (true) {
+        if ( !geometricCalibration() ) {
+            cerr << "geometric calibration error" << endl;
+            return false;
+        }
+        
+        cout << "Calibration is ok?" << endl;
+        if (yes_no()) {
+            break;
+        }
     }
 #else
     // load
