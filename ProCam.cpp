@@ -735,8 +735,6 @@ bool ProCam::saveRelationP2I(void){
 bool ProCam::saveRelationI2C(void){
     const Size* l_camSize = getCameraSize();
     Mat l_captureImage(*l_camSize, CV_64FC3, CV_SCALAR_BLACK);
-    Mat l_captureImageNC(*l_camSize, CV_64FC3, CV_SCALAR_BLACK);
-    Mat l_captureImageNCNL(*l_camSize, CV_64FC3, CV_SCALAR_BLACK);
     
     for (int i = 1; i < 8; ++ i) {
         if (i == 3 || i >= 5) {
@@ -753,19 +751,20 @@ bool ProCam::saveRelationI2C(void){
         
         for (int prj = 0; prj < 256; ++ prj) {
             // capture
-            Vec3b l_color(prj * l_mask[0], prj * l_mask[1], prj * l_mask[2]);
-            captureFromLightOnProjectorDomain(&l_captureImageNCNL, l_color);
-            MY_IMSHOW(l_captureImageNCNL);
+//            Vec3b l_color(prj * l_mask[0], prj * l_mask[1], prj * l_mask[2]);
+            Vec3b l_color = prj * l_mask;
+            captureFromLightOnProjectorDomain(&l_captureImage, l_color);
+            MY_IMSHOW(l_captureImage);
             
             // get mean and standard deviation
-            Vec3d l_meanColor(0, 0, 0), l_stddevColor(0, 0, 0);
-            meanStdDev(l_captureImageNCNL, l_meanColor, l_stddevColor);
+            Vec3d l_mean(0, 0, 0), l_stddev(0, 0, 0);
+            meanStdDev(l_captureImage, l_mean, l_stddev);
             
             // print
             std::cout << prj << "\t";
-            _print_gnuplot2(std::cout, l_meanColor, l_stddevColor);
+            _print_gnuplot2(std::cout, l_mean, l_stddev);
             ofs << prj << "\t";
-            _print_gnuplot_color2_l(ofs, l_meanColor, l_stddevColor);
+            _print_gnuplot_color2_l(ofs, l_mean, l_stddev);
         }
         ofs.close();
     }
@@ -1675,15 +1674,18 @@ bool ProCam::interpolationProjectorResponseP2I(cv::Mat* const _prjRes){
                         // 上端の検索
                         uchar p1 = p + 1, i1 = 0;
                         for (; ; ++ p1) {
+                            cout << (int)p1 << endl;
                             if (l_pPrjRes[x * 256 + p1][c] != INIT_RES_NUM || p1 == 255) {
                                 i1 = l_pPrjRes[x * 256 + p1][c];
+                                cout << "top is " << (int)p1 << endl;
+                                cout << "bottom is " << (int)p << endl;
                                 break;
                             }
                         }
-                        if (p == 1 && p1 == 255) {
-                            l_pPrjRes[x * 256 + p1][c] = INIT_RES_NUM;
-                            break;
-                        }
+//                        if (p == 1 && p1 == 255) {
+//                            l_pPrjRes[x * 256 + p1][c] = INIT_RES_NUM;
+//                            break;
+//                        }
                         
                         // 抜けていた箇所全てを修復
                         for (int p_current = p; p_current < p1; ++ p_current) {
@@ -1707,12 +1709,15 @@ bool ProCam::interpolationProjectorResponseP2I(cv::Mat* const _prjRes){
 bool ProCam::test_interpolationProjectorResponseP2I(void){
     Mat m1(2, 256, CV_8UC3, Scalar(INIT_RES_NUM, INIT_RES_NUM, INIT_RES_NUM));
 //    m1.at<Vec3b>(0, 255) = Vec3b(127, 127, 127);
-//    m1.at<Vec3b>(1, 255) = Vec3b(0, 0, 0);
+//    m1.at<Vec3b>(1, 255) = Vec3b(0, 0, 0);ls
     for (int i = 0; i < 256; i += 5) {
         m1.at<Vec3b>(0, i) = Vec3b(i, i, i);
         m1.at<Vec3b>(1, i) = Vec3b(0, 0, 0);
+        if (i > 128) {
+            m1.at<Vec3b>(1, i) = CV_VEC3B_WHITE;
+        }
     }
-    m1.at<Vec3b>(1, 255) = Vec3b(255, 255, 255);
+//    m1.at<Vec3b>(1, 255) = Vec3b(255, 255, 255);
     _print(m1);
     interpolationProjectorResponseP2I(&m1);
     _print(m1);

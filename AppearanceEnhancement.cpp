@@ -24,6 +24,7 @@ AppearanceEnhancement::AppearanceEnhancement(const double& _CMaxNum, const doubl
 :m_K(3, 1, CV_8UC1), m_F(3, 1, CV_8UC1), m_Cfull(3, 1, CV_8UC1), m_C0(3, 1, CV_8UC1)
 {
 //    m_procam.test_medianBlurForProjectorResponseP2I();
+    m_procam.test_interpolationProjectorResponseP2I();
     srand((unsigned) time(NULL));
 }
 AppearanceEnhancement::AppearanceEnhancement(const cv::Size& _prjSize)

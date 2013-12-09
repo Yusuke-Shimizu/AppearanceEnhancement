@@ -661,19 +661,26 @@ bool LinearizerOfProjector::calcColorMixingMatrix(void){
     cv::Mat white_cap    (*cameraSize, depth8x3, CV_SCALAR_BLACK);
 
     // capture from some color light
-    procam->captureFromLightOnProjectorDomain(&black_cap, CV_VEC3B_BLACK, true, SLEEP_TIME * 5);
-    procam->captureFromLightOnProjectorDomain(&red_cap, CV_VEC3B_RED, true);
-    procam->captureFromLightOnProjectorDomain(&green_cap, CV_VEC3B_GREEN, true);
-    procam->captureFromLightOnProjectorDomain(&blue_cap, CV_VEC3B_BLUE, true);
-    procam->captureFromLightOnProjectorDomain(&white_cap, CV_VEC3B_WHITE, true);
+    while (true) {
+        procam->captureFromLightOnProjectorDomain(&black_cap, CV_VEC3B_BLACK, true, SLEEP_TIME * 5);
+        procam->captureFromLightOnProjectorDomain(&red_cap, CV_VEC3B_RED, true);
+        procam->captureFromLightOnProjectorDomain(&green_cap, CV_VEC3B_GREEN, true);
+        procam->captureFromLightOnProjectorDomain(&blue_cap, CV_VEC3B_BLUE, true);
+        procam->captureFromLightOnProjectorDomain(&white_cap, CV_VEC3B_WHITE, true);
+        
+        // show image
+        imshow("black_cap", black_cap);
+        imshow("red_cap", red_cap);
+        imshow("green_cap", green_cap);
+        imshow("blue_cap", blue_cap);
+        imshow("white_cap", white_cap);
+        waitKey(30);
 
-    // show image
-    imshow("black_cap", black_cap);
-    imshow("red_cap", red_cap);
-    imshow("green_cap", green_cap);
-    imshow("blue_cap", blue_cap);
-    imshow("white_cap", white_cap);
-    waitKey(30);
+        cout << "キャリブレーションは正しいですか？(y/n)" << endl;
+        if (yes_no()) {
+            break;
+        }
+    }
     
     // translate bit depth (uchar[0-255] -> double[0-1])
     uchar depth64x3 = CV_64FC3;
