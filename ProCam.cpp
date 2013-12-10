@@ -1681,11 +1681,11 @@ bool ProCam::interpolationProjectorResponseP2I(cv::Mat* const _prjRes){
                         // 上端の検索
                         uchar p1 = p + 1, i1 = 0;
                         for (; ; ++ p1) {
-                            cout << (int)p1 << endl;
+//                            cout << (int)p1 << endl;
                             if (l_pPrjRes[x * 256 + p1][c] != INIT_RES_NUM || p1 == 255) {
                                 i1 = l_pPrjRes[x * 256 + p1][c];
-                                cout << "top is " << (int)p1 << endl;
-                                cout << "bottom is " << (int)p << endl;
+//                                cout << "top is " << (int)p1 << endl;
+//                                cout << "bottom is " << (int)p << endl;
                                 break;
                             }
                         }

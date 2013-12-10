@@ -168,9 +168,11 @@ bool yes_no(void){
         switch (l_key) {
             case CV_BUTTON_y:
             case CV_BUTTON_Y:
+                std::cout << "yes" << std::endl;
                 return true;
             case CV_BUTTON_n:
             case CV_BUTTON_N:
+                std::cout << "no" << std::endl;
                 return false;
         }
     }

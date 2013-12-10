@@ -93,6 +93,7 @@ public:
     bool calcColorMixingMatrix(void);
     bool calcMoreDetailColorMixingMatrix(void);
     bool createVMap(const cv::Mat& _normalR2BL, const cv::Mat& _normalG2BL, const cv::Mat& _normalB2BL);
+    bool test_createVMap(void);
     bool calcResponseFunction(cv::Mat_<cv::Vec3b>* const _responseMap, cv::Mat_<cv::Vec3b>* const _responseMapP2I);
     void test_responseFunction(void);
     bool convertCImage2PImage(cv::Mat_<cv::Vec3b>* const _PImageOnCameraDomain, const cv::Mat_<cv::Vec3b>& _CImage);

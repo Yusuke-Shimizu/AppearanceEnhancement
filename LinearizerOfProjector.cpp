@@ -802,27 +802,47 @@ bool LinearizerOfProjector::createVMap(const cv::Mat& _normalR2BL, const cv::Mat
     Mat V = Mat::zeros(3, 3, CV_64FC1);
     Vec9d l_VVec(0, 0, 0, 0, 0, 0, 0, 0, 0);
     for (int y = 0; y < rows; ++ y) {
-        const double* pNormalR = _normalR2BL.ptr<double>(y);
-        const double* pNormalG = _normalG2BL.ptr<double>(y);
-        const double* pNormalB = _normalB2BL.ptr<double>(y);
-//        const Vec3d* l_pNormalR = _normalR2BL.ptr<Vec3d>(y);
-//        const Vec3d* l_pNormalG = _normalG2BL.ptr<Vec3d>(y);
-//        const Vec3d* l_pNormalB = _normalB2BL.ptr<Vec3d>(y);
+//        const double* pNormalR = _normalR2BL.ptr<double>(y);
+//        const double* pNormalG = _normalG2BL.ptr<double>(y);
+//        const double* pNormalB = _normalB2BL.ptr<double>(y);
+        const Vec3d* l_pNormalR = _normalR2BL.ptr<Vec3d>(y);
+        const Vec3d* l_pNormalG = _normalG2BL.ptr<Vec3d>(y);
+        const Vec3d* l_pNormalB = _normalB2BL.ptr<Vec3d>(y);
         Vec9d* p_cmmm = l_cmmm.ptr<Vec9d>(y);
 
         for (int x = 0; x < cols; ++ x) {
             // assigne V
-            V.at<double>(0, 0) = pNormalR[x * ch + CV_RED];
-            V.at<double>(0, 1) = pNormalR[x * ch + CV_GREEN];
-            V.at<double>(0, 2) = pNormalR[x * ch + CV_BLUE];
-            
-            V.at<double>(1, 0) = pNormalG[x * ch + CV_RED];
-            V.at<double>(1, 1) = pNormalG[x * ch + CV_GREEN];
-            V.at<double>(1, 2) = pNormalG[x * ch + CV_BLUE];
-            
-            V.at<double>(2, 0) = pNormalB[x * ch + CV_RED];
-            V.at<double>(2, 1) = pNormalB[x * ch + CV_GREEN];
-            V.at<double>(2, 2) = pNormalB[x * ch + CV_BLUE];
+//            V.at<double>(0, 0) = pNormalR[x * ch + CV_RED];
+//            V.at<double>(0, 1) = pNormalR[x * ch + CV_GREEN];
+//            V.at<double>(0, 2) = pNormalR[x * ch + CV_BLUE];
+//            
+//            V.at<double>(1, 0) = pNormalG[x * ch + CV_RED];
+//            V.at<double>(1, 1) = pNormalG[x * ch + CV_GREEN];
+//            V.at<double>(1, 2) = pNormalG[x * ch + CV_BLUE];
+//            
+//            V.at<double>(2, 0) = pNormalB[x * ch + CV_RED];
+//            V.at<double>(2, 1) = pNormalB[x * ch + CV_GREEN];
+//            V.at<double>(2, 2) = pNormalB[x * ch + CV_BLUE];
+            for (int c = 0; c < ch; ++ c) {
+//                V.at<double>(0, c) = l_pNormalR[x][ch - 1 - c];
+//                V.at<double>(1, c) = l_pNormalG[x][ch - 1 - c];
+//                V.at<double>(2, c) = l_pNormalB[x][ch - 1 - c];
+                
+                V.at<double>(c, 0) = l_pNormalR[x][ch - 1 - c];
+                V.at<double>(c, 1) = l_pNormalG[x][ch - 1 - c];
+                V.at<double>(c, 2) = l_pNormalB[x][ch - 1 - c];
+            }
+//            V.at<double>(0, 0) = l_pNormalR[x][CV_RED];
+//            V.at<double>(0, 1) = l_pNormalR[x][CV_GREEN];
+//            V.at<double>(0, 2) = l_pNormalR[x][CV_BLUE];
+//            
+//            V.at<double>(1, 0) = l_pNormalG[x][CV_RED];
+//            V.at<double>(1, 1) = l_pNormalG[x][CV_GREEN];
+//            V.at<double>(1, 2) = l_pNormalG[x][CV_BLUE];
+//            
+//            V.at<double>(2, 0) = l_pNormalB[x][CV_RED];
+//            V.at<double>(2, 1) = l_pNormalB[x][CV_GREEN];
+//            V.at<double>(2, 2) = l_pNormalB[x][CV_BLUE];
             
             // push V
             convertMatToVec(&l_VVec, V);    // mat -> vec
@@ -832,6 +852,15 @@ bool LinearizerOfProjector::createVMap(const cv::Mat& _normalR2BL, const cv::Mat
     
     // setting
     setColorMixMatMap(l_cmmm);
+    return true;
+}
+bool LinearizerOfProjector::test_createVMap(void){
+    const Size l_size(10, 8);
+    Mat l_red(l_size, CV_64FC3, Scalar(0.0, 0.1, 0.2));
+    Mat l_blue(l_size, CV_64FC3, Scalar(0.3, 0.4, 0.5));
+    Mat l_green(l_size, CV_64FC3, Scalar(0.6, 0.7, 0.8));
+    createVMap(l_red, l_green, l_blue);
+    
     return true;
 }
 
