@@ -1635,7 +1635,7 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
     //
     ProCam* l_procam = getProCam();
     const Size* l_camSize = l_procam->getCameraSize();
-    bool loopFlag = true;//, clearFlag = false;
+    bool l_loopFlag = true;//, clearFlag = false;
     int prj = 255, prj2 = 30;
     Mat l_projectionImage(*l_camSize, CV_8UC3, Scalar(prj, prj, prj));
     Mat l_projectionImageBefore(*l_camSize, CV_8UC3, Scalar(prj2, prj2, prj2));
@@ -1654,7 +1654,7 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
     l_procam->captureOfProjecctorColorFromLinearLightOnProjectorDomain(&l_captureImage, l_projectionImage);
 
     // loop
-    while (loopFlag) {
+    while (l_loopFlag) {
         // estimate
         Mat l_KMapBefore = getKMap(), l_FMapBefore = getFMap();
         switch (l_estTarget) {
@@ -1703,8 +1703,8 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
         evaluateEstimationAndProjection(l_answerK, l_KMap, l_targetImage, l_captureImage);
         
         // check key
-        int key = waitKey(l_stopTime);
-        switch (key) {
+        int l_key = waitKey(l_stopTime);
+        switch (l_key) {
             // what does calibrate
             case (CV_BUTTON_p):
                 cout << "本当にプロジェクタを線形化しますか？(y/n)" << endl;
@@ -1826,6 +1826,9 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
                     l_stopTime = -1;
                 }
                 break;
+            case (CV_BUTTON_S):
+                l_procam->settingProjectorAndCamera();
+                break;
             case (CV_BUTTON_DELETE):
                 cout << "all clean" << endl;
                 initK(*l_camSize);
@@ -1836,10 +1839,10 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
                 prj = 255;
                 break;
             case (CV_BUTTON_ESC):
-                loopFlag = false;
+                l_loopFlag = false;
                 break;
             default:
-                cout << "you push " << (int)key << " key" << endl;
+                cout << "you push " << (int)l_key << " key" << endl;
                 break;
         }
     }

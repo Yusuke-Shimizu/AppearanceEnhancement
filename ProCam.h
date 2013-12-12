@@ -103,6 +103,8 @@ private:
     cv::Mat_<Vec9d> m_V;     // 全カメラ画素分のV（プロジェクタからカメラへの色変換行列）
     cv::Mat m_F;             // 環境光の全画素分
     
+//    LinearizerOfProjector m_linearPrj;
+    
     ProCam(const ProCam& _procam);      // コピーコンストラクタ隠し（プログラムで１つしか存在しない為）
 public:
     ///////////////////////////////  constructor ///////////////////////////////
@@ -235,6 +237,7 @@ public:
     void getProjectionImage(cv::Mat* const _P, const cv::Mat& _desireC, const cv::Mat_<Vec12d>& _K);
     bool medianBlurForProjectorResponseP2I(cv::Mat* const _dst, const cv::Mat& _src);
     bool test_medianBlurForProjectorResponseP2I(void);
+    bool settingProjectorAndCamera(void);
 };
 
 #endif /* defined(__cameraBase03__ProCam__) */

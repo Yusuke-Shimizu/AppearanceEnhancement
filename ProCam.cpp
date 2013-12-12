@@ -2074,3 +2074,62 @@ bool ProCam::test_medianBlurForProjectorResponseP2I(void){
     imshow("after", l_imageMap);
     return true;
 }
+
+// プロカムのパラメータ調整の為に，投影・撮影を繰り返す
+bool ProCam::settingProjectorAndCamera(void){
+    const Size l_camSize = getCameraSize_();
+    Mat l_projectionImage(l_camSize, CV_8UC3, CV_SCALAR_BLACK);
+    Mat l_captureImage(l_camSize, CV_8UC3, CV_SCALAR_BLACK);
+    bool l_loopFlag = true;
+    int l_caprjType = 0;
+    
+    while (l_loopFlag) {
+        // project and capture
+        switch (l_caprjType) {
+            case 0:
+                captureFromLightOnProjectorDomain(&l_captureImage, l_projectionImage);
+                break;
+            case 1:
+                break;
+                
+            default:
+                break;
+        }
+        
+        // calc
+        Scalar l_mean(0, 0, 0, 0), l_stddev(0, 0, 0, 0);
+        meanStdDev(l_captureImage, l_mean, l_stddev);
+        
+        // show
+        _print_gnuplot2(std::cout, l_mean, l_stddev);
+        MY_IMSHOW(l_captureImage);
+        
+        int l_key = waitKey(30);
+        switch (l_key) {
+            case CV_BUTTON_r:
+                l_projectionImage = CV_SCALAR_RED;
+                break;
+            case CV_BUTTON_g:
+                l_projectionImage = CV_SCALAR_GREEN;
+                break;
+            case CV_BUTTON_b:
+                l_projectionImage = CV_SCALAR_BLUE;
+                break;
+            case CV_BUTTON_k:
+                l_projectionImage = CV_SCALAR_BLACK;
+                break;
+            case CV_BUTTON_w:
+                l_projectionImage = CV_SCALAR_WHITE;
+                break;
+                
+            case CV_BUTTON_ESC:
+                l_loopFlag = false;
+                break;
+                
+            default:
+                break;
+        }
+    }
+    return true;
+}
+
