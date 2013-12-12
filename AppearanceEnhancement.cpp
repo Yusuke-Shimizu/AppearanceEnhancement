@@ -123,6 +123,9 @@ bool AppearanceEnhancement::setCfullMap(const bool _denoisingFlag){
     l_procam->captureOfProjecctorColorFromLinearLightOnProjectorDomain(&m_CfullMap, 255, _denoisingFlag, SLEEP_TIME);
     saveCfull();
     showCfullMap();
+    Scalar l_meanOfCfull(0,0,0,0), l_stddevOfCfull(0,0,0,0);
+    meanStdDev(m_CfullMap, l_meanOfCfull, l_stddevOfCfull);
+    _print2(l_meanOfCfull, l_stddevOfCfull);
     return true;
 }
 bool AppearanceEnhancement::setCfullMap(const cv::Mat& _Cfull){
@@ -139,6 +142,9 @@ bool AppearanceEnhancement::setC0Map(const bool _denoisingFlag){
     l_procam->captureOfProjecctorColorFromLinearLightOnProjectorDomain(&m_C0Map, 0, _denoisingFlag, SLEEP_TIME);
     saveC0();
     showC0Map();
+    Scalar l_meanOfC0(0,0,0,0), l_stddevOfC0(0,0,0,0);
+    meanStdDev(m_C0Map, l_meanOfC0, l_stddevOfC0);
+    _print2(l_meanOfC0, l_stddevOfC0);
     return true;
 }
 bool AppearanceEnhancement::setC0Map(const cv::Mat& _C0){
@@ -1113,7 +1119,7 @@ bool AppearanceEnhancement::test_estimateK(const cv::Mat& _answerK, const cv::Ma
     const Size* l_camSize = l_procam->getCameraSize();
     Mat l_projectionImage(*l_camSize, CV_8UC3, CV_SCALAR_BLACK);
     Mat l_captureImage(*l_camSize, CV_64FC3, CV_SCALAR_BLACK);
-    Scalar l_mean(0,0,0,0), l_stddev(0,0,0,0);
+    Scalar l_meanDiff(0,0,0,0), l_stddevDiff(0,0,0,0);
     Scalar l_meanEst(0,0,0,0), l_stddevEst(0,0,0,0);
     Scalar l_meanAns(0,0,0,0), l_stddevAns(0,0,0,0);
     ofstream ofs(ESTIMATE_K_FILE_NAME.c_str());
@@ -1129,15 +1135,15 @@ bool AppearanceEnhancement::test_estimateK(const cv::Mat& _answerK, const cv::Ma
         Mat l_estK = getKMap();
         
         // calc
-        calcMeanStddevOfDiffImage(&l_mean, &l_stddev, _answerK, l_estK);
+        calcMeanStddevOfDiffImage(&l_meanDiff, &l_stddevDiff, _answerK, l_estK);
         meanStdDev(l_estK, l_meanEst, l_stddevEst);
         meanStdDev(_answerK, l_meanAns, l_stddevAns);
         
         // print
         std::cout << i << "\t";
-        _print_gnuplot_color6_l(std::cout, l_mean, l_stddev, l_meanEst, l_stddevEst, l_meanAns, l_stddevAns);
+        _print_gnuplot_color6_l(std::cout, l_meanDiff, l_stddevDiff, l_meanEst, l_stddevEst, l_meanAns, l_stddevAns);
         ofs << i << "\t";
-        _print_gnuplot_color6_l(ofs, l_mean, l_stddev, l_meanEst, l_stddevEst, l_meanAns, l_stddevAns);
+        _print_gnuplot_color6_l(ofs, l_meanDiff, l_stddevDiff, l_meanEst, l_stddevEst, l_meanAns, l_stddevAns);
     }
     return true;
 }
@@ -1380,13 +1386,18 @@ bool AppearanceEnhancement::evaluateEstimationAndProjection(const cv::Mat& _ansK
     // get mean and standard deviation
     cv::Scalar l_estMean(0, 0, 0, 0), l_estStddev(0, 0, 0, 0);
     cv::Scalar l_prjMean(0, 0, 0, 0), l_prjStddev(0, 0, 0, 0);
-    calcMeanStddevOfDiffImage(&l_estMean, &l_estStddev, _ansK, _estK);
-    calcMeanStddevOfDiffImage(&l_prjMean, &l_prjStddev, _targetImage, _captureImage);
+    cv::Scalar l_estDiffMean(0, 0, 0, 0), l_estDiffStddev(0, 0, 0, 0);
+    cv::Scalar l_prjDiffMean(0, 0, 0, 0), l_prjDiffStddev(0, 0, 0, 0);
+    meanStdDev(_estK, l_estMean, l_estStddev);
+    meanStdDev(_captureImage, l_prjMean, l_prjStddev);
+    calcMeanStddevOfDiffImage(&l_estDiffMean, &l_estDiffStddev, _ansK, _estK);
+    calcMeanStddevOfDiffImage(&l_prjDiffMean, &l_prjDiffStddev, _targetImage, _captureImage);
     
     // print
-//    _print2(l_estMean, l_estStddev);
-//    _print2(l_prjMean, l_prjStddev);
-    _print_gnuplot_color4_l(std::cout, l_estMean, l_estStddev, l_prjMean, l_prjStddev);
+    _print2(l_estMean, l_estStddev);
+    _print2(l_prjMean, l_prjStddev);
+    _print2(l_estDiffMean, l_estDiffStddev);
+    _print2(l_prjDiffMean, l_prjDiffStddev);
     
     return true;
 }

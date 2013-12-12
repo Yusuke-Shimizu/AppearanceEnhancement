@@ -950,7 +950,7 @@ bool ProCam::linearizeOfProjector(const bool _calcLinearFlag, const bool _showLi
         loadProjectorResponseForByte(PROJECTOR_RESPONSE_I2P_FILE_NAME_BYTE);
         linearPrj.loadAllCImages();
 //        linearPrj.test_responseFunction();
-        linearPrj.saveEstimatedC();
+//        linearPrj.saveEstimatedC();
     }
 
     // show and print
