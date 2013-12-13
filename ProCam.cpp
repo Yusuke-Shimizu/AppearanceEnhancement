@@ -918,10 +918,10 @@ bool ProCam::geometricCalibration(void){
     setAccessMapCam2Prj(l_accessMapCam2Prj);
     saveAccessMapCam2Prj();
 
-#ifdef SHOW_GEOMETRIC_CALIBRATION_MAP_FLAG
+//#ifdef SHOW_GEOMETRIC_CALIBRATION_MAP_FLAG
     // show geometric map
     showAccessMapCam2Prj();
-#endif
+//#endif
     
     return true;
 }
@@ -991,6 +991,11 @@ bool ProCam::test_linearizeOfProjector(void){
 //        _print_gnuplot_color4_l(std::cout, l_meanColor, l_stddevColor, l_meanColorNL, l_stddevColorNL);
         ofs << i << "\t";
         _print_gnuplot_color4_l(ofs, l_meanColor, l_stddevColor, l_meanColorNL, l_stddevColorNL);
+        
+        // if you are mistake, you should push delete button then go back
+        if (waitKey(30) == CV_BUTTON_DELETE) {
+            return false;
+        }
     }
     
     return true;
@@ -1165,6 +1170,11 @@ bool ProCam::test_colorCalibration(void){
             _print_gnuplot6(std::cout, l_meanColor, l_stddevColor, l_meanColorNC, l_stddevColorNC, l_meanColorNCNL, l_stddevColorNCNL);
             ofs << prj << "\t";
             _print_gnuplot_color6_l(ofs, l_meanColor, l_stddevColor, l_meanColorNC, l_stddevColorNC, l_meanColorNCNL, l_stddevColorNCNL);
+            
+            // if you are mistake, you should push delete button then go back
+            if (waitKey(30) == CV_BUTTON_DELETE) {
+                return false;
+            }
         }
         ofs.close();
     }
@@ -2081,15 +2091,24 @@ bool ProCam::settingProjectorAndCamera(void){
     Mat l_projectionImage(l_camSize, CV_8UC3, CV_SCALAR_BLACK);
     Mat l_captureImage(l_camSize, CV_8UC3, CV_SCALAR_BLACK);
     bool l_loopFlag = true;
-    int l_caprjType = 0;
+    int l_caprjType = 0, l_luminance = 255;
+    Vec3b l_mask(1, 1, 1), l_projectionColor = l_mask * l_luminance;
     
     while (l_loopFlag) {
         // project and capture
+        l_projectionColor = l_mask * l_luminance;
         switch (l_caprjType) {
             case 0:
-                captureFromLightOnProjectorDomain(&l_captureImage, l_projectionImage);
+                captureFromLightOnProjectorDomain(&l_captureImage, l_projectionColor);
                 break;
             case 1:
+                captureFromLinearLightOnProjectorDomain(&l_captureImage, l_projectionColor);
+                break;
+            case 2:
+                captureOfProjecctorColorFromLinearLightOnProjectorDomain(&l_captureImage, l_projectionColor);
+                break;
+            case 3:
+                captureFromLight(&l_captureImage, l_projectionColor);
                 break;
                 
             default:
@@ -2107,22 +2126,61 @@ bool ProCam::settingProjectorAndCamera(void){
         int l_key = waitKey(30);
         switch (l_key) {
             case CV_BUTTON_r:
-                l_projectionImage = CV_SCALAR_RED;
+                l_mask = CV_VEC3B_RED / 255;
                 break;
             case CV_BUTTON_g:
-                l_projectionImage = CV_SCALAR_GREEN;
+                l_mask = CV_VEC3B_GREEN / 255;
                 break;
             case CV_BUTTON_b:
-                l_projectionImage = CV_SCALAR_BLUE;
+                l_mask = CV_VEC3B_BLUE / 255;
                 break;
             case CV_BUTTON_k:
-                l_projectionImage = CV_SCALAR_BLACK;
+                l_mask = CV_VEC3B_BLACK / 255;
                 break;
             case CV_BUTTON_w:
-                l_projectionImage = CV_SCALAR_WHITE;
+                l_mask = CV_VEC3B_WHITE / 255;
+                break;
+            case CV_BUTTON_y:
+                l_mask = CV_VEC3B_YELLOW / 255;
+                break;
+            case CV_BUTTON_p:
+                l_mask = CV_VEC3B_PURPLE / 255;
+                break;
+            case CV_BUTTON_c:
+                l_mask = CV_VEC3B_CYAN / 255;
                 break;
                 
-            case CV_BUTTON_ESC:
+            case CV_BUTTON_UP:
+                l_luminance ++;
+                _print(l_luminance);
+                break;
+            case CV_BUTTON_DOWN:
+                l_luminance --;
+                _print(l_luminance);
+                break;
+            case CV_BUTTON_RIGHT:
+                l_luminance += 10;
+                _print(l_luminance);
+                break;
+            case CV_BUTTON_LEFT:
+                l_luminance -= 10;
+                _print(l_luminance);
+                break;
+                
+            case CV_BUTTON_0:
+                l_caprjType = 0;
+                break;
+            case CV_BUTTON_1:
+                l_caprjType = 1;
+                break;
+            case CV_BUTTON_2:
+                l_caprjType = 2;
+                break;
+            case CV_BUTTON_3:
+                l_caprjType = 3;
+                break;
+                
+            case CV_BUTTON_DELETE:
                 l_loopFlag = false;
                 break;
                 

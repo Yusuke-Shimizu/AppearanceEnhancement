@@ -20,7 +20,7 @@ const int BUFFER_NUM = 10;
 
 //#define GEO_CAL_CALC_FLAG       // 幾何変換を計算するフラグ
 
-#define SHOW_GEOMETRIC_CALIBRATION_MAP_FLAG // 幾何変換のマップを表示するフラグ
+//#define SHOW_GEOMETRIC_CALIBRATION_MAP_FLAG // 幾何変換のマップを表示するフラグ
 //#define SHOW_LINEAR_FLAG                    // プロジェクタ線形化を表示するフラグ
 
 //#define BAYER_FLAG

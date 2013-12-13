@@ -876,6 +876,11 @@ bool AppearanceEnhancement::test_calcNextProjectionImage(const cv::Mat& _answerK
         _print_gnuplot_color6_l(std::cout, l_mean, l_stddev, l_meanCap, l_stddevCap, l_meanTarget, l_stddeTarget);
         ofs << i << "\t";
         _print_gnuplot_color6_l(ofs, l_mean, l_stddev, l_meanCap, l_stddevCap, l_meanTarget, l_stddeTarget);
+        
+        // if you are mistake, you should push delete button then go back
+        if (waitKey(30) == CV_BUTTON_DELETE) {
+            return false;
+        }
     }
     return true;
 }
@@ -1144,6 +1149,11 @@ bool AppearanceEnhancement::test_estimateK(const cv::Mat& _answerK, const cv::Ma
         _print_gnuplot_color6_l(std::cout, l_meanDiff, l_stddevDiff, l_meanEst, l_stddevEst, l_meanAns, l_stddevAns);
         ofs << i << "\t";
         _print_gnuplot_color6_l(ofs, l_meanDiff, l_stddevDiff, l_meanEst, l_stddevEst, l_meanAns, l_stddevAns);
+        
+        // if you are mistake, you should push delete button then go back
+        if (waitKey(30) == CV_BUTTON_DELETE) {
+            return false;
+        }
     }
     return true;
 }
@@ -1286,6 +1296,11 @@ bool AppearanceEnhancement::test_estimateKFByAmanoModel(const cv::Mat& _answerK,
         _print_gnuplot_color6_l(std::cout, l_mean, l_stddev, l_meanEstK, l_stddevEstK, l_meanEstF, l_stddevEstF);
         ofs << i << "\t";
         _print_gnuplot_color6_l(ofs, l_mean, l_stddev, l_meanEstK, l_stddevEstK, l_meanEstF, l_stddevEstF);
+        
+        // if you are mistake, you should push delete button then go back
+        if (waitKey(30) == CV_BUTTON_DELETE) {
+            return false;
+        }
     }
 
     return true;
