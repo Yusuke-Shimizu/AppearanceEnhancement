@@ -372,15 +372,16 @@ bool ProCam::setV(const cv::Mat& _diffBB, const cv::Mat& _diffGB, const cv::Mat&
 bool ProCam::setV(const std::vector<cv::Mat>& _vecC, const std::vector<cv::Vec3d>& _vecP){
     
     // create P mat
-    std::vector<cv::Mat> l_vecPMat;
+    std::vector<cv::Vec3d> l_vecPMat;
     for (vector<Vec3d>::const_iterator l_vecPItr = _vecP.begin();
          l_vecPItr != _vecP.end();
          ++ l_vecPItr) {
-        l_vecPMat.push_back(Mat(*l_vecPItr));
+        l_vecPMat.push_back(*l_vecPItr);
         _print(*l_vecPItr);
     }
     Mat l_matP(3, (int)l_vecPMat.size(), CV_64FC1, 0.0);
-    cv::merge(l_vecPMat, l_matP);
+    convertVector2Mat(&l_matP, l_vecPMat);
+//    cv::merge(l_vecPMat, l_matP);
     _print(l_matP);
 
     //
