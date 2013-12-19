@@ -258,6 +258,8 @@ bool convertBGRtoRGB(cv::Vec3b* const _rgb, const cv::Vec3b& _bgr);
 bool convertRGBtoBGR(cv::Vec3b* const _bgr, const cv::Vec3b& _rgb);
 bool convertVecToMat(cv::Mat* const _dst, const Vec9d& _src);
 bool convertMatToVec(Vec9d* const _dst, const cv::Mat_<double>& _src);
+bool convertVector2Mat(cv::Mat* const _dst, const std::vector<cv::Vec3d>& _src);
+bool test_convertVector2Mat(void);
 ///////////////////////////////  round method ///////////////////////////////
 bool roundXtoY(double* const _num, const double& X, const double& Y);
 bool round0to1(double* const _num);

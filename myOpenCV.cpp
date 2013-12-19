@@ -549,6 +549,31 @@ bool convertMatToVec(Vec9d* const _dst, const cv::Mat_<double>& _src){
     *_dst = tmp;
     return true;
 }
+
+// vectorに入っているVec3dを行列にする
+bool convertVector2Mat(cv::Mat* const _dst, const std::vector<cv::Vec3d>& _src){
+    int y = 0;
+    for (vector<Vec3d>::const_iterator l_srcItr = _src.begin();
+         l_srcItr != _src.end();
+         ++ l_srcItr, ++ y) {
+        for (int x = 0; x < 3; ++ x) {
+            _dst->at<double>(x, y) = (*l_srcItr)[x];
+        }
+    }
+    return true;
+}
+bool test_convertVector2Mat(void){
+    vector<Vec3d> l_vec;
+    l_vec.push_back(Vec3d(0, 1, 2));
+    l_vec.push_back(Vec3d(3, 4, 5));
+    l_vec.push_back(Vec3d(6, 7, 8));
+    l_vec.push_back(Vec3d(9.1, 10.2, 11.3));
+    Mat l_mat(3, 4, CV_64FC1, 0.0);
+    convertVector2Mat(&l_mat, l_vec);
+    _print(l_mat);
+    return true;
+}
+
 ///////////////////////////////  other method ///////////////////////////////
 
 // この関数はいずれmyMath.hppに移動させる！！！！！！！

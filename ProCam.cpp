@@ -397,14 +397,15 @@ bool ProCam::setV(const std::vector<cv::Mat>& _vecC, const std::vector<cv::Vec3d
         
         for (int x = 0; x < cols; ++ x) {
             // create C mat
-            vector<Mat> l_vecMatC;
+            vector<Vec3d> l_vecMatC;
             for (vector<Mat>::const_iterator l_itrVecC = _vecC.begin();
                  l_itrVecC != _vecC.end();
                  ++ l_itrVecC) {
-                l_vecMatC.push_back((Mat)(l_itrVecC->at<Vec3d>(y, x)));
+                l_vecMatC.push_back((l_itrVecC->at<Vec3d>(y, x)));
             }
             Mat l_matC(3, (int)l_vecMatC.size(), CV_64FC1, 0.0);
-            cv::merge(l_vecMatC, l_matC);
+//            cv::merge(l_vecMatC, l_matC);
+            convertVector2Mat(&l_matC, l_vecMatC);
             
             // calc
             const Mat l_matV = l_matC * l_matP.inv();
