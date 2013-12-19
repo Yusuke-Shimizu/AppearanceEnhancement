@@ -896,7 +896,7 @@ bool AppearanceEnhancement::calcNextProjectionImageAtPixel(uchar* const _nextP, 
     round0to1(&l_nNextP);
     
     // unnormalize
-    *_nextP = std::max((uchar)(l_nNextP * 255), (uchar)50);
+//    *_nextP = std::max((uchar)(l_nNextP * 255), (uchar)50);
     return true;
 }
 bool AppearanceEnhancement::test_calcNextProjectionImageAtPixel(void){
@@ -1741,7 +1741,8 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
             case (CV_BUTTON_g):
                 l_procam->geometricCalibration();
             case (CV_BUTTON_c): // have to get Cfull and C0 after color calibration
-                l_procam->colorCalibration();
+//                l_procam->colorCalibration();
+                l_procam->colorCalibration3();
             case (CV_BUTTON_f):
                 setCfullMap();
                 setC0Map();
@@ -1751,7 +1752,8 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
             case (CV_BUTTON_G):
                 l_procam->geometricCalibration();
             case (CV_BUTTON_C): // have to get Cfull and C0 after color calibration
-                l_procam->colorCalibration(true);
+//                l_procam->colorCalibration();
+                l_procam->colorCalibration3();
             case (CV_BUTTON_F):
                 setCfullMap(true);
                 setC0Map(true);

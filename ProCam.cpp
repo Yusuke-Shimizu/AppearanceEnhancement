@@ -369,6 +369,52 @@ bool ProCam::setV(const cv::Mat& _diffBB, const cv::Mat& _diffGB, const cv::Mat&
     
     return true;
 }
+bool ProCam::setV(const std::vector<cv::Mat>& _vecC, const std::vector<cv::Vec3d>& _vecP){
+    
+    // create P mat
+    std::vector<cv::Mat> l_vecPMat;
+    for (vector<Vec3d>::const_iterator l_vecPItr = _vecP.begin();
+         l_vecPItr != _vecP.end();
+         ++ l_vecPItr) {
+        l_vecPMat.push_back(Mat(*l_vecPItr));
+        _print(*l_vecPItr);
+    }
+    Mat l_matP(3, (int)l_vecPMat.size(), CV_64FC1, 0.0);
+    cv::merge(l_vecPMat, l_matP);
+    _print(l_matP);
+
+    //
+    int rows = _vecC[0].rows, cols = _vecC[0].cols;
+//    Mat_<Vec9d> l_V(rows, cols, Vec9d(0,0,0,0,0,0,0,0,0));
+    for (int y = 0; y < rows; ++ y) {
+        Vec9d* l_pV = m_V.ptr<Vec9d>(y);
+//        vector<const Vec3d* const> l_pVecC;
+//        for (vector<Mat>::const_iterator l_itrC = _vecC.begin();
+//             l_itrC != _vecC.end();
+//             ++ l_itrC) {
+//            l_pVecC.push_back(l_itrC->ptr<Vec3b>(y));
+//        }
+        
+        for (int x = 0; x < cols; ++ x) {
+            // create C mat
+            vector<Mat> l_vecMatC;
+            for (vector<Mat>::const_iterator l_itrVecC = _vecC.begin();
+                 l_itrVecC != _vecC.end();
+                 ++ l_itrVecC) {
+                l_vecMatC.push_back((Mat)(l_itrVecC->at<Vec3d>(y, x)));
+            }
+            Mat l_matC(3, (int)l_vecMatC.size(), CV_64FC1, 0.0);
+            cv::merge(l_vecMatC, l_matC);
+            
+            // calc
+            const Mat l_matV = l_matC * l_matP.inv();
+            
+            // Mat -> Vec9d
+            convertMatToVec(&l_pV[x], l_matV);
+        }
+    }
+    return true;
+}
 
 // m_Fの設定
 // F = C - VP
@@ -898,7 +944,8 @@ bool ProCam::allCalibration(void){
     }
 
     // color caliration
-    if ( !colorCalibration() ) {
+//    if ( !colorCalibration() ) {
+    if ( !colorCalibration3() ) {
         cerr << "color caliration error" << endl;
         exit(-1);
     }
@@ -1021,7 +1068,7 @@ bool ProCam::colorCalibration(const bool _denoisingFlag){
     captureFromLinearLightOnProjectorDomain(&red_cap, CV_VEC3B_RED, _denoisingFlag);
     captureFromLinearLightOnProjectorDomain(&green_cap, CV_VEC3B_GREEN, _denoisingFlag);
     captureFromLinearLightOnProjectorDomain(&blue_cap, CV_VEC3B_BLUE, _denoisingFlag);
-    g_F0 = black_cap;
+    g_F0 = black_cap.clone();
     
     // show image
     imshow("black_cap", black_cap);
@@ -1131,6 +1178,67 @@ bool ProCam::colorCalibration2(cv::Mat_<Vec12d>* const _V){
     cout << "color calibration finish!" << endl;
     return true;
 }
+bool ProCam::colorCalibration3(const bool _denoisingFlag){
+    cout << "color calibration start!" << endl;
+    
+    // init
+    Size cameraSize = getCameraSize_();
+    
+    // init project color
+    std::vector<Vec3b> l_vecPrjColor;
+    l_vecPrjColor.push_back(Vec3b(0, 0, 240));
+    l_vecPrjColor.push_back(Vec3b(0, 230, 0));
+    l_vecPrjColor.push_back(Vec3b(220, 0, 0));
+    
+    // capture from some color light
+    cv::Mat black_cap(cameraSize, CV_8UC3, CV_SCALAR_BLACK);
+    captureFromLinearLightOnProjectorDomain(&black_cap, CV_VEC3B_BLACK, _denoisingFlag, SLEEP_TIME * 5);
+    g_F0 = black_cap.clone();
+    vector<Mat> l_vecCapImg;
+    for (vector<Vec3b>::const_iterator l_itr = l_vecPrjColor.begin();
+         l_itr != l_vecPrjColor.end();
+         ++ l_itr) {
+        cv::Mat l_capImg(cameraSize, CV_8UC3, CV_SCALAR_BLACK);
+        captureFromLinearLightOnProjectorDomain(&l_capImg, *l_itr, _denoisingFlag);
+        l_vecCapImg.push_back(l_capImg);
+    }
+    
+    // get vec C
+    const double rate = 1.0 / 255.0;
+    black_cap.convertTo(black_cap, CV_64FC3, rate);
+    vector<Mat> l_vecCapImg_d;
+    for (vector<Mat>::const_iterator l_capImgItr = l_vecCapImg.begin();
+         l_capImgItr != l_vecCapImg.end();
+         ++ l_capImgItr) {
+        // Vec3b -> Vec3d
+        Mat l_capImg_d = l_capImgItr->clone();
+        l_capImgItr->convertTo(l_capImg_d, CV_64FC3, rate);
+        
+        // calc diff
+        if (COLOR_CALIB_2004) {
+            l_capImg_d -= black_cap;
+        }
+        
+        // push
+        l_vecCapImg_d.push_back(l_capImg_d);
+    }
+    
+    // get vec P
+    vector<Vec3d> l_vecPrjColor_d;
+    for (vector<Vec3b>::const_iterator l_prjItr = l_vecPrjColor.begin();
+         l_prjItr != l_vecPrjColor.end();
+         ++ l_prjItr) {
+        const Vec3d l_prjColor_d = (Vec3d)(*l_prjItr) * rate;
+        l_vecPrjColor_d.push_back(l_prjColor_d);
+    }
+    
+    // set V
+    setV(l_vecCapImg_d, l_vecPrjColor_d);
+    
+    cout << "color calibration finish!" << endl;
+    return true;
+}
+
 bool ProCam::test_colorCalibration(void){
     const Size* l_camSize = getCameraSize();
     Mat l_captureImage(*l_camSize, CV_64FC3, CV_SCALAR_BLACK);
@@ -2105,7 +2213,9 @@ bool ProCam::settingProjectorAndCamera(void){
                 captureFromLinearLightOnProjectorDomain(&l_captureImage, l_projectionColor);
                 break;
             case 2:
+                l_captureImage.convertTo(l_captureImage, CV_64FC3);
                 captureOfProjecctorColorFromLinearLightOnProjectorDomain(&l_captureImage, l_projectionColor);
+                l_captureImage.convertTo(l_captureImage, CV_8UC3);
                 break;
             case 3:
                 captureFromLight(&l_captureImage, l_projectionColor);

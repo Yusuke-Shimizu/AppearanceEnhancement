@@ -17,6 +17,7 @@ const int BUFFER_NUM = 10;
 #include "myOpenCV.h"
 #include "myDc1394.h"
 #include "common.h"
+//#include <vector>
 
 //#define GEO_CAL_CALC_FLAG       // 幾何変換を計算するフラグ
 
@@ -143,6 +144,7 @@ public:
     bool setImageProjectorResponseP2I(cv::Mat* const _responseMap, const cv::Mat& _responseImage, const int _index);
     bool setImageProjectorResponseP2I(const cv::Mat& _responseImage, const int _index);
     bool setV(const cv::Mat& _diffBB, const cv::Mat& _diffGB, const cv::Mat& _diffRB);
+    bool setV(const std::vector<cv::Mat>& _vecC, const std::vector<cv::Vec3d>& _vecP);
     void setF(const cv::Mat& _P);
     ///////////////////////////////  get method ///////////////////////////////
     DCam getDCam(void);
@@ -184,6 +186,7 @@ public:
     bool test_linearizeOfProjector(void);
     bool colorCalibration(const bool _denoisingFlag = false);
     bool colorCalibration2(cv::Mat_<Vec12d>* const _V);
+    bool colorCalibration3(const bool _denoisingFlag = false);
     bool test_colorCalibration(void);
     ///////////////////////////////  convert method ///////////////////////////////
     bool convertProjectorDomainToCameraOne(cv::Mat* const _psImg, const cv::Mat&  _csImg);
