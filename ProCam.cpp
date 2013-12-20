@@ -353,17 +353,6 @@ bool ProCam::setV(const cv::Mat& _diffBB, const cv::Mat& _diffGB, const cv::Mat&
                 l_pV[x][i * 3 + 1] = l_pDiffGB[x][i];
                 l_pV[x][i * 3 + 2] = l_pDiffRB[x][i];
             }
-//            l_pV[x][0] = l_pDiffBB[x][0];
-//            l_pV[x][1] = l_pDiffGB[x][0];
-//            l_pV[x][2] = l_pDiffRB[x][0];
-//            
-//            l_pV[x][3] = l_pDiffBB[x][1];
-//            l_pV[x][4] = l_pDiffGB[x][1];
-//            l_pV[x][5] = l_pDiffRB[x][1];
-//            
-//            l_pV[x][6] = l_pDiffBB[x][2];
-//            l_pV[x][7] = l_pDiffGB[x][2];
-//            l_pV[x][8] = l_pDiffRB[x][2];
         }
     }
     
@@ -1188,7 +1177,7 @@ bool ProCam::colorCalibration3(const bool _denoisingFlag){
     
     // init project color
     std::vector<Vec3b> l_vecPrjColor;
-    l_vecPrjColor.push_back(Vec3b(0, 0, 240));
+    l_vecPrjColor.push_back(Vec3b(0, 0, 230));
     l_vecPrjColor.push_back(Vec3b(0, 230, 0));
     l_vecPrjColor.push_back(Vec3b(220, 0, 0));
     
@@ -1196,13 +1185,20 @@ bool ProCam::colorCalibration3(const bool _denoisingFlag){
     cv::Mat black_cap(cameraSize, CV_8UC3, CV_SCALAR_BLACK);
     captureFromLinearLightOnProjectorDomain(&black_cap, CV_VEC3B_BLACK, _denoisingFlag, SLEEP_TIME * 5);
     g_F0 = black_cap.clone();
+    
+    int i = 0;
     vector<Mat> l_vecCapImg;
     for (vector<Vec3b>::const_iterator l_itr = l_vecPrjColor.begin();
          l_itr != l_vecPrjColor.end();
-         ++ l_itr) {
+         ++ l_itr, ++ i) {
         cv::Mat l_capImg(cameraSize, CV_8UC3, CV_SCALAR_BLACK);
         captureFromLinearLightOnProjectorDomain(&l_capImg, *l_itr, _denoisingFlag);
         l_vecCapImg.push_back(l_capImg);
+        
+        // show
+        ostringstream oss;
+        oss << "projection image" << i;
+        imshow(oss.str().c_str(), l_capImg);
     }
     
     // get vec C
@@ -2235,31 +2231,31 @@ bool ProCam::settingProjectorAndCamera(void){
         _print_gnuplot2(std::cout, l_mean, l_stddev);
         MY_IMSHOW(l_captureImage);
         
-        int l_key = waitKey(30);
+        int l_key = waitKey(-1);
         switch (l_key) {
             case CV_BUTTON_r:
-                l_mask = CV_VEC3B_RED / 255;
+                l_mask = (Vec3b)CV_VEC3D_RED;
                 break;
             case CV_BUTTON_g:
-                l_mask = CV_VEC3B_GREEN / 255;
+                l_mask = (Vec3b)CV_VEC3D_GREEN;
                 break;
             case CV_BUTTON_b:
-                l_mask = CV_VEC3B_BLUE / 255;
+                l_mask = (Vec3b)CV_VEC3D_BLUE;
                 break;
             case CV_BUTTON_k:
-                l_mask = CV_VEC3B_BLACK / 255;
+                l_mask = (Vec3b)CV_VEC3D_BLACK;
                 break;
             case CV_BUTTON_w:
-                l_mask = CV_VEC3B_WHITE / 255;
+                l_mask = (Vec3b)CV_VEC3D_WHITE;
                 break;
             case CV_BUTTON_y:
-                l_mask = CV_VEC3B_YELLOW / 255;
+                l_mask = (Vec3b)CV_VEC3D_YELLOW;
                 break;
             case CV_BUTTON_p:
-                l_mask = CV_VEC3B_PURPLE / 255;
+                l_mask = (Vec3b)CV_VEC3D_PURPLE;
                 break;
             case CV_BUTTON_c:
-                l_mask = CV_VEC3B_CYAN / 255;
+                l_mask = (Vec3b)CV_VEC3D_CYAN;
                 break;
                 
             case CV_BUTTON_UP:

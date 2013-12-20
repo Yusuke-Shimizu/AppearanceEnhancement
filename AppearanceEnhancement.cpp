@@ -813,8 +813,8 @@ bool AppearanceEnhancement::calcNextProjectionImage(cv::Mat* const _nextP, const
         const Vec3d* l_pK = _K.ptr<Vec3d>(y);
         const Vec3d* l_pF = _F.ptr<Vec3d>(y);
         const Vec3d* l_pFBefore = _FBefore.ptr<Vec3d>(y);
-        const Vec3d* l_pCfull = _CMax.ptr<Vec3d>(y);
-        const Vec3d* l_pC0 = _CMin.ptr<Vec3d>(y);
+        const Vec3d* l_pCMax = _CMax.ptr<Vec3d>(y);
+        const Vec3d* l_pCMin = _CMin.ptr<Vec3d>(y);
         
         for (int x = 0; x < cols; ++ x) {
             for (int c = 0; c < channel; ++ c) {
@@ -826,11 +826,11 @@ bool AppearanceEnhancement::calcNextProjectionImage(cv::Mat* const _nextP, const
                 const double l_nK = l_pK[x][c];
                 const double l_nF = l_pF[x][c] / 255.0;
                 const double l_nFBefore = l_pFBefore[x][c] / 255.0;
-                const double l_nCfull = l_pCfull[x][c] / 255.0;
-                const double l_nC0 = l_pC0[x][c] / 255.0;
+                const double l_nCMax = l_pCMax[x][c] / 255.0;
+                const double l_nCMin = l_pCMin[x][c] / 255.0;
                 
                 // calculation
-                calcNextProjectionImageAtPixel(&(l_pNextP[x][c]), l_nTargetImage, l_nTargetImageBefore, l_nC, l_nP, l_nK, l_nF, l_nFBefore, l_nCfull, l_nC0);
+                calcNextProjectionImageAtPixel(&(l_pNextP[x][c]), l_nTargetImage, l_nTargetImageBefore, l_nC, l_nP, l_nK, l_nF, l_nFBefore, l_nCMax, l_nCMin, _alpha);
             }
         }
     }
@@ -897,6 +897,7 @@ bool AppearanceEnhancement::calcNextProjectionImageAtPixel(uchar* const _nextP, 
     
     // unnormalize
 //    *_nextP = std::max((uchar)(l_nNextP * 255), (uchar)50);
+    *_nextP = std::max((uchar)(l_nNextP * 255), (uchar)0);
     return true;
 }
 bool AppearanceEnhancement::test_calcNextProjectionImageAtPixel(void){
@@ -1218,27 +1219,36 @@ bool AppearanceEnhancement::estimateF(const cv::Mat& _P){
 bool AppearanceEnhancement::estimateKFByAmanoModel(const cv::Mat& _P1, const cv::Mat& _P2){
     // init
     ProCam* l_procam = getProCam();
-    const Size* l_camSize = l_procam->getCameraSize();
+    const Size l_camSize = l_procam->getCameraSize_();
     const Mat l_Cfull = getCfullMap(), l_C0 = getC0Map();
-    Mat l_C1(*l_camSize, CV_64FC3, CV_SCALAR_BLACK), l_C2(*l_camSize, CV_64FC3, CV_SCALAR_BLACK);
+    Mat l_C1(l_camSize, CV_64FC3, CV_SCALAR_BLACK), l_C2(l_camSize, CV_64FC3, CV_SCALAR_BLACK);
     l_procam->captureOfProjecctorColorFromLinearLightOnProjectorDomain(&l_C1, _P1, false, SLEEP_TIME * 5);
     l_procam->captureOfProjecctorColorFromLinearLightOnProjectorDomain(&l_C2, _P2);
-    Mat l_K(*l_camSize, CV_64FC3, CV_SCALAR_BLACK), l_F(*l_camSize, CV_64FC3, CV_SCALAR_BLACK);
+    
+    estimateKFByAmanoModel(_P1, _P2, l_C1, l_C2);
+    
+    return true;
+}
+bool AppearanceEnhancement::estimateKFByAmanoModel(const cv::Mat& _P1, const cv::Mat& _P2, const cv::Mat& _C1, const cv::Mat& _C2){
+    // init
+    const Mat l_CMax = getCfullMap(), l_CMin = getC0Map();
+    const Size l_camSize(l_CMax.rows, l_CMax.cols);
+    Mat l_K(l_camSize, CV_64FC3, CV_SCALAR_BLACK), l_F(l_camSize, CV_64FC3, CV_SCALAR_BLACK);
     
     int rows = _P1.rows, cols = _P1.cols;
-    if (isContinuous(_P1, _P2, l_C1, l_C2, l_Cfull, l_C0, l_K, l_F)) {
+    if (isContinuous(_P1, _P2, _C1, _C2, l_CMax, l_CMin, l_K, l_F)) {
         cols *= rows;
         rows = 1;
     }
     for (int y = 0; y < rows; ++ y) {
         Vec3d* l_pK = l_K.ptr<Vec3d>(y);
         Vec3d* l_pF = l_F.ptr<Vec3d>(y);
-        const Vec3d* l_pC1 = l_C1.ptr<Vec3d>(y);
-        const Vec3d* l_pC2 = l_C2.ptr<Vec3d>(y);
+        const Vec3d* l_pC1 = _C1.ptr<Vec3d>(y);
+        const Vec3d* l_pC2 = _C2.ptr<Vec3d>(y);
         const Vec3b* l_pP1 = _P1.ptr<Vec3b>(y);
         const Vec3b* l_pP2 = _P2.ptr<Vec3b>(y);
-        const Vec3d* l_pCfull = l_Cfull.ptr<Vec3d>(y);
-        const Vec3d* l_pC0 = l_C0.ptr<Vec3d>(y);
+        const Vec3d* l_pCMax = l_CMax.ptr<Vec3d>(y);
+        const Vec3d* l_pCMin = l_CMin.ptr<Vec3d>(y);
         
         for (int x = 0; x < cols; ++ x) {
             for (int c = 0; c < 3; ++ c) {
@@ -1247,11 +1257,11 @@ bool AppearanceEnhancement::estimateKFByAmanoModel(const cv::Mat& _P1, const cv:
                 const double l_nC2 = l_pC2[x][c] / 255.0;
                 const double l_nP1 = l_pP1[x][c] / 255.0;
                 const double l_nP2 = l_pP2[x][c] / 255.0;
-                const double l_nCfull = l_pCfull[x][c] / 255.0;
-                const double l_nC0 = l_pC0[x][c] / 255.0;
+                const double l_nCMax = l_pCMax[x][c] / 255.0;
+                const double l_nCMin = l_pCMin[x][c] / 255.0;
                 
                 // calculation
-                calcReflectanceAndAmbientLightAtPixel(&(l_pK[x][c]), &(l_pF[x][c]), l_nC1, l_nP1, l_nC2, l_nP2, l_nCfull, l_nC0);
+                calcReflectanceAndAmbientLightAtPixel(&(l_pK[x][c]), &(l_pF[x][c]), l_nC1, l_nP1, l_nC2, l_nP2, l_nCMax, l_nCMin);
             }
         }
     }
@@ -1259,31 +1269,34 @@ bool AppearanceEnhancement::estimateKFByAmanoModel(const cv::Mat& _P1, const cv:
     // set
     setKMap(l_K);
     setFMap(l_F);
-    
-    // save
-//    saveK();
-//    saveF();
-    
     return true;
 }
 bool AppearanceEnhancement::test_estimateKFByAmanoModel(const cv::Mat& _answerK, const cv::Scalar& _mask){
     // init
     ProCam* l_procam = getProCam();
-    const Size* l_camSize = l_procam->getCameraSize();
-    Mat l_projectionImage1(*l_camSize, CV_8UC3, CV_SCALAR_BLACK);
-    Mat l_projectionImage2(*l_camSize, CV_8UC3, CV_SCALAR_BLACK);
+    const Size l_camSize = l_procam->getCameraSize_();
+    Mat l_projectionImage1(l_camSize, CV_8UC3, CV_SCALAR_BLACK);
+    Mat l_projectionImage2(l_camSize, CV_8UC3, CV_SCALAR_BLACK);
+    Mat l_captureImage1(l_camSize, CV_8UC3, CV_SCALAR_BLACK);
+    Mat l_captureImage2(l_camSize, CV_8UC3, CV_SCALAR_BLACK);
     Scalar l_mean(0,0,0,0), l_stddev(0,0,0,0);
     Scalar l_meanEstK(0,0,0,0), l_stddevEstK(0,0,0,0);
     Scalar l_meanEstF(0,0,0,0), l_stddevEstF(0,0,0,0);
     ofstream ofs(ESTIMATE_KF_FILE_NAME.c_str());
-    
+
+    // initial projection
+    l_procam->captureOfProjecctorColorFromLinearLightOnProjectorDomain(&l_captureImage1, 0, false, SLEEP_TIME * 5);
+
+    // loop
     for (int i = 0; i < 256; ++ i) {
         // projection and capture
         const Scalar l_prjColor(i * _mask[0], i * _mask[1], i * _mask[2]);
-        l_projectionImage1 = l_prjColor;
+        l_projectionImage2 = l_prjColor;
+        
+        l_procam->captureOfProjecctorColorFromLinearLightOnProjectorDomain(&l_captureImage2, l_projectionImage2, false, SLEEP_TIME);
         
         // estimation
-        estimateKFByAmanoModel(l_projectionImage1, l_projectionImage2);
+        estimateKFByAmanoModel(l_projectionImage1, l_projectionImage2, l_captureImage1, l_captureImage2);
         Mat l_estK = getKMap(), l_estF = getFMap() / 255.0;
         
         // calc
