@@ -882,12 +882,16 @@ bool LinearizerOfProjector::calcResponseFunction(cv::Mat_<cv::Vec3b>* const _res
     // scanning all luminance[0-255] of projector
     int prjLuminance = 0;
     _print(prjLuminance);
-    l_procam->captureFromLightOnProjectorDomain(&camImage, prjLuminance, true, SLEEP_TIME * 2);
+    Mat l_blackImage(*l_cameraSize, CV_8UC3, CV_SCALAR_BLACK);
+    l_procam->captureFromLightOnProjectorDomain(&l_blackImage, prjLuminance, true, SLEEP_TIME * 2);
     for (prjLuminance = 0; prjLuminance < 256; prjLuminance += PROJECTION_LUMINANCE_STEP) {
         _print(prjLuminance);
 
         // capture from projection image
         l_procam->captureFromLightOnProjectorDomain(&camImage, prjLuminance, true);
+        if (USE_LOOK_LIKE_ANOTHER_FLAG) {
+            camImage -= l_blackImage;
+        }
         MY_IMSHOW(camImage);
         ostringstream oss;
         oss << PROJECTOR_RESPONSE_C_IMAGE_PATH << prjLuminance << ".png" << endl;
