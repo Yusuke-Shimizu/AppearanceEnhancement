@@ -1508,20 +1508,22 @@ bool ProCam::showAccessMapCam2Prj(void){
 
     cout << "show access map" << endl;
     while (flag) {
-        // init point
-        Point l_startPt(pt.x - 1, pt.y - 1), l_endPt(pt.x + 1, pt.y + 1);
-        
         // create projection image
         Mat whiteImg(*camSize, CV_8UC3, Scalar(255, 255, 255)), prjImg(*prjSize, CV_8UC3, Scalar(0, 0, 0));
-        cv::rectangle(whiteImg, l_startPt, l_endPt, CV_SCALAR_BLUE, -1, CV_AA);
+//        Point l_startPt(pt.x - 1, pt.y - 1), l_endPt(pt.x + 1, pt.y + 1);
+//        cv::rectangle(whiteImg, l_startPt, l_endPt, CV_SCALAR_BLUE, -1, CV_AA);
+        const int l_lineLength = 20;
+        cv::line(whiteImg, Point(pt.x - l_lineLength, pt.y), Point(pt.x + l_lineLength, pt.y), CV_SCALAR_BLUE);
+        cv::line(whiteImg, Point(pt.x, pt.y - l_lineLength), Point(pt.x, pt.y + l_lineLength), CV_SCALAR_BLUE);
         
         // capture
         captureFromLightOnProjectorDomain(&l_capImage, whiteImg);
+        Mat l_capImage_ = l_capImage.clone();
+//        cv::rectangle(l_capImage, cv::Point(pt.x - 1,pt.y - 1), cv::Point(pt.x + 1, pt.y + 1), CV_SCALAR_RED, -1, CV_AA);
+        cv::line(l_capImage, Point(pt.x - l_lineLength, pt.y), Point(pt.x + l_lineLength, pt.y), CV_SCALAR_RED);
+        cv::line(l_capImage, Point(pt.x, pt.y - l_lineLength), Point(pt.x, pt.y + l_lineLength), CV_SCALAR_RED);
 
-        // add color for capture image
-        cv::rectangle(l_capImage, cv::Point(pt.x - 1,pt.y - 1), cv::Point(pt.x + 1, pt.y + 1), CV_SCALAR_RED, -1, CV_AA);
-
-        MY_IMSHOW(l_capImage);
+        MY_IMSHOW2(l_capImage, l_capImage_);
 
         int pushKey = waitKey(-1);
         switch (pushKey) {
@@ -2205,18 +2207,22 @@ bool ProCam::settingProjectorAndCamera(void){
         l_projectionColor = l_mask * l_luminance;
         switch (l_caprjType) {
             case 0:
-                captureFromLightOnProjectorDomain(&l_captureImage, l_projectionColor);
+                cout << "captureFromLight" << endl;
+                captureFromLight(&l_captureImage, l_projectionColor);
                 break;
             case 1:
-                captureFromLinearLightOnProjectorDomain(&l_captureImage, l_projectionColor);
+                cout << "captureFromLightOnProjectorDomain" << endl;
+                captureFromLightOnProjectorDomain(&l_captureImage, l_projectionColor);
                 break;
             case 2:
+                cout << "captureFromLinearLightOnProjectorDomain" << endl;
+                captureFromLinearLightOnProjectorDomain(&l_captureImage, l_projectionColor);
+                break;
+            case 3:
+                cout << "captureOfProjecctorColorFromLinearLightOnProjectorDomain" << endl;
                 l_captureImage.convertTo(l_captureImage, CV_64FC3);
                 captureOfProjecctorColorFromLinearLightOnProjectorDomain(&l_captureImage, l_projectionColor);
                 l_captureImage.convertTo(l_captureImage, CV_8UC3);
-                break;
-            case 3:
-                captureFromLight(&l_captureImage, l_projectionColor);
                 break;
                 
             default:
