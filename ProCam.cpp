@@ -1177,9 +1177,9 @@ bool ProCam::colorCalibration3(const bool _denoisingFlag){
     
     // init project color
     std::vector<Vec3b> l_vecPrjColor;
-    l_vecPrjColor.push_back(Vec3b(0, 0, 230));
-    l_vecPrjColor.push_back(Vec3b(0, 230, 0));
-    l_vecPrjColor.push_back(Vec3b(220, 0, 0));
+    l_vecPrjColor.push_back(Vec3b(0, 0, g_maxLuminance[2]));
+    l_vecPrjColor.push_back(Vec3b(0, g_maxLuminance[1], 0));
+    l_vecPrjColor.push_back(Vec3b(g_maxLuminance[0], 0, 0));
     
     // capture from some color light
     cv::Mat black_cap(cameraSize, CV_8UC3, CV_SCALAR_BLACK);
@@ -1505,6 +1505,7 @@ bool ProCam::showAccessMapCam2Prj(void){
     bool flag = true;
     Point pt(camSize->height / 2, camSize->width / 2);
     Mat l_capImage(*camSize, CV_8UC3);
+    int l_lineLength = 50;
 
     cout << "show access map" << endl;
     while (flag) {
@@ -1512,7 +1513,6 @@ bool ProCam::showAccessMapCam2Prj(void){
         Mat whiteImg(*camSize, CV_8UC3, Scalar(255, 255, 255)), prjImg(*prjSize, CV_8UC3, Scalar(0, 0, 0));
 //        Point l_startPt(pt.x - 1, pt.y - 1), l_endPt(pt.x + 1, pt.y + 1);
 //        cv::rectangle(whiteImg, l_startPt, l_endPt, CV_SCALAR_BLUE, -1, CV_AA);
-        const int l_lineLength = 20;
         cv::line(whiteImg, Point(pt.x - l_lineLength, pt.y), Point(pt.x + l_lineLength, pt.y), CV_SCALAR_BLUE);
         cv::line(whiteImg, Point(pt.x, pt.y - l_lineLength), Point(pt.x, pt.y + l_lineLength), CV_SCALAR_BLUE);
         
@@ -1541,6 +1541,13 @@ bool ProCam::showAccessMapCam2Prj(void){
                 break;
             case (CV_BUTTON_RIGHT):
                 pt.x += 10;
+                break;
+                
+            case (CV_BUTTON_s):
+                l_lineLength += 10;
+                break;
+            case (CV_BUTTON_S):
+                l_lineLength += 10;
                 break;
                 
             default:

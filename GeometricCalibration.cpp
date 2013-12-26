@@ -67,8 +67,8 @@ void GeometricCalibration::setAccessMap(Point* const c2pMap, const bool* codeMap
                 //return;
             }
             
-            // set
-            setPoint(c2pMap + cameraPos, px, py);
+            // set(ずれてたから無理矢理補正)
+            setPoint(c2pMap + cameraPos, std::max(px - 1, 0), py);
             
             // free
             delete [] grayCodeX;

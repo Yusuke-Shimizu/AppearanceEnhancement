@@ -430,7 +430,7 @@ bool AppearanceEnhancement::printAppearanceEnhancement(void){
         l_target /= 255.0;
         
         // calc next projection number
-        calcNextProjectionImageAtPixel(&l_Puchar, l_target, l_target, l_C, l_P, l_estK, l_estF, l_estFBefore, l_CMax, l_CMin);
+        calcNextProjectionImageAtPixel(&l_Puchar, l_target, l_target, l_C, l_P, l_estK, l_estF, l_estFBefore, l_CMax, l_CMin, g_maxLuminance[0]);
         l_P = (double)l_Puchar / 255.0;
         l_P = i / 255.0;
         
@@ -830,7 +830,7 @@ bool AppearanceEnhancement::calcNextProjectionImage(cv::Mat* const _nextP, const
                 const double l_nCMin = l_pCMin[x][c] / 255.0;
                 
                 // calculation
-                calcNextProjectionImageAtPixel(&(l_pNextP[x][c]), l_nTargetImage, l_nTargetImageBefore, l_nC, l_nP, l_nK, l_nF, l_nFBefore, l_nCMax, l_nCMin, _alpha);
+                calcNextProjectionImageAtPixel(&(l_pNextP[x][c]), l_nTargetImage, l_nTargetImageBefore, l_nC, l_nP, l_nK, l_nF, l_nFBefore, l_nCMax, l_nCMin, g_maxLuminance[c], _alpha);
             }
         }
     }
@@ -885,7 +885,7 @@ bool AppearanceEnhancement::test_calcNextProjectionImage(const cv::Mat& _answerK
     return true;
 }
 
-bool AppearanceEnhancement::calcNextProjectionImageAtPixel(uchar* const _nextP, const double& _targetImage, const double& _targetImageBefore, const double& _C, const double& _P, const double& _K, const double& _F, const double& _FBefore, const double& _Cfull, const double& _C0, const double& _alpha){
+bool AppearanceEnhancement::calcNextProjectionImageAtPixel(uchar* const _nextP, const double& _targetImage, const double& _targetImageBefore, const double& _C, const double& _P, const double& _K, const double& _F, const double& _FBefore, const double& _Cfull, const double& _C0, const uchar _maxLuminance, const double& _alpha){
     // calculation
 //    double l_nNextP = (((1 - _alpha) * (_targetImage - _C) - _F + _FBefore) / (_Cfull - _C0) + _P * _K) / _K;
     double l_nNextP = ((1 - _alpha) * ((_targetImage - _C) / _K) - _F + _FBefore) / (_Cfull - _C0) + _P;
@@ -896,8 +896,9 @@ bool AppearanceEnhancement::calcNextProjectionImageAtPixel(uchar* const _nextP, 
     round0to1(&l_nNextP);
     
     // unnormalize
-//    *_nextP = std::max((uchar)(l_nNextP * 255), (uchar)50);
-    *_nextP = std::max((uchar)(l_nNextP * 255), (uchar)0);
+    *_nextP = std::max((uchar)(l_nNextP * 255), (uchar)50);
+//    *_nextP = std::max((uchar)(l_nNextP * 255), (uchar)0);
+    *_nextP = std::min(*_nextP, _maxLuminance);
     return true;
 }
 bool AppearanceEnhancement::test_calcNextProjectionImageAtPixel(void){
