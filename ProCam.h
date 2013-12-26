@@ -83,7 +83,8 @@ const std::string P2I_DATA_PATH = LIN_DATA_PATH_ + "P2I.dat";
 
 const uchar INIT_RES_NUM = 0;   // 応答特性の初期値
 
-const cv::Vec3b g_maxLuminance(220, 230, 230);
+const cv::Vec3b g_maxPrjLuminance(220, 230, 230);
+const cv::Vec3b g_minPrjLuminance(0, 0, 0);
 
 // 先攻宣言
 class GeometricCalibration;

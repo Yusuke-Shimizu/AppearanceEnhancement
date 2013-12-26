@@ -1177,9 +1177,9 @@ bool ProCam::colorCalibration3(const bool _denoisingFlag){
     
     // init project color
     std::vector<Vec3b> l_vecPrjColor;
-    l_vecPrjColor.push_back(Vec3b(0, 0, g_maxLuminance[2]));
-    l_vecPrjColor.push_back(Vec3b(0, g_maxLuminance[1], 0));
-    l_vecPrjColor.push_back(Vec3b(g_maxLuminance[0], 0, 0));
+    l_vecPrjColor.push_back(Vec3b(0, 0, g_maxPrjLuminance[2]));
+    l_vecPrjColor.push_back(Vec3b(0, g_maxPrjLuminance[1], 0));
+    l_vecPrjColor.push_back(Vec3b(g_maxPrjLuminance[0], 0, 0));
     
     // capture from some color light
     cv::Mat black_cap(cameraSize, CV_8UC3, CV_SCALAR_BLACK);

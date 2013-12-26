@@ -120,7 +120,7 @@ bool AppearanceEnhancement::setFMap(const cv::Mat& _F){
 // return           : 成功したかどうか
 bool AppearanceEnhancement::setCfullMap(const bool _denoisingFlag){
     ProCam* l_procam = getProCam();
-    l_procam->captureOfProjecctorColorFromLinearLightOnProjectorDomain(&m_CfullMap, 255, _denoisingFlag, SLEEP_TIME);
+    l_procam->captureOfProjecctorColorFromLinearLightOnProjectorDomain(&m_CfullMap, g_maxPrjLuminance, _denoisingFlag, SLEEP_TIME);
     saveCfull();
     showCfullMap();
     Scalar l_meanOfCfull(0,0,0,0), l_stddevOfCfull(0,0,0,0);
@@ -423,14 +423,14 @@ bool AppearanceEnhancement::printAppearanceEnhancement(void){
     for (int i = 0; i < 256; ++ i) {
         // estimate K
         l_estFBefore = l_estF;
-        calcReflectanceAtPixel(&l_estK, l_C, l_P, l_CMax, l_CMin);
+        calcReflectanceAtPixel(&l_estK, l_C, l_P, l_CMax, l_CMin, g_maxPrjLuminance[0], g_minPrjLuminance[0]);
         
         // calc target number
         calcTargetImageAtPixel(&l_target, l_estK, l_estF, l_CMin, l_estK * 1.2);
         l_target /= 255.0;
         
         // calc next projection number
-        calcNextProjectionImageAtPixel(&l_Puchar, l_target, l_target, l_C, l_P, l_estK, l_estF, l_estFBefore, l_CMax, l_CMin, g_maxLuminance[0]);
+        calcNextProjectionImageAtPixel(&l_Puchar, l_target, l_target, l_C, l_P, l_estK, l_estF, l_estFBefore, l_CMax, l_CMin, g_maxPrjLuminance[0]/255.0, g_minPrjLuminance[0]/255.0);
         l_P = (double)l_Puchar / 255.0;
         l_P = i / 255.0;
         
@@ -828,9 +828,11 @@ bool AppearanceEnhancement::calcNextProjectionImage(cv::Mat* const _nextP, const
                 const double l_nFBefore = l_pFBefore[x][c] / 255.0;
                 const double l_nCMax = l_pCMax[x][c] / 255.0;
                 const double l_nCMin = l_pCMin[x][c] / 255.0;
-                
+                double l_nPMax = (double)g_maxPrjLuminance[c] / 255.0;
+                double l_nPMin = (double)g_minPrjLuminance[c] / 255.0;
+
                 // calculation
-                calcNextProjectionImageAtPixel(&(l_pNextP[x][c]), l_nTargetImage, l_nTargetImageBefore, l_nC, l_nP, l_nK, l_nF, l_nFBefore, l_nCMax, l_nCMin, g_maxLuminance[c], _alpha);
+                calcNextProjectionImageAtPixel(&(l_pNextP[x][c]), l_nTargetImage, l_nTargetImageBefore, l_nC, l_nP, l_nK, l_nF, l_nFBefore, l_nCMax, l_nCMin, l_nPMax, l_nPMin, _alpha);
             }
         }
     }
@@ -885,10 +887,11 @@ bool AppearanceEnhancement::test_calcNextProjectionImage(const cv::Mat& _answerK
     return true;
 }
 
-bool AppearanceEnhancement::calcNextProjectionImageAtPixel(uchar* const _nextP, const double& _targetImage, const double& _targetImageBefore, const double& _C, const double& _P, const double& _K, const double& _F, const double& _FBefore, const double& _Cfull, const double& _C0, const uchar _maxLuminance, const double& _alpha){
+bool AppearanceEnhancement::calcNextProjectionImageAtPixel(uchar* const _nextP, const double& _targetImage, const double& _targetImageBefore, const double& _C, const double& _P, const double& _K, const double& _F, const double& _FBefore, const double& _Cfull, const double& _C0, const double& _PMax, const double& _PMin, const double& _alpha){
     // calculation
 //    double l_nNextP = (((1 - _alpha) * (_targetImage - _C) - _F + _FBefore) / (_Cfull - _C0) + _P * _K) / _K;
-    double l_nNextP = ((1 - _alpha) * ((_targetImage - _C) / _K) - _F + _FBefore) / (_Cfull - _C0) + _P;
+//    double l_nNextP = ((1 - _alpha) * ((_targetImage - _C) / _K) - _F + _FBefore) / (_Cfull - _C0) + _P;
+    double l_nNextP = ((1 - _alpha) * (_targetImage - _C) * (_PMax - _PMin)) / (_K * (_Cfull - _C0)) + _P;
 //    double l_nNextP = ((1 - _alpha) * (_targetImage - _C) / _K) / (_Cfull - _C0) + _P;
 //    double l_nNextP = (_targetImage - _C0 * _K) / ((_Cfull - _C0) * _K);
 //    double l_nNextP = _targetImage;
@@ -898,7 +901,7 @@ bool AppearanceEnhancement::calcNextProjectionImageAtPixel(uchar* const _nextP, 
     // unnormalize
     *_nextP = std::max((uchar)(l_nNextP * 255), (uchar)50);
 //    *_nextP = std::max((uchar)(l_nNextP * 255), (uchar)0);
-    *_nextP = std::min(*_nextP, _maxLuminance);
+//    *_nextP = std::min(*_nextP, _maxLuminance);
     return true;
 }
 bool AppearanceEnhancement::test_calcNextProjectionImageAtPixel(void){
@@ -916,7 +919,7 @@ bool AppearanceEnhancement::test_calcNextProjectionImageAtPixel(void){
         //
         l_PBefore = l_P;
         uchar l_ucP = 0;
-        calcNextProjectionImageAtPixel(&l_ucP, l_target, l_target, l_C, l_PBefore, l_ansK, l_ansF, l_ansF, l_CMax, l_CMin, l_alpha);
+        calcNextProjectionImageAtPixel(&l_ucP, l_target, l_target, l_C, l_PBefore, l_ansK, l_ansF, l_ansF, l_CMax, l_CMin, g_maxPrjLuminance[0]/255.0, g_minPrjLuminance[0]/255.0, l_alpha);
         l_P = (double)l_ucP / 255.0;
         
         // capture
@@ -931,10 +934,10 @@ bool AppearanceEnhancement::test_calcNextProjectionImageAtPixel(void){
 }
 
 // 反射率の計算
-bool AppearanceEnhancement::calcReflectanceAtPixel(double* const _K, const double& _nC, const double& _nP, const double& _nCMax, const double& _nCMin){
+bool AppearanceEnhancement::calcReflectanceAtPixel(double* const _K, const double& _nC, const double& _nP, const double& _nCMax, const double& _nCMin, const double& _nPMax, const double& _nPMin){
     // calc
     // normalized linear interpolation P
-    double l_nliP = (_nCMax - _nCMin) * _nP + _nCMin;
+    double l_nliP = (_nCMax - _nCMin) * ((_nP - _nPMin)/(_nPMax - _nPMin)) + _nCMin;
     // avoid 0
     l_nliP = std::max(l_nliP, 1.0/255.0);
     const double l_nC = std::max(_nC, 1.0/255.0);
@@ -967,7 +970,7 @@ bool AppearanceEnhancement::test_calcReflectanceAtPixel(void){
 
         // estimate K
         l_estFBefore = l_estF;
-        calcReflectanceAtPixel(&l_estK, l_C, l_P, l_CMax, l_CMin);
+        calcReflectanceAtPixel(&l_estK, l_C, l_P, l_CMax, l_CMin, g_maxPrjLuminance[0], g_minPrjLuminance[0]);
         
         if (l_estK <= 0.01) {
             _print_gnuplot6(std::cout, l_estK, l_C, l_P, l_CMax, l_CMin, l_noise);
@@ -1108,9 +1111,11 @@ bool AppearanceEnhancement::estimateK(const cv::Mat& _P, const cv::Mat& _C, cons
                 double l_nP = (double)l_pP[x][c] / 255.0;
                 double l_nCMax = l_pCMax[x][c] / 255.0;
                 double l_nCMin = l_pCMin[x][c] / 255.0;
+                double l_nPMax = (double)g_maxPrjLuminance[c] / 255.0;
+                double l_nPMin = (double)g_minPrjLuminance[c] / 255.0;
                 
                 // calculation
-                calcReflectanceAtPixel(&(l_pK[x][c]), l_nC, l_nP, l_nCMax, l_nCMin);
+                calcReflectanceAtPixel(&(l_pK[x][c]), l_nC, l_nP, l_nCMax, l_nCMin, l_nPMax, l_nPMin);
             }
         }
     }
