@@ -139,7 +139,7 @@ bool AppearanceEnhancement::setCfullMap(const cv::Mat& _Cfull){
 // return       : 成功したかどうか
 bool AppearanceEnhancement::setC0Map(const bool _denoisingFlag){
     ProCam* l_procam = getProCam();
-    l_procam->captureOfProjecctorColorFromLinearLightOnProjectorDomain(&m_C0Map, 0, _denoisingFlag, SLEEP_TIME);
+    l_procam->captureOfProjecctorColorFromLinearLightOnProjectorDomain(&m_C0Map, g_minPrjLuminance, _denoisingFlag, SLEEP_TIME);
     saveC0();
     showC0Map();
     Scalar l_meanOfC0(0,0,0,0), l_stddevOfC0(0,0,0,0);

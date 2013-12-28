@@ -630,7 +630,8 @@ bool LinearizerOfProjector::doLinearlize(cv::Mat_<cv::Vec3b>* const _responseOfP
     ///////////////// create V map /////////////////
     // 色変換行列の生成
     cout << "creating Color Mixing Matrix..." << endl;
-    if( !calcColorMixingMatrix() ) return false;
+//    if( !calcColorMixingMatrix() ) return false;
+    calcMoreDetailColorMixingMatrix();
     cout << "created Color Mixing Matrix" << endl;
     
     // show V map
@@ -715,71 +716,122 @@ bool LinearizerOfProjector::calcColorMixingMatrix(void){
 
 // より正確な色変換行列を取得する
 bool LinearizerOfProjector::calcMoreDetailColorMixingMatrix(void){
-    // init
-    ProCam *procam = getProCam();
-    Size *cameraSize = procam->getCameraSize();
+    // init projection color
+    std::vector<Vec3b> l_vecPrjColor;
+    l_vecPrjColor.push_back(Vec3b(0, 0, 0));        // 0
+    l_vecPrjColor.push_back(Vec3b(0, 0, 255));      // 1
+    l_vecPrjColor.push_back(Vec3b(0, 255, 0));      // 2
+    l_vecPrjColor.push_back(Vec3b(255, 0, 0));      // 3
+    l_vecPrjColor.push_back(Vec3b(0, 255, 255));    // 4
+    l_vecPrjColor.push_back(Vec3b(255, 255, 0));    // 5
+    l_vecPrjColor.push_back(Vec3b(255, 0, 255));    // 6
+    l_vecPrjColor.push_back(Vec3b(255, 255, 255));  // 7
     
-    // init capture image
-    uchar depth8x3 = CV_8UC3;
-    cv::Mat black_cap   (*cameraSize, depth8x3, CV_SCALAR_BLACK);
-    cv::Mat red_cap     (*cameraSize, depth8x3, CV_SCALAR_BLACK);
-    cv::Mat green_cap   (*cameraSize, depth8x3, CV_SCALAR_BLACK);
-    cv::Mat blue_cap    (*cameraSize, depth8x3, CV_SCALAR_BLACK);
-    cv::Mat white_cap    (*cameraSize, depth8x3, CV_SCALAR_BLACK);
-    
-    // capture from some color light
-    procam->captureFromLightOnProjectorDomain(&black_cap, CV_VEC3B_BLACK, true, SLEEP_TIME * 2);
-    procam->captureFromLightOnProjectorDomain(&red_cap, CV_VEC3B_RED, true);
-    procam->captureFromLightOnProjectorDomain(&green_cap, CV_VEC3B_GREEN, true);
-    procam->captureFromLightOnProjectorDomain(&blue_cap, CV_VEC3B_BLUE, true);
-    procam->captureFromLightOnProjectorDomain(&white_cap, CV_VEC3B_WHITE, true);
-    
-    // show image
-    MY_IMSHOW(black_cap);
-    MY_IMSHOW(red_cap);
-    MY_IMSHOW(green_cap);
-    MY_IMSHOW(blue_cap);
-    MY_IMSHOW(white_cap);
+    // get capture
+    ProCam *l_procam = getProCam();
+    const Size l_camSize(l_procam->getCameraSize_());
+    std::vector<cv::Mat> l_vecCaptureImage;
+    Mat l_captureImage(l_camSize, CV_8UC3, CV_SCALAR_BLACK);
+    l_procam->captureFromLightOnProjectorDomain(&l_captureImage, CV_VEC3B_BLACK, true, SLEEP_TIME);
+    for (vector<Vec3b>::const_iterator l_itrPrj = l_vecPrjColor.begin();
+         l_itrPrj != l_vecPrjColor.end();
+         ++ l_itrPrj) {
+        // capture
+        l_procam->captureFromLightOnProjectorDomain(&l_captureImage, *l_itrPrj);
+        
+        // push
+        l_vecCaptureImage.push_back(l_captureImage);
+    }
     
     // translate bit depth (uchar[0-255] -> double[0-1])
-    uchar depth64x3 = CV_64FC3;
-    double rate = 1.0 / 255.0;
-    black_cap.convertTo(black_cap, depth64x3, rate);
-    red_cap.convertTo(red_cap, depth64x3, rate);
-    green_cap.convertTo(green_cap, depth64x3, rate);
-    blue_cap.convertTo(blue_cap, depth64x3, rate);
-    white_cap.convertTo(white_cap, depth64x3, rate);
+    Mat l_captureImage_d(l_camSize, CV_64FC3, CV_SCALAR_D_BLACK);
+    std::vector<cv::Mat> l_vecCaptureImage_d;
+    const double l_rateUC2D = 1.0 / 255.0;
+    for (vector<Mat>::const_iterator l_itrCapImg = l_vecCaptureImage.begin();
+         l_itrCapImg != l_vecCaptureImage.end();
+         ++ l_itrCapImg) {
+        l_itrCapImg->convertTo(l_captureImage_d, CV_64FC3, l_rateUC2D);
+        l_vecCaptureImage_d.push_back(l_captureImage_d);
+    }
+    
+    // create front and back image
+    std::vector<Mat> l_vecFront, l_vecBack;
+    // change red
+    addTwoVector(&l_vecFront, &l_vecBack, l_vecCaptureImage_d, 1, 0);
+    addTwoVector(&l_vecFront, &l_vecBack, l_vecCaptureImage_d, 4, 2);
+    addTwoVector(&l_vecFront, &l_vecBack, l_vecCaptureImage_d, 6, 3);
+    addTwoVector(&l_vecFront, &l_vecBack, l_vecCaptureImage_d, 7, 5);
+    // change green
+    addTwoVector(&l_vecFront, &l_vecBack, l_vecCaptureImage_d, 2, 0);
+    addTwoVector(&l_vecFront, &l_vecBack, l_vecCaptureImage_d, 4, 1);
+    addTwoVector(&l_vecFront, &l_vecBack, l_vecCaptureImage_d, 5, 3);
+    addTwoVector(&l_vecFront, &l_vecBack, l_vecCaptureImage_d, 7, 6);
+    // change blue
+    addTwoVector(&l_vecFront, &l_vecBack, l_vecCaptureImage_d, 3, 0);
+    addTwoVector(&l_vecFront, &l_vecBack, l_vecCaptureImage_d, 6, 1);
+    addTwoVector(&l_vecFront, &l_vecBack, l_vecCaptureImage_d, 5, 2);
+    addTwoVector(&l_vecFront, &l_vecBack, l_vecCaptureImage_d, 7, 4);
     
     // calc difference[-1-1]
-    Mat diffRedAndBlack = red_cap - black_cap;
-    Mat diffGreenAndBlack = green_cap - black_cap;
-    Mat diffBlueAndBlack = blue_cap - black_cap;
-    Mat diffWhiteAndBlack = white_cap - black_cap;
-    //    imshow("black_cap2", black_cap);
-    //    imshow("white_cap2", white_cap);
-    //    imshow("diffWtoB_cap", diffWhiteAndBlack);
+    std::vector<Mat> l_vecDiff;
+    std::vector<Mat>::const_iterator l_itrFront = l_vecFront.begin();
+    std::vector<Mat>::const_iterator l_itrBack = l_vecBack.begin();
+    Mat l_diffImage(l_camSize, CV_64FC3, CV_SCALAR_D_BLACK);
+    for (; l_itrFront != l_vecFront.end() || l_itrBack != l_vecBack.end();
+         ++ l_itrFront, ++ l_itrBack) {
+        l_diffImage = *l_itrFront - *l_itrBack;
+        l_vecDiff.push_back(l_diffImage);
+    }
     
-    // show difference image
-    //    imshow("diffRedAndBlack", diffRedAndBlack);
-    //    imshow("diffGreenAndBlack", diffGreenAndBlack);
-    //    imshow("diffBlueAndBlack", diffBlueAndBlack);
+    // devide mat along channel to change
+    std::vector<Mat> l_vecDiffRed, l_vecDiffGreen, l_vecDiffBlue;
+    const int l_length = (int)l_vecDiff.size() / 3;
+    for (int i = 0; i < l_length; ++ i) {
+        // normalize
+        Mat l_diffImgRed = l_vecDiff[i];
+        Mat l_diffImgGreen = l_vecDiff[i + l_length];
+        Mat l_diffImgBlue = l_vecDiff[i + l_length * 2];
+        normalizeByAnyColorChannel(&l_diffImgRed, CV_RED);
+        normalizeByAnyColorChannel(&l_diffImgGreen, CV_GREEN);
+        normalizeByAnyColorChannel(&l_diffImgBlue, CV_BLUE);
+
+        l_vecDiffRed.push_back(l_vecDiff[i]);
+        l_vecDiffGreen.push_back(l_vecDiff[i + l_length]);
+        l_vecDiffBlue.push_back(l_vecDiff[i + l_length * 2]);
+    }
     
-    // image divided by any color element
-    normalizeByAnyColorChannel(&diffRedAndBlack, CV_RED);
-    normalizeByAnyColorChannel(&diffGreenAndBlack, CV_GREEN);
-    normalizeByAnyColorChannel(&diffBlueAndBlack, CV_BLUE);
-    //    imshow("diffRedAndBlack2", diffRedAndBlack);
-    //    imshow("diffGreenAndBlack2", diffGreenAndBlack);
-    //    imshow("diffBlueAndBlack2", diffBlueAndBlack);
+    // calc mean
+    std::vector<Mat>::iterator l_itrDiffRed = l_vecDiffRed.begin();
+    std::vector<Mat>::iterator l_itrDiffGreen = l_vecDiffGreen.begin();
+    std::vector<Mat>::iterator l_itrDiffBlue = l_vecDiffBlue.begin();
+    Mat l_sumRed(l_camSize, CV_64FC3, CV_SCALAR_D_BLACK);
+    Mat l_sumGreen(l_camSize, CV_64FC3, CV_SCALAR_D_BLACK);
+    Mat l_sumBlue(l_camSize, CV_64FC3, CV_SCALAR_D_BLACK);
+    for (; l_itrDiffRed != l_vecDiffRed.end() ||
+         l_itrDiffGreen != l_vecDiffGreen.end() ||
+         l_itrDiffBlue != l_vecDiffBlue.end();
+         ++ l_itrDiffRed, ++ l_itrDiffGreen, ++ l_itrDiffBlue) {
+        l_sumRed += *l_itrDiffRed;
+        l_sumGreen += *l_itrDiffGreen;
+        l_sumBlue += *l_itrDiffBlue;
+    }
+    l_sumRed /= l_length;
+    l_sumGreen /= l_length;
+    l_sumBlue /= l_length;
     
     // create V map
-    createVMap(diffRedAndBlack, diffGreenAndBlack, diffBlueAndBlack);
+    createVMap(l_sumRed, l_sumGreen, l_sumBlue);
     
     // save
     cout << "saving Color Mixing Matrix..." << endl;
     if ( !saveColorMixingMatrixOfByte(CMM_MAP_FILE_NAME_BYTE) ) return false;
     cout << "saved Color Mixing Matrix" << endl;
     
+    return true;
+}
+inline bool LinearizerOfProjector::addTwoVector(std::vector<cv::Mat>* _dst1, std::vector<cv::Mat>* _dst2, const std::vector<cv::Mat>& _src, const int _ref1, const int _ref2){
+    _dst1->push_back(_src[_ref1]);
+    _dst2->push_back(_src[_ref2]);
     return true;
 }
 

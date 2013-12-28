@@ -92,6 +92,7 @@ public:
     bool doLinearlize(cv::Mat_<cv::Vec3b>* const _responseMap, cv::Mat_<cv::Vec3b>* const _responseMapP2I);
     bool calcColorMixingMatrix(void);
     bool calcMoreDetailColorMixingMatrix(void);
+    inline bool addTwoVector(std::vector<cv::Mat>* _dst1, std::vector<cv::Mat>* _dst2, const std::vector<cv::Mat>& _src, const int _ref1, const int _ref2);
     bool createVMap(const cv::Mat& _normalR2BL, const cv::Mat& _normalG2BL, const cv::Mat& _normalB2BL);
     bool test_createVMap(void);
     bool calcResponseFunction(cv::Mat_<cv::Vec3b>* const _responseMap, cv::Mat_<cv::Vec3b>* const _responseMapP2I);
