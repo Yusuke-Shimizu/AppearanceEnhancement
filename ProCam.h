@@ -227,7 +227,10 @@ public:
     bool captureOfProjecctorColorFromLinearLightOnProjectorDomain(cv::Mat* const _captureImage, const cv::Mat& _projectionImage, const bool _denoiseFlag = false, const int _waitTimeNum = SLEEP_TIME);
     bool captureOfProjecctorColorFromLinearLightOnProjectorDomain(cv::Mat* const _captureImage, const cv::Vec3b& _projectionColor, const bool _denoiseFlag = false, const int _waitTimeNum = SLEEP_TIME);
     bool captureOfProjecctorColorFromLinearLightOnProjectorDomain(cv::Mat* const _captureImage, const uchar _projectionNumber, const bool _denoiseFlag = false, const int _waitTimeNum = SLEEP_TIME);
-
+    
+    bool captureFromLinearLightOnProjectorDomainAndColor(cv::Mat* const _captureImage, const cv::Mat& _projectionImage, const bool _denoiseFlag = false, const int _waitTimeNum = SLEEP_TIME);
+    bool captureFromLinearLightOnProjectorDomainAndColor(cv::Mat* const _captureImage, const cv::Vec3b& _projectionColor, const bool _denoiseFlag = false, const int _waitTimeNum = SLEEP_TIME);
+    bool captureFromLinearLightOnProjectorDomainAndColor(cv::Mat* const _captureImage, const uchar _projectionNumber, const bool _denoiseFlag = false, const int _waitTimeNum = SLEEP_TIME);
     ///////////////////////////////  other method ///////////////////////////////
     bool interpolationProjectorResponseP2I(cv::Mat* const _prjRes);
     bool test_interpolationProjectorResponseP2I(void);

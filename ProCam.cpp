@@ -1779,6 +1779,28 @@ bool ProCam::captureOfProjecctorColorFromLinearLightOnProjectorDomain(cv::Mat* c
     return captureOfProjecctorColorFromLinearLightOnProjectorDomain(_captureImage, l_projectionColor, _denoiseFlag, _waitTimeNum);
 }
 
+// project on camera domain color
+bool ProCam::captureFromLinearLightOnProjectorDomainAndColor(cv::Mat* const _captureImage, const cv::Mat& _projectionImage, const bool _denoiseFlag, const int _waitTimeNum){
+    // projector -> camera (color domain)
+    Mat l_projectionImageOnCamColor(_projectionImage.rows, _projectionImage.cols, CV_64FC3, CV_SCALAR_D_BLACK);
+    convertColorSpaceOfProjectorToCamera(&l_projectionImageOnCamColor, _projectionImage);
+    
+    // convert Vec3d -> Vec3b
+    l_projectionImageOnCamColor.convertTo(l_projectionImageOnCamColor, CV_8UC3);
+    
+    // capture from projection image
+    return captureFromLinearLightOnProjectorDomain(_captureImage, l_projectionImageOnCamColor, _denoiseFlag, _waitTimeNum);
+}
+bool ProCam::captureFromLinearLightOnProjectorDomainAndColor(cv::Mat* const _captureImage, const cv::Vec3b& _projectionColor, const bool _denoiseFlag, const int _waitTimeNum){
+    const Size l_camSize = getCameraSize_();    // カメラサイズの取得
+    const Mat l_projectionImage(l_camSize, CV_8UC3, Scalar(_projectionColor)); // 投影画像
+    return captureFromLinearLightOnProjectorDomainAndColor(_captureImage, l_projectionImage, _denoiseFlag, _waitTimeNum);
+}
+bool ProCam::captureFromLinearLightOnProjectorDomainAndColor(cv::Mat* const _captureImage, const uchar _projectionNumber, const bool _denoiseFlag, const int _waitTimeNum){
+    const Vec3b l_projectionColor(_projectionNumber, _projectionNumber, _projectionNumber);
+    return captureFromLinearLightOnProjectorDomainAndColor(_captureImage, l_projectionColor, _denoiseFlag, _waitTimeNum);
+}
+
 ///////////////////////////////  other method ///////////////////////////////
 
 // projector responseの補間を行う
