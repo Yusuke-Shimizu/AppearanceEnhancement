@@ -334,6 +334,34 @@ bool getUnderExposureImage(cv::Mat* const _dst, const cv::Mat& _src){
     return getBinaryExposureImage(_dst, _src, 0);
 }
 
+bool getThresholdColorImage(cv::Mat* const _dst, const cv::Mat& _src, const cv::Vec3b _thresh){
+    Mat l_dst = _src.clone();
+    int rows = _src.rows, cols = _src.cols, channel = _src.channels();
+    if (isContinuous(_src, l_dst)) {
+        cols *= rows;
+        rows = 1;
+    }
+    for (int y = 0; y < rows; ++ y) {
+        Vec3b* l_pDst = l_dst.ptr<Vec3b>(y);
+        const Vec3b* l_pSrc = _src.ptr<Vec3b>(y);
+        
+        for (int x = 0; x < cols; ++ x) {
+            for (int c = 0; c < channel; ++ c) {
+                if (l_pSrc[x][c] >= _thresh[c]) {
+                    l_pDst[x][c] = 255;
+                } else {
+                    l_pDst[x][c] = 0;
+                }
+            }
+        }
+    }
+    
+    // copy
+    *_dst = l_dst.clone();
+    
+    return true;
+}
+
 ///////////////////////////////  print method ///////////////////////////////
 // Matの様々な要素を表示
 void printMatPropaty(const Mat& m1){

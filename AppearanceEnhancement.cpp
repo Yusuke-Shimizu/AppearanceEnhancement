@@ -1533,13 +1533,12 @@ bool AppearanceEnhancement::showAll(const cv::Mat& _captureImage, const cv::Mat&
     absdiff(_answerK, l_estimatedK, l_errorOfEstimate);
     
     // create over and under exposure image
-    Mat l_overP = l_projectorImage.clone();
-    Mat l_underP = l_projectorImage.clone();
-    getOverExposureImage(&l_overP, _projectionImage);
-    getUnderExposureImage(&l_underP, _projectionImage);
+    Mat l_overP = _projectionImage.clone();
+//    Mat l_underP = _projectionImage.clone();
+    getThresholdColorImage(&l_overP, _projectionImage, g_maxPrjLuminance);
     
     // show
-    MY_IMSHOW8(l_captureImage, l_projectorImage, l_targetImage, _answerK, l_errorOfProjection, l_errorOfEstimate, l_overP, l_underP);
+    MY_IMSHOW7(l_captureImage, l_projectorImage, l_targetImage, _answerK, l_errorOfProjection, l_errorOfEstimate, l_overP);
     showKMap();
     showFMap();
     
@@ -1690,19 +1689,19 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
     
     //
     ProCam* l_procam = getProCam();
-    const Size* l_camSize = l_procam->getCameraSize();
+    const Size l_camSize = l_procam->getCameraSize_();
     bool l_loopFlag = true;//, clearFlag = false;
     int prj = 255, prj2 = 30;
-    Mat l_projectionImage(*l_camSize, CV_8UC3, Scalar(prj, prj, prj));
-    Mat l_projectionImageBefore(*l_camSize, CV_8UC3, Scalar(prj2, prj2, prj2));
-    Mat l_projectionImage2(*l_camSize, CV_8UC3, Scalar(prj, prj, prj));
-    Mat l_projectionImageBefore2(*l_camSize, CV_8UC3, Scalar(prj2, prj2, prj2));
-    Mat l_captureImage(*l_camSize, CV_64FC3, Scalar(prj, prj, prj));
-    Mat l_captureImageBefore(*l_camSize, CV_64FC3, Scalar(prj2, prj2, prj2));
-    Mat l_targetImage(*l_camSize, CV_64FC3, CV_SCALAR_WHITE);
-    Mat l_targetImageBefore(*l_camSize, CV_64FC3, CV_SCALAR_WHITE);
-    Mat l_answerK(*l_camSize, CV_64FC3, CV_SCALAR_D_WHITE);
-    Mat l_answerF(*l_camSize, CV_64FC3, CV_SCALAR_WHITE);
+    Mat l_projectionImage(l_camSize, CV_8UC3, Scalar(prj, prj, prj));
+    Mat l_projectionImageBefore(l_camSize, CV_8UC3, Scalar(prj2, prj2, prj2));
+    Mat l_projectionImage2(l_camSize, CV_8UC3, Scalar(prj, prj, prj));
+    Mat l_projectionImageBefore2(l_camSize, CV_8UC3, Scalar(prj2, prj2, prj2));
+    Mat l_captureImage(l_camSize, CV_64FC3, Scalar(prj, prj, prj));
+    Mat l_captureImageBefore(l_camSize, CV_64FC3, Scalar(prj2, prj2, prj2));
+    Mat l_targetImage(l_camSize, CV_64FC3, CV_SCALAR_WHITE);
+    Mat l_targetImageBefore(l_camSize, CV_64FC3, CV_SCALAR_WHITE);
+    Mat l_answerK(l_camSize, CV_64FC3, CV_SCALAR_D_WHITE);
+    Mat l_answerF(l_camSize, CV_64FC3, CV_SCALAR_WHITE);
     double l_enhanceRate = 1.3, l_alphaMPC = 0.1;
     int l_estTarget = 0, l_enhanceType = 0, l_stopTime = -1;
     
@@ -1828,12 +1827,12 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
             case (CV_BUTTON_RIGHT):
                 prj = std::min(prj + 10, 255);
                 _print2(prj, prj2);
-                l_projectionImage2 = Mat(*l_camSize, CV_8UC3, Scalar(prj, prj, prj));
+                l_projectionImage2 = Mat(l_camSize, CV_8UC3, Scalar(prj, prj, prj));
                 break;
             case (CV_BUTTON_LEFT):
                 prj = std::max(prj - 10, 0);
                 _print2(prj, prj2);
-                l_projectionImage2 = Mat(*l_camSize, CV_8UC3, Scalar(prj, prj, prj));
+                l_projectionImage2 = Mat(l_camSize, CV_8UC3, Scalar(prj, prj, prj));
                 break;
             // what is type of enhancement
             case (CV_BUTTON_2):
@@ -1889,11 +1888,13 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
                 break;
             case (CV_BUTTON_DELETE):
                 cout << "all clean" << endl;
-                initK(*l_camSize);
-                initF(*l_camSize);
-                l_projectionImage = Mat(*l_camSize, CV_8UC3, CV_SCALAR_WHITE);
+                initK(l_camSize);
+                initF(l_camSize);
+//                l_projectionImage = Mat(l_camSize, CV_8UC3, CV_SCALAR_WHITE);
+                l_projectionImage = Scalar(g_maxPrjLuminance);
                 l_procam->captureOfProjecctorColorFromLinearLightOnProjectorDomain(&l_captureImage, l_projectionImage);
-                l_targetImage = Mat(*l_camSize, CV_64FC3, CV_SCALAR_WHITE);
+//                l_targetImage = Mat(l_camSize, CV_64FC3, CV_SCALAR_WHITE);
+                l_targetImage = CV_SCALAR_D_WHITE;
                 prj = 255;
                 break;
             case (CV_BUTTON_ESC):

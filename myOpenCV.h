@@ -40,6 +40,7 @@ const float DEPTH_S16BIT_MAX = 32767;
 #define MY_IMSHOW6(img1, img2, img3, img4, img5, img6) MY_IMSHOW5_(img1, img2, img3, img4, img5);MY_IMSHOW(img6)
 #define MY_IMSHOW6_(img1, img2, img3, img4, img5, img6) MY_IMSHOW5_(img1, img2, img3, img4, img5);MY_IMSHOW_(img6)
 #define MY_IMSHOW7(img1, img2, img3, img4, img5, img6, img7) MY_IMSHOW6_(img1, img2, img3, img4, img5, img6);MY_IMSHOW(img7)
+#define MY_IMSHOW7_(img1, img2, img3, img4, img5, img6, img7) MY_IMSHOW6_(img1, img2, img3, img4, img5, img6);MY_IMSHOW_(img7)
 #define MY_IMSHOW8(img1, img2, img3, img4, img5, img6, img7, img8) MY_IMSHOW7_(img1, img2, img3, img4, img5, img6, img7);MY_IMSHOW(img8)
 #define MY_IMSHOW8_(img1, img2, img3, img4, img5, img6, img7, img8) MY_IMSHOW7_(img1, img2, img3, img4, img5, img6, img7);MY_IMSHOW_(img8)
 #define MY_IMSHOW9(img1, img2, img3, img4, img5, img6, img7, img8, img9) MY_IMSHOW8_(img1, img2, img3, img4, img5, img6, img7, img8);MY_IMSHOW(img9)
@@ -243,6 +244,7 @@ bool getDiagonalImage(cv::Mat* _diagImage, const cv::Mat_<Vec9d>& _vec9dImage);
 bool getBinaryExposureImage(cv::Mat* const _dst, const cv::Mat& _src, const int thresh);
 bool getOverExposureImage(cv::Mat* const _dst, const cv::Mat& _src);
 bool getUnderExposureImage(cv::Mat* const _dst, const cv::Mat& _src);
+bool getThresholdColorImage(cv::Mat* const _dst, const cv::Mat& _src, const cv::Vec3b _thresh);
 ///////////////////////////////  print method ///////////////////////////////
 void printMatPropaty(const cv::Mat& m1);
 void printOpenCVVersion(void);
