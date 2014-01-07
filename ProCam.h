@@ -112,6 +112,8 @@ private:
     std::vector<cv::Vec3b> m_normalColorList;
     std::vector<cv::Vec3b> m_largeColorList;
     
+    // カメラキャプチャのデノイジングを行うかどうかのフラグ
+    bool m_bDenoise;
 //    LinearizerOfProjector m_linearPrj;
     
     ProCam(const ProCam& _procam);      // コピーコンストラクタ隠し（プログラムで１つしか存在しない為）
@@ -155,6 +157,9 @@ public:
     bool setV(const cv::Mat& _diffBB, const cv::Mat& _diffGB, const cv::Mat& _diffRB);
     bool setV(const std::vector<cv::Mat>& _vecC, const std::vector<cv::Vec3d>& _vecP);
     void setF(const cv::Mat& _P);
+    bool switchDenoiseFlag(void);
+    bool switchOnDenoiseFlag(void);
+    bool switchOffDenoiseFlag(void);
     ///////////////////////////////  get method ///////////////////////////////
     DCam getDCam(void);
     cv::Size* getCameraSize(void);

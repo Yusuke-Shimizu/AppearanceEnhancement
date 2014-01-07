@@ -731,6 +731,7 @@ bool LinearizerOfProjector::calcMoreDetailColorMixingMatrix(void){
     ProCam *l_procam = getProCam();
     const Size l_camSize(l_procam->getCameraSize_());
     std::vector<cv::Mat> l_vecCaptureImage;
+    l_procam->switchOnDenoiseFlag();
     while (true) {
         Mat l_captureImage(l_camSize, CV_8UC3, CV_SCALAR_BLACK);
         l_procam->captureFromLightOnProjectorDomain(&l_captureImage, CV_VEC3B_BLACK, true, SLEEP_TIME);
@@ -759,6 +760,7 @@ bool LinearizerOfProjector::calcMoreDetailColorMixingMatrix(void){
             break;
         }
     }
+    l_procam->switchOffDenoiseFlag();
     
     // translate bit depth (uchar[0-255] -> double[0-1])
     std::vector<cv::Mat> l_vecCaptureImage_d;
@@ -931,6 +933,7 @@ bool LinearizerOfProjector::calcResponseFunction(cv::Mat_<cv::Vec3b>* const _res
     _print(prjLuminance);
     Mat l_blackImage(*l_cameraSize, CV_8UC3, CV_SCALAR_BLACK);
     l_procam->captureFromLightOnProjectorDomain(&l_blackImage, prjLuminance, true, SLEEP_TIME * 2);
+    l_procam->switchOnDenoiseFlag();
     for (prjLuminance = 0; prjLuminance < 256; prjLuminance += PROJECTION_LUMINANCE_STEP) {
         _print(prjLuminance);
 
@@ -951,7 +954,8 @@ bool LinearizerOfProjector::calcResponseFunction(cv::Mat_<cv::Vec3b>* const _res
         // set all C images
         setCImages(camImage, prjLuminance);
     }
-    
+    l_procam->switchOffDenoiseFlag();
+
     // interpolation projector response P to I
     l_procam->interpolationProjectorResponseP2I(&l_responseMapP2I);
     l_procam->interpolateProjectorResponseP2IAtOutOfCameraArea(&l_responseMapP2I);

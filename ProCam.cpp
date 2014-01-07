@@ -21,21 +21,25 @@ using namespace cv;
 ///////////////////////////////  constructor ///////////////////////////////
 // コンストラクタ
 ProCam::ProCam(void)
+:m_bDenoise(false)
 {
     init();
 }
 
 ProCam::ProCam(const cv::Size& projectorSize)
+:m_bDenoise(false)
 {
     init(projectorSize);
 }
 
 ProCam::ProCam(const int _width, const int _height)
+:m_bDenoise(false)
 {
     init(_width, _height);
 }
 
 ProCam::ProCam(const int _size)
+:m_bDenoise(false)
 {
     init(_size);
 }
@@ -489,6 +493,26 @@ void ProCam::setF(const cv::Mat& _P){
     }
     MY_IMSHOW(l_VP);
     waitKey(30);
+}
+
+bool ProCam::switchDenoiseFlag(void){
+    m_bDenoise = !m_bDenoise;
+    if (m_bDenoise) {
+        cout << "m_bDenoise on" << endl;
+    } else {
+        cout << "m_bDenoise off" << endl;
+    }
+    return true;
+}
+bool ProCam::switchOnDenoiseFlag(void){
+    cout << "m_bDenoise on" << endl;
+    m_bDenoise = true;
+    return true;
+}
+bool ProCam::switchOffDenoiseFlag(void){
+    cout << "m_bDenoise off" << endl;
+    m_bDenoise = false;
+    return true;
 }
 
 ///////////////////////////////  get method ///////////////////////////////
@@ -1704,13 +1728,16 @@ bool ProCam::captureFromLight(cv::Mat* const _captureImage, const cv::Mat& _proj
     
     // get image
     cv::Mat l_image(_captureImage->rows, _captureImage->cols, CV_8UC3);
-    if (_denoiseFlag) {
+//    if (_denoiseFlag) {
+    if (m_bDenoise) {
         // 複数撮影し，ベクタに格納
         std::vector<Mat> l_vCaptureImages;
+        Mat l_captureImage;
         for (int i = 0; i < 10; ++ i) {
-            cv::Mat l_tmp(_captureImage->rows, _captureImage->cols, CV_8UC3);
-            getCaptureImage(&l_tmp);
-            l_vCaptureImages.push_back(l_tmp);
+            cv::Mat tmp(_captureImage->rows, _captureImage->cols, CV_8UC3);
+            getCaptureImage(&tmp);
+            l_captureImage = tmp.clone();
+            l_vCaptureImages.push_back(l_captureImage);
         }
         
         // get average

@@ -1690,7 +1690,7 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
     //
     ProCam* l_procam = getProCam();
     const Size l_camSize = l_procam->getCameraSize_();
-    bool l_loopFlag = true;//, clearFlag = false;
+    bool l_loopFlag = true, l_bDenoise = false;//, clearFlag = false;
     int prj = 255, prj2 = 30;
     Mat l_projectionImage(l_camSize, CV_8UC3, Scalar(prj, prj, prj));
     Mat l_projectionImageBefore(l_camSize, CV_8UC3, Scalar(prj2, prj2, prj2));
@@ -1748,7 +1748,7 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
         calcNextProjectionImage(&l_projectionImage, l_targetImage, l_targetImageBefore, l_captureImageBefore, l_projectionImageBefore, l_KMap, l_FMap, l_FMapBefore, l_CMax, l_CMin, l_alphaMPC);
         
         // projection
-        l_procam->captureOfProjecctorColorFromLinearLightOnProjectorDomain(&l_captureImage, l_projectionImage);
+        l_procam->captureOfProjecctorColorFromLinearLightOnProjectorDomain(&l_captureImage, l_projectionImage, l_bDenoise);
         
         // save and show
         saveAll(l_captureImage, l_projectionImage, l_targetImage);
@@ -1778,17 +1778,17 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
                 l_CMax = getCfullMap();
                 l_CMin = getC0Map();
                 break;
-            case (CV_BUTTON_G):
-                l_procam->geometricCalibration();
-            case (CV_BUTTON_C): // have to get Cfull and C0 after color calibration
-//                l_procam->colorCalibration();
-                l_procam->colorCalibration3();
-            case (CV_BUTTON_F):
-                setCfullMap(true);
-                setC0Map(true);
-                l_CMax = getCfullMap();
-                l_CMin = getC0Map();
-                break;
+//            case (CV_BUTTON_G):
+//                l_procam->geometricCalibration();
+//            case (CV_BUTTON_C): // have to get Cfull and C0 after color calibration
+////                l_procam->colorCalibration();
+//                l_procam->colorCalibration3();
+//            case (CV_BUTTON_F):
+//                setCfullMap(true);
+//                setC0Map(true);
+//                l_CMax = getCfullMap();
+//                l_CMin = getC0Map();
+//                break;
             // what is target to estimate
             case (CV_BUTTON_r):
                 l_estTarget = 0;
@@ -1886,13 +1886,17 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
             case (CV_BUTTON_S):
                 l_procam->settingProjectorAndCamera();
                 break;
+            case (CV_BUTTON_d):
+                // denoise flag
+                l_procam->switchDenoiseFlag();
+                break;
             case (CV_BUTTON_DELETE):
                 cout << "all clean" << endl;
                 initK(l_camSize);
                 initF(l_camSize);
 //                l_projectionImage = Mat(l_camSize, CV_8UC3, CV_SCALAR_WHITE);
                 l_projectionImage = Scalar(g_maxPrjLuminance);
-                l_procam->captureOfProjecctorColorFromLinearLightOnProjectorDomain(&l_captureImage, l_projectionImage);
+                l_procam->captureOfProjecctorColorFromLinearLightOnProjectorDomain(&l_captureImage, l_projectionImage, l_bDenoise);
 //                l_targetImage = Mat(l_camSize, CV_64FC3, CV_SCALAR_WHITE);
                 l_targetImage = CV_SCALAR_D_WHITE;
                 prj = 255;
