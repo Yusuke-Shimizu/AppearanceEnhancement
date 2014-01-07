@@ -240,6 +240,9 @@ double getPixelNumd(const cv::Mat& _image, const cv::Point& _point, const ColorN
 //const cv::Scalar_<double>* getPixelNumd(const cv::Mat& _image, const cv::Point& _point);
 const cv::Vec3d* getPixelNumd(const cv::Mat& _image, const cv::Point& _point);
 bool getDiagonalImage(cv::Mat* _diagImage, const cv::Mat_<Vec9d>& _vec9dImage);
+bool getBinaryExposureImage(cv::Mat* const _dst, const cv::Mat& _src, const int thresh);
+bool getOverExposureImage(cv::Mat* const _dst, const cv::Mat& _src);
+bool getUnderExposureImage(cv::Mat* const _dst, const cv::Mat& _src);
 ///////////////////////////////  print method ///////////////////////////////
 void printMatPropaty(const cv::Mat& m1);
 void printOpenCVVersion(void);

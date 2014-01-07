@@ -1521,16 +1521,25 @@ bool AppearanceEnhancement::showC0Map(void){
 }
 bool AppearanceEnhancement::showAll(const cv::Mat& _captureImage, const cv::Mat& _projectionImage, const cv::Mat& _targetImage, const cv::Mat& _answerK){
     const Mat l_captureImage = _captureImage / 255.0;
-    Mat l_projectorImage(_projectionImage);
+    Mat l_projectorImage = _projectionImage.clone();
     l_projectorImage.convertTo(l_projectorImage, CV_64FC3, 1.0/255.0);
     const Mat l_targetImage = _targetImage / 255.0;
-    Mat l_errorOfProjection(l_targetImage);
-    Mat l_errorOfEstimate(_answerK);
+    
+    // create error image
+    Mat l_errorOfProjection = l_targetImage.clone();
+    Mat l_errorOfEstimate = _answerK.clone();
     const Mat l_estimatedK = getKMap();
     absdiff(l_targetImage, l_captureImage, l_errorOfProjection);
     absdiff(_answerK, l_estimatedK, l_errorOfEstimate);
-    MY_IMSHOW6(l_captureImage, l_projectorImage, l_targetImage, _answerK, l_errorOfProjection, l_errorOfEstimate);
     
+    // create over and under exposure image
+    Mat l_overP = l_projectorImage.clone();
+    Mat l_underP = l_projectorImage.clone();
+    getOverExposureImage(&l_overP, _projectionImage);
+    getUnderExposureImage(&l_underP, _projectionImage);
+    
+    // show
+    MY_IMSHOW8(l_captureImage, l_projectorImage, l_targetImage, _answerK, l_errorOfProjection, l_errorOfEstimate, l_overP, l_underP);
     showKMap();
     showFMap();
     
@@ -1798,7 +1807,7 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
             case (CV_BUTTON_a):
                 // 現在推定している反射率を正解にする
                 cout << "l_answerK = l_KMap" << endl;
-                l_answerK = l_KMap;
+                l_answerK = l_KMap.clone();
                 break;
             case (CV_BUTTON_e):
                 l_enhanceRate += 0.1;
