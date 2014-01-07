@@ -107,6 +107,11 @@ private:
     cv::Mat_<Vec9d> m_V;     // 全カメラ画素分のV（プロジェクタからカメラへの色変換行列）
     cv::Mat m_F;             // 環境光の全画素分
     
+    // カラーキャリブレーションに必要な色のリスト
+    std::vector<cv::Vec3b> m_smallColorList;
+    std::vector<cv::Vec3b> m_normalColorList;
+    std::vector<cv::Vec3b> m_largeColorList;
+    
 //    LinearizerOfProjector m_linearPrj;
     
     ProCam(const ProCam& _procam);      // コピーコンストラクタ隠し（プログラムで１つしか存在しない為）
@@ -136,6 +141,7 @@ public:
     bool initProjectorResponse(cv::Mat* const _prjResP2I);
     bool initV(void);
     void initF(void);
+    bool initColorList(void);
     ///////////////////////////////  set method ///////////////////////////////
     bool setCameraSize(const cv::Size& cameraSize);
     bool setProjectorSize(const cv::Size& projectorSize);

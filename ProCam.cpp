@@ -237,6 +237,36 @@ void ProCam::initF(void){
     m_F = Mat(*camSize, CV_8UC3, Scalar(0, 0, 0));
 }
 
+// initialize of color list
+bool ProCam::initColorList(void){
+    std::vector<cv::Vec3b> l_base;
+    l_base.push_back(Vec3b(0, 0, 0));
+    l_base.push_back(Vec3b(0, 0, 1));
+    l_base.push_back(Vec3b(0, 1, 0));
+    l_base.push_back(Vec3b(1, 0, 0));
+    l_base.push_back(Vec3b(0, 1, 1));
+    l_base.push_back(Vec3b(1, 1, 0));
+    l_base.push_back(Vec3b(1, 0, 1));
+    l_base.push_back(Vec3b(1, 1, 1));
+    
+    Vec3b l_vec(0, 0, 0);
+    int i = 0;
+    for (vector<Vec3b>::const_iterator itr = l_base.begin();
+         itr != l_base.end();
+         ++ itr, ++ i) {
+        multiply(*itr, g_maxPrjLuminance, l_vec);
+        m_largeColorList.push_back(l_vec);
+        if (i < 4) {
+            m_normalColorList.push_back(l_vec);
+            if (i > 0) {
+                m_smallColorList.push_back(l_vec);
+            }
+        }
+    }
+
+    return true;
+}
+
 ///////////////////////////////  set method ///////////////////////////////
 // m_cameraSizeの設定
 bool ProCam::setCameraSize(const cv::Size& cameraSize){

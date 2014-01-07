@@ -55,7 +55,7 @@ bool AppearanceEnhancement::initRadiometricModel(void){
 // return   : 初期化出来たかどうか
 bool AppearanceEnhancement::initK(const cv::Size& _camSize){
     // init K map
-    m_KMap = Mat(_camSize, CV_64FC3, Scalar(1.0, 1.0, 1.0));
+    m_KMap = Mat(_camSize, CV_64FC3, CV_SCALAR_D_WHITE);
     
     return true;
 }
@@ -63,7 +63,7 @@ bool AppearanceEnhancement::initK(const cv::Size& _camSize){
 // 環境光(F)の初期化
 // return   : 初期化出来たかどうか
 bool AppearanceEnhancement::initF(const cv::Size& _camSize){
-    m_FMap = Mat(_camSize, CV_64FC3, Scalar(1.0, 1.0, 1.0));
+    m_FMap = Mat(_camSize, CV_64FC3, CV_SCALAR_D_WHITE);
 
     return true;
 }
@@ -72,7 +72,7 @@ bool AppearanceEnhancement::initF(const cv::Size& _camSize){
 // return   : 初期化出来たかどうか
 bool AppearanceEnhancement::initCfull(const cv::Size& _camSize){
     // init Cfull map
-    m_CfullMap = Mat(_camSize, CV_64FC3, Scalar(1.0, 1.0, 1.0));
+    m_CfullMap = Mat(_camSize, CV_64FC3, CV_SCALAR_D_WHITE);
     return true;
 }
 
@@ -80,7 +80,7 @@ bool AppearanceEnhancement::initCfull(const cv::Size& _camSize){
 // return   : 初期化出来たかどうか
 bool AppearanceEnhancement::initC0(const cv::Size& _camSize){
     // init C0 map
-    m_C0Map = Mat(_camSize, CV_64FC3, Scalar(1.0, 1.0, 1.0));
+    m_C0Map = Mat(_camSize, CV_64FC3, CV_SCALAR_D_WHITE);
     return true;
 }
 
@@ -1238,7 +1238,7 @@ bool AppearanceEnhancement::estimateKFByAmanoModel(const cv::Mat& _P1, const cv:
 bool AppearanceEnhancement::estimateKFByAmanoModel(const cv::Mat& _P1, const cv::Mat& _P2, const cv::Mat& _C1, const cv::Mat& _C2){
     // init
     const Mat l_CMax = getCfullMap(), l_CMin = getC0Map();
-    const Size l_camSize(l_CMax.rows, l_CMax.cols);
+    const Size l_camSize(l_CMax.cols, l_CMax.rows);
     Mat l_K(l_camSize, CV_64FC3, CV_SCALAR_BLACK), l_F(l_camSize, CV_64FC3, CV_SCALAR_BLACK);
     
     int rows = _P1.rows, cols = _P1.cols;
@@ -1521,13 +1521,15 @@ bool AppearanceEnhancement::showC0Map(void){
 }
 bool AppearanceEnhancement::showAll(const cv::Mat& _captureImage, const cv::Mat& _projectionImage, const cv::Mat& _targetImage, const cv::Mat& _answerK){
     const Mat l_captureImage = _captureImage / 255.0;
-    Mat l_projectorImage = _projectionImage;
+    Mat l_projectorImage(_projectionImage);
     l_projectorImage.convertTo(l_projectorImage, CV_64FC3, 1.0/255.0);
     const Mat l_targetImage = _targetImage / 255.0;
-    MY_IMSHOW(l_captureImage);
-    MY_IMSHOW(l_projectorImage);
-    MY_IMSHOW(l_targetImage);
-    MY_IMSHOW(_answerK);
+    Mat l_errorOfProjection(l_targetImage);
+    Mat l_errorOfEstimate(_answerK);
+    const Mat l_estimatedK = getKMap();
+    absdiff(l_targetImage, l_captureImage, l_errorOfProjection);
+    absdiff(_answerK, l_estimatedK, l_errorOfEstimate);
+    MY_IMSHOW6(l_captureImage, l_projectorImage, l_targetImage, _answerK, l_errorOfProjection, l_errorOfEstimate);
     
     showKMap();
     showFMap();

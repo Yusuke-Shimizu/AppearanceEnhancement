@@ -719,37 +719,54 @@ bool LinearizerOfProjector::calcMoreDetailColorMixingMatrix(void){
     // init projection color
     std::vector<Vec3b> l_vecPrjColor;
     l_vecPrjColor.push_back(Vec3b(0, 0, 0));        // 0
-    l_vecPrjColor.push_back(Vec3b(0, 0, 255));      // 1
-    l_vecPrjColor.push_back(Vec3b(0, 255, 0));      // 2
-    l_vecPrjColor.push_back(Vec3b(255, 0, 0));      // 3
-    l_vecPrjColor.push_back(Vec3b(0, 255, 255));    // 4
-    l_vecPrjColor.push_back(Vec3b(255, 255, 0));    // 5
-    l_vecPrjColor.push_back(Vec3b(255, 0, 255));    // 6
-    l_vecPrjColor.push_back(Vec3b(255, 255, 255));  // 7
+    l_vecPrjColor.push_back(Vec3b(0, 0, g_maxPrjLuminance[2]));      // 1
+    l_vecPrjColor.push_back(Vec3b(0, g_maxPrjLuminance[1], 0));      // 2
+    l_vecPrjColor.push_back(Vec3b(g_maxPrjLuminance[0], 0, 0));      // 3
+    l_vecPrjColor.push_back(Vec3b(0, g_maxPrjLuminance[1], g_maxPrjLuminance[2]));    // 4
+    l_vecPrjColor.push_back(Vec3b(g_maxPrjLuminance[0], g_maxPrjLuminance[1], 0));    // 5
+    l_vecPrjColor.push_back(Vec3b(g_maxPrjLuminance[0], 0, g_maxPrjLuminance[2]));    // 6
+    l_vecPrjColor.push_back(Vec3b(g_maxPrjLuminance[0], g_maxPrjLuminance[1], g_maxPrjLuminance[2]));  // 7
     
     // get capture
     ProCam *l_procam = getProCam();
     const Size l_camSize(l_procam->getCameraSize_());
     std::vector<cv::Mat> l_vecCaptureImage;
-    Mat l_captureImage(l_camSize, CV_8UC3, CV_SCALAR_BLACK);
-    l_procam->captureFromLightOnProjectorDomain(&l_captureImage, CV_VEC3B_BLACK, true, SLEEP_TIME);
-    for (vector<Vec3b>::const_iterator l_itrPrj = l_vecPrjColor.begin();
-         l_itrPrj != l_vecPrjColor.end();
-         ++ l_itrPrj) {
-        // capture
-        l_procam->captureFromLightOnProjectorDomain(&l_captureImage, *l_itrPrj);
+    while (true) {
+        Mat l_captureImage(l_camSize, CV_8UC3, CV_SCALAR_BLACK);
+        l_procam->captureFromLightOnProjectorDomain(&l_captureImage, CV_VEC3B_BLACK, true, SLEEP_TIME);
+        for (vector<Vec3b>::const_iterator l_itrPrj = l_vecPrjColor.begin();
+             l_itrPrj != l_vecPrjColor.end();
+             ++ l_itrPrj) {
+            // capture
+            l_procam->captureFromLightOnProjectorDomain(&l_captureImage, *l_itrPrj);
+            
+            // push
+            l_vecCaptureImage.push_back(l_captureImage);
+        }
         
-        // push
-        l_vecCaptureImage.push_back(l_captureImage);
+        int i = 0;
+        for (vector<Mat>::const_iterator l_itrCapImg = l_vecCaptureImage.begin();
+             l_itrCapImg != l_vecCaptureImage.end();
+             ++ l_itrCapImg, ++ i) {
+            ostringstream oss;
+            oss << "linearize" << i;
+            imshow(oss.str().c_str(), *l_itrCapImg);
+        }
+
+        // 投影撮影出来てるなら抜ける
+        cout << "Is capture image true?" << endl;
+        if (yes_no()) {
+            break;
+        }
     }
     
     // translate bit depth (uchar[0-255] -> double[0-1])
-    Mat l_captureImage_d(l_camSize, CV_64FC3, CV_SCALAR_D_BLACK);
     std::vector<cv::Mat> l_vecCaptureImage_d;
     const double l_rateUC2D = 1.0 / 255.0;
     for (vector<Mat>::const_iterator l_itrCapImg = l_vecCaptureImage.begin();
          l_itrCapImg != l_vecCaptureImage.end();
          ++ l_itrCapImg) {
+        Mat l_captureImage_d(l_camSize, CV_64FC3, CV_SCALAR_D_BLACK);
         l_itrCapImg->convertTo(l_captureImage_d, CV_64FC3, l_rateUC2D);
         l_vecCaptureImage_d.push_back(l_captureImage_d);
     }
@@ -776,9 +793,9 @@ bool LinearizerOfProjector::calcMoreDetailColorMixingMatrix(void){
     std::vector<Mat> l_vecDiff;
     std::vector<Mat>::const_iterator l_itrFront = l_vecFront.begin();
     std::vector<Mat>::const_iterator l_itrBack = l_vecBack.begin();
-    Mat l_diffImage(l_camSize, CV_64FC3, CV_SCALAR_D_BLACK);
     for (; l_itrFront != l_vecFront.end() || l_itrBack != l_vecBack.end();
          ++ l_itrFront, ++ l_itrBack) {
+        Mat l_diffImage(l_camSize, CV_64FC3, CV_SCALAR_D_BLACK);
         l_diffImage = *l_itrFront - *l_itrBack;
         l_vecDiff.push_back(l_diffImage);
     }
@@ -795,9 +812,9 @@ bool LinearizerOfProjector::calcMoreDetailColorMixingMatrix(void){
         normalizeByAnyColorChannel(&l_diffImgGreen, CV_GREEN);
         normalizeByAnyColorChannel(&l_diffImgBlue, CV_BLUE);
 
-        l_vecDiffRed.push_back(l_vecDiff[i]);
-        l_vecDiffGreen.push_back(l_vecDiff[i + l_length]);
-        l_vecDiffBlue.push_back(l_vecDiff[i + l_length * 2]);
+        l_vecDiffRed.push_back(l_diffImgRed);
+        l_vecDiffGreen.push_back(l_diffImgGreen);
+        l_vecDiffBlue.push_back(l_diffImgBlue);
     }
     
     // calc mean
@@ -951,7 +968,7 @@ bool LinearizerOfProjector::calcResponseFunction(cv::Mat_<cv::Vec3b>* const _res
     // all C images
     saveAllCImages();
     // estimated C
-    saveEstimatedC();
+//    saveEstimatedC();
     
     // deep copy
     *_responseMap = l_responseMap.clone();          // I2P
