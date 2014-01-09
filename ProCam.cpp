@@ -2310,7 +2310,9 @@ bool ProCam::settingProjectorAndCamera(void){
                 captureOfProjecctorColorFromLinearLightOnProjectorDomain(&l_captureImage, l_projectionColor);
                 l_captureImage.convertTo(l_captureImage, CV_8UC3);
                 break;
-                
+            case 4:
+                cout << "captureFromLinearLightOnProjectorDomainAndColor" << endl;
+                captureFromLinearLightOnProjectorDomainAndColor(&l_captureImage, l_projectionColor);
             default:
                 break;
         }
@@ -2328,11 +2330,20 @@ bool ProCam::settingProjectorAndCamera(void){
             case CV_BUTTON_r:
                 l_mask = (Vec3b)CV_VEC3D_RED;
                 break;
+            case CV_BUTTON_R:
+                l_mask = (Vec3b)CV_VEC3D_RED / 2;
+                break;
             case CV_BUTTON_g:
                 l_mask = (Vec3b)CV_VEC3D_GREEN;
                 break;
+            case CV_BUTTON_G:
+                l_mask = (Vec3b)CV_VEC3D_GREEN / 2;
+                break;
             case CV_BUTTON_b:
                 l_mask = (Vec3b)CV_VEC3D_BLUE;
+                break;
+            case CV_BUTTON_B:
+                l_mask = (Vec3b)CV_VEC3D_BLUE / 2;
                 break;
             case CV_BUTTON_k:
                 l_mask = (Vec3b)CV_VEC3D_BLACK;
@@ -2340,14 +2351,26 @@ bool ProCam::settingProjectorAndCamera(void){
             case CV_BUTTON_w:
                 l_mask = (Vec3b)CV_VEC3D_WHITE;
                 break;
+            case CV_BUTTON_W:
+                l_mask = (Vec3b)CV_VEC3D_WHITE / 2;
+                break;
             case CV_BUTTON_y:
                 l_mask = (Vec3b)CV_VEC3D_YELLOW;
+                break;
+            case CV_BUTTON_Y:
+                l_mask = (Vec3b)CV_VEC3D_YELLOW / 2;
                 break;
             case CV_BUTTON_p:
                 l_mask = (Vec3b)CV_VEC3D_PURPLE;
                 break;
+            case CV_BUTTON_P:
+                l_mask = (Vec3b)CV_VEC3D_PURPLE / 2;
+                break;
             case CV_BUTTON_c:
                 l_mask = (Vec3b)CV_VEC3D_CYAN;
+                break;
+            case CV_BUTTON_C:
+                l_mask = (Vec3b)CV_VEC3D_CYAN / 2;
                 break;
                 
             case CV_BUTTON_UP:
@@ -2378,6 +2401,9 @@ bool ProCam::settingProjectorAndCamera(void){
                 break;
             case CV_BUTTON_3:
                 l_caprjType = 3;
+                break;
+            case CV_BUTTON_4:
+                l_caprjType = 4;
                 break;
                 
             case CV_BUTTON_DELETE:

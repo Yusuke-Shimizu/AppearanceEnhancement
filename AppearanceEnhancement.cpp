@@ -21,14 +21,14 @@ using namespace cv;
 
 ///////////////////////////////  constructor ///////////////////////////////
 AppearanceEnhancement::AppearanceEnhancement(const double& _CMaxNum, const double& _CMinNum)
-:m_K(3, 1, CV_8UC1), m_F(3, 1, CV_8UC1), m_Cfull(3, 1, CV_8UC1), m_C0(3, 1, CV_8UC1), m_projectionMode(e_Calc)
+:m_K(3, 1, CV_8UC1), m_F(3, 1, CV_8UC1), m_Cfull(3, 1, CV_8UC1), m_C0(3, 1, CV_8UC1)
 {
 //    m_procam.test_medianBlurForProjectorResponseP2I();
 //    m_procam.test_interpolationProjectorResponseP2I();
     srand((unsigned) time(NULL));
 }
 AppearanceEnhancement::AppearanceEnhancement(const cv::Size& _prjSize)
-:m_procam(_prjSize), m_projectionMode(e_Calc)
+:m_procam(_prjSize)
 {
     init();
 }
@@ -153,15 +153,6 @@ bool AppearanceEnhancement::setC0Map(const cv::Mat& _C0){
     return true;
 }
 
-bool AppearanceEnhancement::switchProjectionMode(void){
-    if (m_projectionMode == e_Calc) {
-        m_projectionMode = e_Single;
-    } else {
-        m_projectionMode = e_Calc;
-    }
-    return true;
-}
-
 ///////////////////////////////  get method ///////////////////////////////
 // m_Cfullの取得
 bool AppearanceEnhancement::getCfull(cv::Mat* const Cfull){
@@ -199,14 +190,6 @@ const cv::Mat& AppearanceEnhancement::getFMap(void){
 // m_procamの取得
 ProCam* AppearanceEnhancement::getProCam(void){
     return &m_procam;
-}
-
-bool AppearanceEnhancement::isProjectionModeCalc(void){
-    if (m_projectionMode == e_Calc) {
-        return true;
-    } else {
-        return false;
-    }
 }
 
 ///////////////////////////////  print method ///////////////////////////////
@@ -1482,22 +1465,33 @@ bool AppearanceEnhancement::evaluateF(const cv::Mat& _ansF){
 
     return true;
 }
-bool AppearanceEnhancement::evaluateEstimationAndProjection(const cv::Mat& _ansK, const cv::Mat& _estK, const cv::Mat& _targetImage, const cv::Mat& _captureImage){
+bool AppearanceEnhancement::evaluateEstimationAndProjection(const cv::Mat& _ansK, const cv::Mat& _estK, const cv::Mat& _ansF, const cv::Mat& _estF, const cv::Mat& _targetImage, const cv::Mat& _captureImage){
     
     // get mean and standard deviation
-    cv::Scalar l_estMean(0, 0, 0, 0), l_estStddev(0, 0, 0, 0);
+    cv::Scalar l_estKMean(0, 0, 0, 0), l_estKStddev(0, 0, 0, 0);
+    meanStdDev(_estK, l_estKMean, l_estKStddev);
+
+    cv::Scalar l_estFMean(0, 0, 0, 0), l_estFStddev(0, 0, 0, 0);
+    meanStdDev(_estF, l_estFMean, l_estFStddev);
+
     cv::Scalar l_prjMean(0, 0, 0, 0), l_prjStddev(0, 0, 0, 0);
-    cv::Scalar l_estDiffMean(0, 0, 0, 0), l_estDiffStddev(0, 0, 0, 0);
-    cv::Scalar l_prjDiffMean(0, 0, 0, 0), l_prjDiffStddev(0, 0, 0, 0);
-    meanStdDev(_estK, l_estMean, l_estStddev);
     meanStdDev(_captureImage, l_prjMean, l_prjStddev);
-    calcMeanStddevOfDiffImage(&l_estDiffMean, &l_estDiffStddev, _ansK, _estK);
+
+    cv::Scalar l_estKDiffMean(0, 0, 0, 0), l_estKDiffStddev(0, 0, 0, 0);
+    calcMeanStddevOfDiffImage(&l_estKDiffMean, &l_estKDiffStddev, _ansK, _estK);
+    
+    cv::Scalar l_estFDiffMean(0, 0, 0, 0), l_estFDiffStddev(0, 0, 0, 0);
+    calcMeanStddevOfDiffImage(&l_estFDiffMean, &l_estFDiffStddev, _ansF, _estF);
+    
+    cv::Scalar l_prjDiffMean(0, 0, 0, 0), l_prjDiffStddev(0, 0, 0, 0);
     calcMeanStddevOfDiffImage(&l_prjDiffMean, &l_prjDiffStddev, _targetImage, _captureImage);
     
     // print
-    _print2(l_estMean, l_estStddev);
+    _print2(l_estKMean, l_estKStddev);
+    _print2(l_estFMean, l_estFStddev);
     _print2(l_prjMean, l_prjStddev);
-    _print2(l_estDiffMean, l_estDiffStddev);
+    _print2(l_estKDiffMean, l_estKDiffStddev);
+    _print2(l_estFDiffMean, l_estFDiffStddev);
     _print2(l_prjDiffMean, l_prjDiffStddev);
     
     return true;
@@ -1586,7 +1580,7 @@ bool AppearanceEnhancement::showC0Map(void){
     MY_IMSHOW(l_C0);
     return true;
 }
-bool AppearanceEnhancement::showAll(const cv::Mat& _captureImage, const cv::Mat& _projectionImage, const cv::Mat& _targetImage, const cv::Mat& _answerK){
+bool AppearanceEnhancement::showAll(const cv::Mat& _captureImage, const cv::Mat& _projectionImage, const cv::Mat& _targetImage, const cv::Mat& _answerK, const cv::Mat& _answerF){
     const Mat l_captureImage = _captureImage / 255.0;
     Mat l_projectorImage = _projectionImage.clone();
     l_projectorImage.convertTo(l_projectorImage, CV_64FC3, 1.0/255.0);
@@ -1594,10 +1588,13 @@ bool AppearanceEnhancement::showAll(const cv::Mat& _captureImage, const cv::Mat&
     
     // create error image
     Mat l_errorOfProjection = l_targetImage.clone();
-    Mat l_errorOfEstimate = _answerK.clone();
-    const Mat l_estimatedK = getKMap();
     absdiff(l_targetImage, l_captureImage, l_errorOfProjection);
-    absdiff(_answerK, l_estimatedK, l_errorOfEstimate);
+    Mat l_errorOfEstimateK = _answerK.clone();
+    const Mat l_estimatedK = getKMap();
+    absdiff(_answerK, l_estimatedK, l_errorOfEstimateK);
+    Mat l_errorOfEstimateF = _answerF.clone();
+    const Mat l_estimatedF = getFMap();
+    absdiff(_answerF, l_estimatedF, l_errorOfEstimateF);
     
     // create over and under exposure image
     Mat l_overP = _projectionImage.clone();
@@ -1605,10 +1602,14 @@ bool AppearanceEnhancement::showAll(const cv::Mat& _captureImage, const cv::Mat&
     getThresholdColorImage(&l_overP, _projectionImage, g_maxPrjLuminance);
     
     // show
-    MY_IMSHOW7(l_captureImage, l_projectorImage, l_targetImage, _answerK, l_errorOfProjection, l_errorOfEstimate, l_overP);
+    MY_IMSHOW9(l_captureImage, l_projectorImage, l_targetImage, _answerK, _answerF, l_errorOfProjection, l_errorOfEstimateK, l_errorOfEstimateF, l_overP);
     showKMap();
     showFMap();
     
+    // save (error image only)
+    imwrite(OUTPUT_DATA_PATH + "errorOfEstimateK", l_errorOfEstimateK);
+    imwrite(OUTPUT_DATA_PATH + "errorOfEstimateF", l_errorOfEstimateF);
+    imwrite(OUTPUT_DATA_PATH + "errorOfProjection", l_errorOfProjection);
     return true;
     
 }
@@ -1814,21 +1815,17 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
         l_captureImageBefore = l_captureImage.clone();
 
         // calc next projection image
-        if (isProjectionModeCalc()) {
-            calcNextProjectionImage(&l_projectionImage, l_targetImage, l_targetImageBefore, l_captureImageBefore, l_projectionImageBefore, l_KMap, l_FMap, l_FMapBefore, l_CMax, l_CMin, l_alphaMPC);
-        } else {
-            l_projectionImage = l_projectionColor;
-        }
+        calcNextProjectionImage(&l_projectionImage, l_targetImage, l_targetImageBefore, l_captureImageBefore, l_projectionImageBefore, l_KMap, l_FMap, l_FMapBefore, l_CMax, l_CMin, l_alphaMPC);
         
         // projection
         l_procam->captureOfProjecctorColorFromLinearLightOnProjectorDomain(&l_captureImage, l_projectionImage, l_bDenoise);
         
         // save and show
         saveAll(l_captureImage, l_projectionImage, l_targetImage);
-        showAll(l_captureImage, l_projectionImage, l_targetImage, l_answerK);
+        showAll(l_captureImage, l_projectionImage, l_targetImage, l_answerK, l_answerF);
         
         // evaluate
-        evaluateEstimationAndProjection(l_answerK, l_KMap, l_targetImage, l_captureImage);
+        evaluateEstimationAndProjection(l_answerK, l_KMap, l_answerF, l_FMap, l_targetImage, l_captureImage);
         
         // calc time
         getFps(&l_startTime, &l_endTime, &l_fps);
@@ -1845,12 +1842,7 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
                 }
                 break;
             case (CV_BUTTON_g):
-                if (isProjectionModeCalc()) {
-                    l_procam->geometricCalibration();
-                } else {
-                    l_projectionColor[1] = std::min(l_projectionColor[1] + 10, 255.0);
-                    _print(l_projectionColor);
-                }
+                l_procam->geometricCalibration();
             case (CV_BUTTON_c): // have to get Cfull and C0 after color calibration
 //                l_procam->colorCalibration();
                 l_procam->colorCalibration3();
@@ -1862,23 +1854,13 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
                 break;
             // what is target to estimate
             case (CV_BUTTON_r):
-                if (isProjectionModeCalc()) {
-                    l_estTarget = 0;
-                } else {
-                    l_projectionColor[2] = std::min(l_projectionColor[2] + 10, 255.0);
-                    _print(l_projectionColor);
-                }
+                l_estTarget = 0;
                 break;
             case (CV_BUTTON_l):
                 l_estTarget = 1;
                 break;
             case (CV_BUTTON_R):
-                if (isProjectionModeCalc()) {
-                    l_estTarget = 2;
-                } else {
-                    l_projectionColor[2] = std::max(l_projectionColor[2] - 10, 0.0);
-                    _print(l_projectionColor);
-                }
+                l_estTarget = 2;
                 break;
             case (CV_BUTTON_L):
                 l_estTarget = 3;
@@ -1886,8 +1868,9 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
             // what control
             case (CV_BUTTON_a):
                 // 現在推定している反射率を正解にする
-                cout << "l_answerK = l_KMap" << endl;
+                cout << "l_answerK = l_KMap, l_answerF = l_FMap" << endl;
                 l_answerK = l_KMap.clone();
+                l_answerF = l_FMap.clone();
                 break;
             case (CV_BUTTON_e):
                 l_enhanceRate += 0.1;
@@ -1956,19 +1939,6 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
                 cout << "check CMax and CMin" << endl;
                 test_CMaxMin(l_CMax, l_CMin);
                 break;
-            // projection mode
-            case (CV_BUTTON_G):
-                l_projectionColor[1] = std::max(l_projectionColor[1] - 10, 0.0);
-                _print(l_projectionColor);
-                break;
-            case (CV_BUTTON_b):
-                l_projectionColor[0] = std::min(l_projectionColor[0] + 10, 255.0);
-                _print(l_projectionColor);
-                break;
-            case (CV_BUTTON_B):
-                l_projectionColor[0] = std::max(l_projectionColor[0] - 10, 0.0);
-                _print(l_projectionColor);
-                break;
             // other
             case (CV_BUTTON_s):
                 if (l_stopTime == -1) {
@@ -1983,9 +1953,6 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
             case (CV_BUTTON_d):
                 // denoise flag
                 l_procam->switchDenoiseFlag();
-                break;
-            case (CV_BUTTON_m):
-                switchProjectionMode();
                 break;
             case (CV_BUTTON_DELETE):
                 cout << "all clean" << endl;

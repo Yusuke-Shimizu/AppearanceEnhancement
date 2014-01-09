@@ -17,6 +17,7 @@
 const double NOISE_RANGE = 5 / 255.0;
 //#define NOISE_RANGE 0.05
 
+const std::string OUTPUT_DATA_PATH = "data/";
 const std::string C_FULL_FILE_NAME = "data/cfull.png";
 const std::string C_0_FILE_NAME = "data/c0.png";
 const std::string K_FILE_NAME = "data/estK.png";
@@ -32,11 +33,6 @@ const std::string SIM_ESTIMATE_KF_FILE_NAME = "simulationData/estimate/estimateK
 const std::string SIM_PROJECTION_FILE_NAME = "simulationData/projection/projection.dat";
 const std::string CHECK_CMAX_MIN_FILE_NAME = "calibrationData/checkCMax_CMin";
 
-enum projectionMode{
-    e_Calc,
-    e_Single
-};
-
 class ProCam;
 
 class AppearanceEnhancement{
@@ -46,7 +42,6 @@ private:
     cv::Mat m_C, m_P, m_K, m_F, m_Cfull, m_C0;
     // experimental data
     cv::Mat m_KMap, m_FMap, m_CfullMap, m_C0Map;
-    projectionMode m_projectionMode;
     
     AppearanceEnhancement(const AppearanceEnhancement& ae); // コピーコンストラクタ隠し（プログラムで１つしか存在しない為）
 public:
@@ -71,7 +66,6 @@ public:
     bool setCfullMap(const cv::Mat& _Cfull);
     bool setC0Map(const bool _denoisingFlag = false);
     bool setC0Map(const cv::Mat& _C0);
-    bool switchProjectionMode(void);
     ///////////////////////////////  get method ///////////////////////////////
     bool getCfull(cv::Mat* const Cfull);
     const cv::Mat& getCfullMap(void);
@@ -80,7 +74,6 @@ public:
     const cv::Mat& getKMap(void);
     const cv::Mat& getFMap(void);
     ProCam* getProCam(void);
-    bool isProjectionModeCalc(void);
     ///////////////////////////////  print method ///////////////////////////////
     bool printStandardDeviationOfRadiometricModel(void);
     bool printSwitchIteratorError(void);
@@ -129,7 +122,7 @@ public:
     ////////////////////////////// evaluate method //////////////////////////////
     bool evaluateK(const cv::Mat& _ansK);
     bool evaluateF(const cv::Mat& _ansF);
-    bool evaluateEstimationAndProjection(const cv::Mat& _ansK, const cv::Mat& _estK, const cv::Mat& _targetImage, const cv::Mat& _captureImage);
+    bool evaluateEstimationAndProjection(const cv::Mat& _ansK, const cv::Mat& _estK, const cv::Mat& _ansF, const cv::Mat& _estF, const cv::Mat& _targetImage, const cv::Mat& _captureImage);
     ///////////////////////////////  round method ///////////////////////////////
     bool roundDesireC(cv::Mat* const _desireC, const cv::Mat& _K, const cv::Mat& _F);
     bool roundReflectance(cv::Mat* const _K);
@@ -139,7 +132,7 @@ public:
     bool showFMap(void);
     bool showCfullMap(void);
     bool showC0Map(void);
-    bool showAll(const cv::Mat& _captureImage, const cv::Mat& _projectionImage, const cv::Mat& _targetImage, const cv::Mat& _answerK);
+    bool showAll(const cv::Mat& _captureImage, const cv::Mat& _projectionImage, const cv::Mat& _targetImage, const cv::Mat& _answerK, const cv::Mat& _answerF);
     ///////////////////////////////  other method ///////////////////////////////
     bool test_RadiometricModel(void);
     bool test_CMaxMin(const cv::Mat& _CMax, const cv::Mat& _CMin);
