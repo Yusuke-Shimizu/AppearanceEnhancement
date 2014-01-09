@@ -362,6 +362,16 @@ bool getThresholdColorImage(cv::Mat* const _dst, const cv::Mat& _src, const cv::
     return true;
 }
 
+bool getFps(double* const _start, double* const _end, double* const _fps){
+    *_end = cv::getTickCount();
+    double l_processingTime = (*_end - *_start) * 1000 / cv::getTickFrequency();
+    *_fps = 1/(l_processingTime / 1000);
+    *_start = *_end;
+//    cout << "processing time is " << l_processingTime << "[ms] (" << *_fps << " fps)" << endl;
+//    std::cout <<  *_fps << " fps" << std::endl;
+    return true;
+}
+
 ///////////////////////////////  print method ///////////////////////////////
 // Matの様々な要素を表示
 void printMatPropaty(const Mat& m1){

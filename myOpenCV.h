@@ -92,6 +92,7 @@ const int CV_BUTTON_a       = 1048673;
 const int CV_BUTTON_0       = 1048624;
 #endif
 const int CV_BUTTON_b       = CV_BUTTON_a + 1;
+const int CV_BUTTON_B       = CV_BUTTON_b + CV_BUTTON_SMALL_TO_CAPITAL;
 const int CV_BUTTON_c       = CV_BUTTON_a + 2;  // 1048675
 const int CV_BUTTON_C       = CV_BUTTON_c + CV_BUTTON_SMALL_TO_CAPITAL;
 const int CV_BUTTON_d       = CV_BUTTON_a + 3;
@@ -105,6 +106,8 @@ const int CV_BUTTON_k       = CV_BUTTON_a + 10;
 const int CV_BUTTON_K       = CV_BUTTON_k + CV_BUTTON_SMALL_TO_CAPITAL;
 const int CV_BUTTON_l       = CV_BUTTON_a + 11; //1048684;
 const int CV_BUTTON_L       = CV_BUTTON_l + CV_BUTTON_SMALL_TO_CAPITAL;
+const int CV_BUTTON_m       = CV_BUTTON_a + 12; //1048684;
+const int CV_BUTTON_M       = CV_BUTTON_m + CV_BUTTON_SMALL_TO_CAPITAL;
 const int CV_BUTTON_n       = CV_BUTTON_a + 13;
 const int CV_BUTTON_N       = CV_BUTTON_n + CV_BUTTON_SMALL_TO_CAPITAL;
 const int CV_BUTTON_p       = CV_BUTTON_a + 15;
@@ -245,6 +248,7 @@ bool getBinaryExposureImage(cv::Mat* const _dst, const cv::Mat& _src, const int 
 bool getOverExposureImage(cv::Mat* const _dst, const cv::Mat& _src);
 bool getUnderExposureImage(cv::Mat* const _dst, const cv::Mat& _src);
 bool getThresholdColorImage(cv::Mat* const _dst, const cv::Mat& _src, const cv::Vec3b _thresh);
+bool getFps(double* const _start, double* const _end, double* const _fps);
 ///////////////////////////////  print method ///////////////////////////////
 void printMatPropaty(const cv::Mat& m1);
 void printOpenCVVersion(void);

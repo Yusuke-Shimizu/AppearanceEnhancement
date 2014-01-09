@@ -32,6 +32,11 @@ const std::string SIM_ESTIMATE_KF_FILE_NAME = "simulationData/estimate/estimateK
 const std::string SIM_PROJECTION_FILE_NAME = "simulationData/projection/projection.dat";
 const std::string CHECK_CMAX_MIN_FILE_NAME = "calibrationData/checkCMax_CMin";
 
+enum projectionMode{
+    e_Calc,
+    e_Single
+};
+
 class ProCam;
 
 class AppearanceEnhancement{
@@ -41,6 +46,7 @@ private:
     cv::Mat m_C, m_P, m_K, m_F, m_Cfull, m_C0;
     // experimental data
     cv::Mat m_KMap, m_FMap, m_CfullMap, m_C0Map;
+    projectionMode m_projectionMode;
     
     AppearanceEnhancement(const AppearanceEnhancement& ae); // コピーコンストラクタ隠し（プログラムで１つしか存在しない為）
 public:
@@ -65,6 +71,7 @@ public:
     bool setCfullMap(const cv::Mat& _Cfull);
     bool setC0Map(const bool _denoisingFlag = false);
     bool setC0Map(const cv::Mat& _C0);
+    bool switchProjectionMode(void);
     ///////////////////////////////  get method ///////////////////////////////
     bool getCfull(cv::Mat* const Cfull);
     const cv::Mat& getCfullMap(void);
@@ -73,6 +80,7 @@ public:
     const cv::Mat& getKMap(void);
     const cv::Mat& getFMap(void);
     ProCam* getProCam(void);
+    bool isProjectionModeCalc(void);
     ///////////////////////////////  print method ///////////////////////////////
     bool printStandardDeviationOfRadiometricModel(void);
     bool printSwitchIteratorError(void);
@@ -113,6 +121,7 @@ public:
     bool estimateK(const cv::Mat& _P, const cv::Mat& _C, const cv::Mat& _CMax, const cv::Mat& _CMin);
     bool test_estimateK(const cv::Mat& _answerK, const cv::Mat& _CMax, const cv::Mat& _CMin, const cv::Scalar& _mask = cv::Scalar(1, 1, 1, 0));
     bool estimateF(const cv::Mat& _P);
+    bool estimateF(const cv::Mat& _P, const cv::Mat& _C, const cv::Mat& _CMax, const cv::Mat& _CMin);
     bool estimateKFByAmanoModel(const cv::Mat& _P1, const cv::Mat& _P2);
     bool estimateKFByAmanoModel(const cv::Mat& _P1, const cv::Mat& _P2, const cv::Mat& _C1, const cv::Mat& _C2);
     bool test_estimateKFByAmanoModel(const cv::Mat& _answerK, const cv::Scalar& _mask = cv::Scalar(1, 1, 1, 0));
