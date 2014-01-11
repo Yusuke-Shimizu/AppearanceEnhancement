@@ -447,7 +447,7 @@ bool AppearanceEnhancement::printAppearanceEnhancement(void){
     const double l_ansK = 0.5, l_ansF = 0.0;
     double l_estK = 0.0, l_estF = 0.0, l_estFBefore = 0.0;
     double l_P = 0, l_C = 0, l_target = 0.0;
-    double l_error = 0, l_Cr = 0;
+    double l_error = 0, l_Cr = 0, l_vrC = 0;
     uchar l_Puchar = 0;
 
     calcCaptureImageAddNoise(&l_C, l_P, l_ansK, l_ansF, l_CMax, l_CMin);
@@ -463,7 +463,7 @@ bool AppearanceEnhancement::printAppearanceEnhancement(void){
         l_target /= 255.0;
         
         // calc next projection number
-        calcNextProjectionImageAtPixel(&l_Puchar, &l_error, &l_Cr, l_target, l_target, l_C, l_P, l_estK, l_estF, l_estFBefore, l_CMax, l_CMin, g_maxPrjLuminance[0]/255.0, g_minPrjLuminance[0]/255.0);
+        calcNextProjectionImageAtPixel(&l_Puchar, &l_error, &l_Cr, &l_vrC, l_target, l_target, l_C, l_P, l_estK, l_estF, l_estFBefore, l_CMax, l_CMin, g_maxPrjLuminance[0]/255.0, g_minPrjLuminance[0]/255.0);
         l_P = (double)l_Puchar / 255.0;
         l_P = i / 255.0;
         
@@ -827,7 +827,7 @@ bool AppearanceEnhancement::calcTargetImageAtPixel(double* const _targetImage, c
 }
 
 // 次に投影する画像を決定
-bool AppearanceEnhancement::calcNextProjectionImage(cv::Mat* const _nextP, cv::Mat* const _error, cv::Mat* const _Cr, const cv::Mat& _targetImage, const cv::Mat& _targetImageBefore, const cv::Mat& _C, const cv::Mat& _P, const cv::Mat& _K, const cv::Mat& _F, const cv::Mat& _FBefore, const cv::Mat& _CMax, const cv::Mat& _CMin, const double& _alpha){
+bool AppearanceEnhancement::calcNextProjectionImage(cv::Mat* const _nextP, cv::Mat* const _error, cv::Mat* const _Cr, cv::Mat* const _vrC, const cv::Mat& _targetImage, const cv::Mat& _targetImageBefore, const cv::Mat& _C, const cv::Mat& _P, const cv::Mat& _K, const cv::Mat& _F, const cv::Mat& _FBefore, const cv::Mat& _CMax, const cv::Mat& _CMin, const double& _alpha){
     
     // init
     int rows = _targetImage.rows, cols = _targetImage.cols, channel = _targetImage.channels();
@@ -841,6 +841,7 @@ bool AppearanceEnhancement::calcNextProjectionImage(cv::Mat* const _nextP, cv::M
         Vec3b* l_pNextP = _nextP->ptr<Vec3b>(y);
         Vec3d* l_pError = _error->ptr<Vec3d>(y);
         Vec3d* l_pCr = _Cr->ptr<Vec3d>(y);
+        Vec3d* l_pVrC = _vrC->ptr<Vec3d>(y);
         const Vec3d* l_pTargetImage = _targetImage.ptr<Vec3d>(y);
         const Vec3d* l_pTargetImageBefore = _targetImageBefore.ptr<Vec3d>(y);
         const Vec3d* l_pC = _C.ptr<Vec3d>(y);
@@ -867,7 +868,7 @@ bool AppearanceEnhancement::calcNextProjectionImage(cv::Mat* const _nextP, cv::M
                 const double l_nPMin = (double)g_minPrjLuminance[c] / 255.0;
 
                 // calculation
-                calcNextProjectionImageAtPixel(&(l_pNextP[x][c]), &(l_pError[x][c]), &(l_pCr[x][c]), l_nTargetImage, l_nTargetImageBefore, l_nC, l_nP, l_nK, l_nF, l_nFBefore, l_nCMax, l_nCMin, l_nPMax, l_nPMin, _alpha);
+                calcNextProjectionImageAtPixel(&(l_pNextP[x][c]), &(l_pError[x][c]), &(l_pCr[x][c]), &(l_pVrC[x][c]), l_nTargetImage, l_nTargetImageBefore, l_nC, l_nP, l_nK, l_nF, l_nFBefore, l_nCMax, l_nCMin, l_nPMax, l_nPMin, _alpha);
             }
         }
     }
@@ -885,6 +886,7 @@ bool AppearanceEnhancement::test_calcNextProjectionImage(const cv::Mat& _answerK
     Mat l_targetImageBefore(*l_camSize, CV_64FC3, CV_SCALAR_BLACK);
     Mat l_error(*l_camSize, CV_64FC3, CV_SCALAR_BLACK);
     Mat l_Cr(*l_camSize, CV_64FC3, CV_SCALAR_BLACK);
+    Mat l_vrC(*l_camSize, CV_64FC3, CV_SCALAR_BLACK);
     Scalar l_mean(0,0,0,0), l_stddev(0,0,0,0);
     Scalar l_meanCap(0,0,0,0), l_stddevCap(0,0,0,0);
     Scalar l_meanTarget(0,0,0,0), l_stddeTarget(0,0,0,0);
@@ -900,7 +902,7 @@ bool AppearanceEnhancement::test_calcNextProjectionImage(const cv::Mat& _answerK
         l_projectionImageBefore = l_projectionImage.clone();
         
         // calc next projection image
-        calcNextProjectionImage(&l_projectionImage, &l_error, &l_Cr, l_targetImage, l_targetImageBefore, l_captureImage, l_projectionImageBefore, _answerK, _answerF, _answerF, _CMax, _CMin, l_alphaMPC);
+        calcNextProjectionImage(&l_projectionImage, &l_error, &l_Cr, &l_vrC, l_targetImage, l_targetImageBefore, l_captureImage, l_projectionImageBefore, _answerK, _answerF, _answerF, _CMax, _CMin, l_alphaMPC);
         
         // projection
         l_procam->captureOfProjecctorColorFromLinearLightOnProjectorDomain(&l_captureImage, l_projectionImage);
@@ -924,7 +926,7 @@ bool AppearanceEnhancement::test_calcNextProjectionImage(const cv::Mat& _answerK
     return true;
 }
 
-bool AppearanceEnhancement::calcNextProjectionImageAtPixel(uchar* const _nextP, double* const _error, double* const _Cr, const double& _targetImage, const double& _targetImageBefore, const double& _C, const double& _P, const double& _K, const double& _F, const double& _FBefore, const double& _CMax, const double& _CMin, const double& _PMax, const double& _PMin, const double& _alpha){
+bool AppearanceEnhancement::calcNextProjectionImageAtPixel(uchar* const _nextP, double* const _error, double* const _Cr, double* const _vrC, const double& _targetImage, const double& _targetImageBefore, const double& _C, const double& _P, const double& _K, const double& _F, const double& _FBefore, const double& _CMax, const double& _CMin, const double& _PMax, const double& _PMin, const double& _alpha){
     // calculation
     double l_nNextP = 0;
     const double l_interP = (_P - _PMin) / (_PMax - _PMin);
@@ -941,8 +943,8 @@ bool AppearanceEnhancement::calcNextProjectionImageAtPixel(uchar* const _nextP, 
         default:
             break;
     }
-    const double l_vrC = _K * l_interC;
-    *_error = _C - l_vrC;
+    *_vrC = _K * l_interC;
+    *_error = _C - *_vrC;
     *_Cr = _alpha * _C + (1 - _alpha) * _targetImage;
     
 //    *_error = _C - _K * ();
@@ -966,7 +968,7 @@ bool AppearanceEnhancement::test_calcNextProjectionImageAtPixel(void){
     double l_noise = NOISE_RANGE * 5;
     double l_target = 0.25, l_alpha = 0.5;
     ofstream ofs(SIM_PROJECTION_FILE_NAME.c_str());
-    double l_error = 0, l_Cr = 0;
+    double l_error = 0, l_Cr = 0, l_vrC = 0;
     
     for (int i = 0; i < 256; ++ i) {
 //        if (i % 10 == 0) {
@@ -975,7 +977,7 @@ bool AppearanceEnhancement::test_calcNextProjectionImageAtPixel(void){
         //
         l_PBefore = l_P;
         uchar l_ucP = 0;
-        calcNextProjectionImageAtPixel(&l_ucP, &l_error, &l_Cr, l_target, l_target, l_C, l_PBefore, l_ansK, l_ansF, l_ansF, l_CMax, l_CMin, g_maxPrjLuminance[0]/255.0, g_minPrjLuminance[0]/255.0, l_alpha);
+        calcNextProjectionImageAtPixel(&l_ucP, &l_error, &l_Cr, &l_vrC, l_target, l_target, l_C, l_PBefore, l_ansK, l_ansF, l_ansF, l_CMax, l_CMin, g_maxPrjLuminance[0]/255.0, g_minPrjLuminance[0]/255.0, l_alpha);
         l_P = (double)l_ucP / 255.0;
         
         // capture
@@ -1697,7 +1699,7 @@ bool AppearanceEnhancement::showC0Map(void){
     MY_IMSHOW(l_C0);
     return true;
 }
-bool AppearanceEnhancement::showAll(const cv::Mat& _captureImage, const cv::Mat& _projectionImage, const cv::Mat& _targetImage, const cv::Mat& _answerK, const cv::Mat& _answerF, const cv::Mat& _errorOfMPC, const cv::Mat& _CrOfMPC){
+bool AppearanceEnhancement::showAll(const cv::Mat& _captureImage, const cv::Mat& _projectionImage, const cv::Mat& _targetImage, const cv::Mat& _answerK, const cv::Mat& _answerF, const cv::Mat& _errorOfMPC, const cv::Mat& _CrOfMPC, const cv::Mat& _vrC){
     const Mat l_captureImage = _captureImage / 255.0;
     Mat l_projectorImage = _projectionImage.clone();
     l_projectorImage.convertTo(l_projectorImage, CV_64FC3, 1.0/255.0);
@@ -1723,7 +1725,7 @@ bool AppearanceEnhancement::showAll(const cv::Mat& _captureImage, const cv::Mat&
     l_errorOfEstimateF.convertTo(l_errorOfEstimateF, CV_8UC3);
     MY_IMSHOW10(l_captureImage, l_projectorImage, l_targetImage, _answerK, _answerF, l_errorOfProjection, l_errorOfEstimateK, l_errorOfEstimateF, l_overP, _CrOfMPC);
     Mat l_errorOfMPC = abs(_errorOfMPC);
-    MY_IMSHOW(l_errorOfMPC);
+    MY_IMSHOW2(l_errorOfMPC, _vrC);
     showKMap();
     showFMap();
     
@@ -1733,6 +1735,7 @@ bool AppearanceEnhancement::showAll(const cv::Mat& _captureImage, const cv::Mat&
     imwrite(OUTPUT_DATA_PATH + "errorOfProjection.png", l_errorOfProjection);
     imwrite(OUTPUT_DATA_PATH + "errorOfMPC.png", l_errorOfMPC);
     imwrite(OUTPUT_DATA_PATH + "CrOfMPC.png", _CrOfMPC);
+    imwrite(OUTPUT_DATA_PATH + "virtualC.png", _vrC);
     return true;
     
 }
@@ -1894,10 +1897,9 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
     Mat l_targetImageBefore(l_camSize, CV_64FC3, CV_SCALAR_WHITE);
     Mat l_answerK(l_camSize, CV_64FC3, CV_SCALAR_D_WHITE);
     Mat l_answerF(l_camSize, CV_64FC3, CV_SCALAR_D_BLACK);
-    Mat l_virtualC1(l_camSize, CV_64FC3, CV_SCALAR_D_BLACK);
-    Mat l_virtualC2(l_camSize, CV_64FC3, CV_SCALAR_D_BLACK);
     Mat l_errorOfMPC(l_camSize, CV_64FC3, CV_SCALAR_D_BLACK);
     Mat l_CrOfMPC(l_camSize, CV_64FC3, CV_SCALAR_D_BLACK);
+    Mat l_virtualC(l_camSize, CV_64FC3, CV_SCALAR_D_BLACK);
     double l_enhanceRate = 1.3, l_alphaMPC = 0.1;
     int l_estTarget = 0, l_enhanceType = 0, l_stopTime = -1;
     double l_startTime = 0, l_endTime = 0, l_fps = 0;
@@ -1947,14 +1949,14 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
         l_captureImageBefore = l_captureImage.clone();
 
         // calc next projection image
-        calcNextProjectionImage(&l_projectionImage, &l_errorOfMPC, &l_CrOfMPC, l_targetImage, l_targetImageBefore, l_captureImageBefore, l_projectionImageBefore, l_KMap, l_FMap, l_FMapBefore, l_CMax, l_CMin, l_alphaMPC);
+        calcNextProjectionImage(&l_projectionImage, &l_errorOfMPC, &l_CrOfMPC, &l_virtualC, l_targetImage, l_targetImageBefore, l_captureImageBefore, l_projectionImageBefore, l_KMap, l_FMap, l_FMapBefore, l_CMax, l_CMin, l_alphaMPC);
         
         // projection
         l_procam->captureOfProjecctorColorFromLinearLightOnProjectorDomain(&l_captureImage, l_projectionImage, l_bDenoise);
         
         // save and show
         saveAll(l_captureImage, l_projectionImage, l_targetImage);
-        showAll(l_captureImage, l_projectionImage, l_targetImage, l_answerK, l_answerF, l_errorOfMPC, l_CrOfMPC);
+        showAll(l_captureImage, l_projectionImage, l_targetImage, l_answerK, l_answerF, l_errorOfMPC, l_CrOfMPC, l_virtualC);
         
         // evaluate
         evaluateEstimationAndProjection(l_answerK, l_KMap, l_answerF, l_FMap, l_targetImage, l_captureImage);
