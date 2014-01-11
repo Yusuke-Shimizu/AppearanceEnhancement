@@ -33,6 +33,12 @@ const std::string SIM_ESTIMATE_KF_FILE_NAME = "simulationData/estimate/estimateK
 const std::string SIM_PROJECTION_FILE_NAME = "simulationData/projection/projection.dat";
 const std::string CHECK_CMAX_MIN_FILE_NAME = "calibrationData/checkCMax_CMin";
 
+enum mode {
+    e_Amano,
+    e_Fujii,
+    e_Shimizu
+};
+
 class ProCam;
 
 class AppearanceEnhancement{
@@ -42,6 +48,7 @@ private:
     cv::Mat m_C, m_P, m_K, m_F, m_Cfull, m_C0;
     // experimental data
     cv::Mat m_KMap, m_FMap, m_CfullMap, m_C0Map;
+    mode m_currentMode;
     
     AppearanceEnhancement(const AppearanceEnhancement& ae); // コピーコンストラクタ隠し（プログラムで１つしか存在しない為）
 public:
@@ -74,6 +81,8 @@ public:
     const cv::Mat& getKMap(void);
     const cv::Mat& getFMap(void);
     ProCam* getProCam(void);
+    bool switchMode(void);
+    bool isAmanoMode(void) const;
     ///////////////////////////////  print method ///////////////////////////////
     bool printStandardDeviationOfRadiometricModel(void);
     bool printSwitchIteratorError(void);
@@ -106,12 +115,13 @@ public:
     bool test_calcNextProjectionImageAtPixel(void);
     bool calcReflectanceAtPixel(double* const _K, const double& _nC, const double& _nP, const double& _nCMax, const double& _nCMin, const double& _nPMax, const double& _nPMin);
     bool test_calcReflectanceAtPixel(void);
-    bool calcReflectanceAndAmbientLightAtPixel(double* const _K, double* const _F, const double& _nC1, const double& _nP1, const double& _nC2, const double& _nP2, const double& _nCMax, const double& _nCMin);
+    bool calcReflectanceAndAmbientLightAtPixel(double* const _K, double* const _F, const double& _nC1, const double& _nP1, const double& _nC2, const double& _nP2, const double& _nCMax, const double& _nCMin, const double& _nPMax, const double& _nPMin);
     bool test_calcReflectanceAndAmbientLightAtPixel(void);
     bool calcCaptureImageAddNoise(double* const _C, const double& _P, const double& _K, const double& _F, const double& _CMax, const double& _CMin, const double& _noiseRange = NOISE_RANGE);
+    bool calcVirtualC(cv::Mat* const _vrC, const cv::Mat& _P);
     ////////////////////////////// estimate method //////////////////////////////
     bool estimateK(const cv::Mat& _P);
-    bool estimateK(const cv::Mat& _P, const cv::Mat& _C, const cv::Mat& _CMax, const cv::Mat& _CMin);
+    bool estimateK(const cv::Mat& _P, const cv::Mat& _C, const cv::Mat& _CMax, const cv::Mat& _CMin, const cv::Mat& _F);
     bool test_estimateK(const cv::Mat& _answerK, const cv::Mat& _CMax, const cv::Mat& _CMin, const cv::Scalar& _mask = cv::Scalar(1, 1, 1, 0));
     bool estimateF(const cv::Mat& _P);
     bool estimateF(const cv::Mat& _P, const cv::Mat& _C, const cv::Mat& _CMax, const cv::Mat& _CMin);
@@ -120,8 +130,7 @@ public:
     bool test_estimateKFByAmanoModel(const cv::Mat& _answerK, const cv::Scalar& _mask = cv::Scalar(1, 1, 1, 0));
     bool estimateKFByFujiiModel(const cv::Mat& _P1, const cv::Mat& _P2);
     ////////////////////////////// evaluate method //////////////////////////////
-    bool evaluateK(const cv::Mat& _ansK);
-    bool evaluateF(const cv::Mat& _ansF);
+    bool evaluateEstimate(const cv::Mat& _C, const cv::Mat& _P, const int num);
     bool evaluateEstimationAndProjection(const cv::Mat& _ansK, const cv::Mat& _estK, const cv::Mat& _ansF, const cv::Mat& _estF, const cv::Mat& _targetImage, const cv::Mat& _captureImage);
     ///////////////////////////////  round method ///////////////////////////////
     bool roundDesireC(cv::Mat* const _desireC, const cv::Mat& _K, const cv::Mat& _F);
