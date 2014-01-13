@@ -48,6 +48,18 @@ const float DEPTH_S16BIT_MAX = 32767;
 #define MY_IMSHOW10(img1, img2, img3, img4, img5, img6, img7, img8, img9, img10) MY_IMSHOW9_(img1, img2, img3, img4, img5, img6, img7, img8, img9);MY_IMSHOW(img10)
 #define MY_IMSHOW10_(img1, img2, img3, img4, img5, img6, img7, img8, img9, img10) MY_IMSHOW9_(img1, img2, img3, img4, img5, img6, img7, img8, img9);MY_IMSHOW_(img10)
 
+#define MY_IMWRITE(path, num, oss, tmp) oss.str("");oss.clear(std::stringstream::goodbit);oss<<path<<#tmp<<num<<".png";cv::imwrite(oss.str().c_str(), tmp)
+#define MY_IMWRITE2(path, num, oss, tmp1, tmp2) MY_IMWRITE(path, num, oss, tmp1);MY_IMWRITE(path, num, oss, tmp2)
+#define MY_IMWRITE3(path, num, oss, tmp1, tmp2, tmp3) MY_IMWRITE2(path, num, oss, tmp1, tmp2);MY_IMWRITE(path, num, oss, tmp3)
+#define MY_IMWRITE4(path, num, oss, tmp1, tmp2, tmp3, tmp4) MY_IMWRITE3(path, num, oss, tmp1, tmp2, tmp3);MY_IMWRITE(path, num, oss, tmp4)
+#define MY_IMWRITE5(path, num, oss, tmp1, tmp2, tmp3, tmp4, tmp5) MY_IMWRITE4(path, num, oss, tmp1, tmp2, tmp3, tmp4);MY_IMWRITE(path, num, oss, tmp5)
+#define MY_IMWRITE6(path, num, oss, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6) MY_IMWRITE5(path, num, oss, tmp1, tmp2, tmp3, tmp4, tmp5);MY_IMWRITE(path, num, oss, tmp6)
+#define MY_IMWRITE7(path, num, oss, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7) MY_IMWRITE6(path, num, oss, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6);MY_IMWRITE(path, num, oss, tmp7)
+#define MY_IMWRITE8(path, num, oss, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7, tmp8) MY_IMWRITE7(path, num, oss, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7);MY_IMWRITE(path, num, oss, tmp8)
+#define MY_IMWRITE9(path, num, oss, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7, tmp8, tmp9) MY_IMWRITE8(path, num, oss, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7, tmp8);MY_IMWRITE(path, num, oss, tmp9)
+#define MY_IMWRITE10(path, num, oss, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7, tmp8, tmp9, tmp10) MY_IMWRITE9(path, num, oss, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7, tmp8, tmp9);MY_IMWRITE(path, num, oss, tmp10)
+
+
 // print color
 #define _print_gnuplot_color(output, var) output<<(var)[0]<<"\t"<<(var)[1]<<"\t"<<(var)[2]<<"\t"
 #define _print_gnuplot_color_l(output, var) _print_gnuplot_color(output, var);output<<std::endl

@@ -18,13 +18,13 @@ const double NOISE_RANGE = 5 / 255.0;
 //#define NOISE_RANGE 0.05
 
 const std::string OUTPUT_DATA_PATH = "data/";
-const std::string C_FULL_FILE_NAME = "data/cfull.png";
-const std::string C_0_FILE_NAME = "data/c0.png";
-const std::string K_FILE_NAME = "data/estK.png";
-const std::string F_FILE_NAME = "data/estF.png";
-const std::string C_FILE_NAME = "data/C.png";
-const std::string P_FILE_NAME = "data/P.png";
-const std::string TARGET_FILE_NAME = "data/target.png";
+const std::string C_FULL_FILE_NAME = OUTPUT_DATA_PATH + "cfull.png";
+const std::string C_0_FILE_NAME = OUTPUT_DATA_PATH + "c0.png";
+const std::string K_FILE_NAME = OUTPUT_DATA_PATH + "estK.png";
+const std::string F_FILE_NAME = OUTPUT_DATA_PATH + "estF.png";
+const std::string C_FILE_NAME = OUTPUT_DATA_PATH + "C.png";
+const std::string P_FILE_NAME = OUTPUT_DATA_PATH + "P.png";
+const std::string TARGET_FILE_NAME = OUTPUT_DATA_PATH + "target.png";
 const std::string ESTIMATE_K_FILE_NAME = "calibrationData/estimate/estimateK.dat";
 const std::string ESTIMATE_KF_FILE_NAME = "calibrationData/estimate/estimateKF.dat";
 const std::string TEST_PROJECTION_FILE_NAME = "calibrationData/projection/projection.dat";
@@ -49,7 +49,8 @@ private:
     // experimental data
     cv::Mat m_KMap, m_FMap, m_CfullMap, m_C0Map;
     mode m_currentMode;
-    
+    cv::Point m_printPoint;
+
     AppearanceEnhancement(const AppearanceEnhancement& ae); // コピーコンストラクタ隠し（プログラムで１つしか存在しない為）
 public:
     ///////////////////////////////  constructor ///////////////////////////////
@@ -83,6 +84,8 @@ public:
     ProCam* getProCam(void);
     bool switchMode(void);
     bool isAmanoMode(void) const;
+    bool isPrintFlag(const int _x, const int _y, const int _rows, const bool _contFlag) const;
+    bool getImageDrawingPrintPoint(cv::Mat* const _img) const;
     ///////////////////////////////  print method ///////////////////////////////
     bool printStandardDeviationOfRadiometricModel(void);
     bool printSwitchIteratorError(void);
@@ -94,7 +97,7 @@ public:
     bool saveC0(const std::string& _fileName = C_0_FILE_NAME);
     bool saveK(const std::string& _fileName = K_FILE_NAME);
     bool saveF(const std::string& _fileName = F_FILE_NAME);
-    bool saveAll(const cv::Mat& _C, const cv::Mat& _P, const cv::Mat& _targetC, const std::string& _fileNameC = C_FILE_NAME, const std::string& _fileNameP = P_FILE_NAME, const std::string& _fileNameTarget = TARGET_FILE_NAME);
+    bool saveAll(const int _num);
     ///////////////////////////////  load method ///////////////////////////////
     bool loadCfull(const std::string& _fileName = C_FULL_FILE_NAME);
     bool loadC0(const std::string& _fileName = C_0_FILE_NAME);
@@ -115,7 +118,7 @@ public:
     bool test_calcNextProjectionImageAtPixel(void);
     bool calcReflectanceAtPixel(double* const _K, const double& _nC, const double& _nP, const double& _nCMax, const double& _nCMin, const double& _nPMax, const double& _nPMin);
     bool test_calcReflectanceAtPixel(void);
-    bool calcReflectanceAndAmbientLightAtPixel(double* const _K, double* const _F, const double& _nC1, const double& _nP1, const double& _nC2, const double& _nP2, const double& _nCMax, const double& _nCMin, const double& _nPMax, const double& _nPMin);
+    bool calcReflectanceAndAmbientLightAtPixel(double* const _K, double* const _F, const double& _nC1, const double& _nP1, const double& _nC2, const double& _nP2, const double& _nCMax, const double& _nCMin, const double& _nPMax, const double& _nPMin, const bool _printFlag = false);
     bool test_calcReflectanceAndAmbientLightAtPixel(void);
     bool calcCaptureImageAddNoise(double* const _C, const double& _P, const double& _K, const double& _F, const double& _CMax, const double& _CMin, const double& _noiseRange = NOISE_RANGE);
     bool calcVirtualC(cv::Mat* const _vrC, const cv::Mat& _P);
@@ -141,7 +144,7 @@ public:
     bool showFMap(void);
     bool showCfullMap(void);
     bool showC0Map(void);
-    bool showAll(const cv::Mat& _captureImage, const cv::Mat& _projectionImage, const cv::Mat& _targetImage, const cv::Mat& _answerK, const cv::Mat& _answerF, const cv::Mat& _errorOfMPC, const cv::Mat& _CrOfMPC, const cv::Mat& _vrC);
+    bool showAll(const int _num, const cv::Mat& _captureImage, const cv::Mat& _projectionImage, const cv::Mat& _targetImage, const cv::Mat& _answerK, const cv::Mat& _answerF, const cv::Mat& _errorOfMPC, const cv::Mat& _CrOfMPC, const cv::Mat& _vrC);
     ///////////////////////////////  other method ///////////////////////////////
     bool test_RadiometricModel(void);
     bool test_CMaxMin(const cv::Mat& _CMax, const cv::Mat& _CMin);
