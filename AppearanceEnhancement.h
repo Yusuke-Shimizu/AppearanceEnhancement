@@ -128,8 +128,8 @@ public:
     bool test_estimateK(const cv::Mat& _answerK, const cv::Mat& _CMax, const cv::Mat& _CMin, const cv::Scalar& _mask = cv::Scalar(1, 1, 1, 0));
     bool estimateF(const cv::Mat& _P);
     bool estimateF(const cv::Mat& _P, const cv::Mat& _C, const cv::Mat& _CMax, const cv::Mat& _CMin);
-    bool estimateKFByAmanoModel(const cv::Mat& _P1, const cv::Mat& _P2);
     bool estimateKFByAmanoModel(const cv::Mat& _P1, const cv::Mat& _P2, const cv::Mat& _C1, const cv::Mat& _C2);
+    bool estimateKFByAmanoModel(const cv::Mat& _P1, const cv::Mat& _P2);
     bool test_estimateKFByAmanoModel(const cv::Mat& _answerK, const cv::Scalar& _mask = cv::Scalar(1, 1, 1, 0));
     bool estimateKFByFujiiModel(const cv::Mat& _P1, const cv::Mat& _P2);
     ////////////////////////////// evaluate method //////////////////////////////
