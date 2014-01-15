@@ -328,7 +328,8 @@ bool ProCam::setProjectorResponseP2I(const cv::Mat_<cv::Vec3b>& _response){
     }
     
     // deep copy
-    m_projectorResponseP2I = _response.clone();
+//    m_projectorResponseP2I = _response.clone();
+    m_projectorResponseP2I = _response;
     return true;
 }
 bool ProCam::setProjectorResponseP2IAtOutOfCameraArea(void){
@@ -943,11 +944,12 @@ bool ProCam::loadProjectorResponseP2IForByte(const char* fileName){
     int rows = 0, cols = 0;
     ifs.read((char*)&rows, sizeof(int));
     ifs.read((char*)&cols, sizeof(int));
-    Mat_<Vec3b> l_proRes(rows, cols, CV_8UC3);
+//    Mat_<Vec3b> l_proRes(rows, cols, CV_8UC3);
     
     // get number
     for (int y = 0; y < rows; ++ y) {
-        Vec3b* p_proRes = l_proRes.ptr<Vec3b>(y);
+//        Vec3b* p_proRes = l_proRes.ptr<Vec3b>(y);
+        Vec3b* p_proRes = m_projectorResponseP2I.ptr<Vec3b>(y);
         
         for (int x = 0; x < cols; ++ x) {
             for (int ch = 0; ch < 3; ++ ch) {
@@ -957,7 +959,7 @@ bool ProCam::loadProjectorResponseP2IForByte(const char* fileName){
     }
     
     // setting
-    setProjectorResponseP2I(l_proRes);
+//    setProjectorResponseP2I(l_proRes);
     return true;
 }
 
@@ -1039,8 +1041,8 @@ bool ProCam::linearizeOfProjector(const bool _calcLinearFlag, const bool _showLi
     } else {
         linearPrj.loadColorMixingMatrixOfByte(CMM_MAP_FILE_NAME_BYTE);
         loadProjectorResponseP2IForByte(PROJECTOR_RESPONSE_P2I_FILE_NAME_BYTE);
-        loadProjectorResponseForByte(PROJECTOR_RESPONSE_I2P_FILE_NAME_BYTE);
-        linearPrj.loadAllCImages();
+//        loadProjectorResponseForByte(PROJECTOR_RESPONSE_I2P_FILE_NAME_BYTE);
+//        linearPrj.loadAllCImages();
 //        linearPrj.test_responseFunction();
 //        linearPrj.saveEstimatedC();
     }

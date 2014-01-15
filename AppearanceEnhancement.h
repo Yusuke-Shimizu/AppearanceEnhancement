@@ -39,6 +39,25 @@ enum mode {
     e_Shimizu
 };
 
+class PhotometricModel{
+public:
+    cv::Mat estK;
+    cv::Mat estF;
+    cv::Mat ansK;
+    cv::Mat ansF;
+    cv::Mat C;
+    cv::Mat P;
+    cv::Mat Cmax;
+    cv::Mat Cmin;
+    cv::Mat Pmax;
+    cv::Mat Pmin;
+    
+    //
+    PhotometricModel(void){
+        
+    }
+};
+
 class ProCam;
 
 class AppearanceEnhancement{
@@ -146,6 +165,8 @@ public:
     bool showC0Map(void);
     bool showAll(const int _num, const cv::Mat& _captureImage, const cv::Mat& _projectionImage, const cv::Mat& _targetImage, const cv::Mat& _answerK, const cv::Mat& _answerF, const cv::Mat& _errorOfMPC, const cv::Mat& _CrOfMPC, const cv::Mat& _vrC);
     ///////////////////////////////  other method ///////////////////////////////
+    bool divideImage(cv::Mat* const _dst1, cv::Mat* const _dst2, const cv::Mat& _src, const cv::Scalar& _distance);
+    bool divideImage(cv::Mat* const _dst1, cv::Mat* const _dst2, const cv::Mat& _src, const double& _distance = 10);
     bool test_RadiometricModel(void);
     bool test_CMaxMin(const cv::Mat& _CMax, const cv::Mat& _CMin);
     bool doAppearanceCrealy(cv::Mat* const _P, const double _s);

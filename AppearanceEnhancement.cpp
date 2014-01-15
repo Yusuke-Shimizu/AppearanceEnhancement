@@ -1065,11 +1065,6 @@ bool AppearanceEnhancement::calcReflectanceAndAmbientLightAtPixel(double* const 
     // calculation
     const Mat l_nKF = l_C12.inv() * l_P12 * l_mCPmm;
     
-    if (_printFlag) {
-        cout << l_nKF<<" = "<<l_C12<<".inv() * "<<l_P12<<" * "<<l_mCPmm << endl;
-        _print_bar;
-    }
-    
     // set
     // K
     *_K = 1 / l_nKF.at<double>(0, 0);
@@ -1077,6 +1072,12 @@ bool AppearanceEnhancement::calcReflectanceAndAmbientLightAtPixel(double* const 
     double l_nRoundF = l_nKF.at<double>(1, 0);
 //    round0to1(&l_nRoundF);
     *_F = l_nRoundF * 255.0;
+    
+    if (_printFlag) {
+        cout << l_nKF<<" = "<<l_C12<<".inv() * "<<l_P12<<" * "<<l_mCPmm << endl;
+        _print2(*_K, *_F);
+        _print_bar;
+    }
     return true;
 }
 bool AppearanceEnhancement::test_calcReflectanceAndAmbientLightAtPixel(void){
@@ -1413,11 +1414,11 @@ bool AppearanceEnhancement::estimateKFByAmanoModel(const cv::Mat& _P1, const cv:
     bool l_printFlag = false, l_contFlag = false;
     
     int rows = _P1.rows, cols = _P1.cols;
-    l_contFlag = isContinuous(_P1, _P2, _C1, _C2, l_CMax, l_CMin, l_K, l_F);
-    if (l_contFlag) {
-        cols *= rows;
-        rows = 1;
-    }
+//    l_contFlag = isContinuous(_P1, _P2, _C1, _C2, l_CMax, l_CMin, l_K, l_F);
+//    if (l_contFlag) {
+//        cols *= rows;
+//        rows = 1;
+//    }
     for (int y = 0; y < rows; ++ y) {
         Vec3d* l_pK = l_K.ptr<Vec3d>(y);
         Vec3d* l_pF = l_F.ptr<Vec3d>(y);
@@ -1475,6 +1476,7 @@ bool AppearanceEnhancement::estimateKFByAmanoModel(const cv::Mat& _P1, const cv:
     return true;
 }
 
+// コアダンプ起こるから修正する
 bool AppearanceEnhancement::test_estimateKFByAmanoModel(const cv::Mat& _answerK, const cv::Scalar& _mask){
     // init
     ProCam* l_procam = getProCam();
@@ -1494,7 +1496,8 @@ bool AppearanceEnhancement::test_estimateKFByAmanoModel(const cv::Mat& _answerK,
     // loop
     for (int i = 0; i < 256; ++ i) {
         // projection and capture
-        const Scalar l_prjColor(i * _mask[0], i * _mask[1], i * _mask[2]);
+//        const Scalar l_prjColor(i * _mask[0], i * _mask[1], i * _mask[2]);
+        const Scalar l_prjColor = (double)i * _mask;
         l_projectionImage2 = l_prjColor;
         
         l_procam->captureOfProjecctorColorFromLinearLightOnProjectorDomain(&l_captureImage2, l_projectionImage2, false, SLEEP_TIME);
@@ -1743,6 +1746,8 @@ bool AppearanceEnhancement::showAll(const int _num, const cv::Mat& _captureImage
     Mat l_errorOfEstimateF = _answerF.clone();
     const Mat l_estimatedF = getFMap();
     absdiff(_answerF, l_estimatedF, l_errorOfEstimateF);
+    _print3(_answerK.at<Vec3d>(m_printPoint), l_estimatedK.at<Vec3d>(m_printPoint), l_errorOfEstimateK.at<Vec3d>(m_printPoint));
+    _print3(_answerF.at<Vec3d>(m_printPoint), l_estimatedF.at<Vec3d>(m_printPoint), l_errorOfEstimateF.at<Vec3d>(m_printPoint));
     
     // create over and under exposure image
     Mat l_overP = _projectionImage.clone();
@@ -1776,6 +1781,19 @@ bool AppearanceEnhancement::showAll(const int _num, const cv::Mat& _captureImage
     
 }
 ///////////////////////////////  other method ///////////////////////////////
+bool AppearanceEnhancement::divideImage(cv::Mat* const _dst1, cv::Mat* const _dst2, const cv::Mat& _src, const cv::Scalar& _distance){
+    Mat l_srcLab, l_dstLab1, l_dstLab2;
+    cv::cvtColor(_src, l_srcLab, CV_BGR2Lab);
+    l_dstLab1 = l_srcLab.clone() + _distance;
+    l_dstLab2 = l_srcLab.clone() - _distance;
+    cv::cvtColor(l_dstLab1, *_dst1, CV_Lab2BGR);
+    cv::cvtColor(l_dstLab2, *_dst2, CV_Lab2BGR);
+    return true;
+}
+bool AppearanceEnhancement::divideImage(cv::Mat* const _dst1, cv::Mat* const _dst2, const cv::Mat& _src, const double& _distance){
+    return divideImage(_dst1, _dst2, _src, Scalar(0, _distance, _distance));
+}
+
 // 光学モデルのテスト ( C=K{(C_full-C_0)P + C_0 + F} )
 // return   : テストが合ってるかどうか
 bool AppearanceEnhancement::test_RadiometricModel(void){
@@ -1944,6 +1962,7 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
     int l_frameNum = 0;
     bool l_calcNextPrj = true;
     Scalar l_prjColor = CV_SCALAR_WHITE;
+    double l_divideSize = 10;
     
     // init
     l_procam->captureOfProjecctorColorFromLinearLightOnProjectorDomain(&l_captureImage, l_projectionImage);
@@ -1996,14 +2015,32 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
         l_captureImageBefore = l_captureImage.clone();
 
         // calc next projection image
-        if (l_calcNextPrj) {
-            calcNextProjectionImage(&l_projectionImage, &l_errorOfMPC, &l_CrOfMPC, &l_virtualC, l_targetImage, l_targetImageBefore, l_captureImageBefore, l_projectionImageBefore, l_KMap, l_FMap, l_FMapBefore, l_CMax, l_CMin, l_alphaMPC);
-        } else {
-            l_projectionImage = l_prjColor;
+        if (isAmanoMode()) {
+            if (l_calcNextPrj) {
+                calcNextProjectionImage(&l_projectionImage, &l_errorOfMPC, &l_CrOfMPC, &l_virtualC, l_targetImage, l_targetImageBefore, l_captureImageBefore, l_projectionImageBefore, l_KMap, l_FMap, l_FMapBefore, l_CMax, l_CMin, l_alphaMPC);
+            } else {
+                l_projectionImage = l_prjColor;
+            }
+            
+            // projection
+            l_procam->captureOfProjecctorColorFromLinearLightOnProjectorDomain(&l_captureImage, l_projectionImage);
+        } else {    // Shimizu mode
+            Mat l_target1 = l_targetImage.clone(), l_target2 = l_targetImage.clone();
+            divideImage(&l_target1, &l_target2, l_targetImage, l_divideSize);
+            
+            // calc next projection image
+            calcNextProjectionImage(&l_projectionImage2, &l_errorOfMPC, &l_CrOfMPC, &l_virtualC, l_target1, l_targetImageBefore, l_captureImageBefore, l_projectionImageBefore, l_KMap, l_FMap, l_FMapBefore, l_CMax, l_CMin, l_alphaMPC);
+            calcNextProjectionImage(&l_projectionImageBefore2, &l_errorOfMPC, &l_CrOfMPC, &l_virtualC, l_target2, l_targetImageBefore, l_captureImageBefore, l_projectionImageBefore, l_KMap, l_FMap, l_FMapBefore, l_CMax, l_CMin, l_alphaMPC);
+            
+            // projection
+            while (true) {
+                l_procam->captureOfProjecctorColorFromLinearLightOnProjectorDomain(&l_captureImage, l_projectionImage2);
+                l_procam->captureOfProjecctorColorFromLinearLightOnProjectorDomain(&l_captureImage, l_projectionImageBefore2);
+                if (waitKey(-1) == CV_BUTTON_DELETE) {
+                    break;
+                }
+            }
         }
-        
-        // projection
-        l_procam->captureOfProjecctorColorFromLinearLightOnProjectorDomain(&l_captureImage, l_projectionImage, l_bDenoise);
         
         // save and show
         saveAll(l_frameNum);
@@ -2032,6 +2069,7 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
                 } else {
                     l_prjColor = CV_SCALAR_GREEN;
                     _print(l_prjColor);
+                    break;
                 }
             case (CV_BUTTON_c): // have to get Cfull and C0 after color calibration
 //                l_procam->colorCalibration();
@@ -2097,6 +2135,14 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
                 prj = std::max(prj - 10, 0);
                 _print2(prj, prj2);
                 l_projectionImage2 = Mat(l_camSize, CV_8UC3, Scalar(prj, prj, prj));
+                break;
+            case (CV_BUTTON_v):
+                l_divideSize += 10;
+                _print(l_divideSize);
+                break;
+            case (CV_BUTTON_V):
+                l_divideSize -= 10;
+                _print(l_divideSize);
                 break;
             // what is type of enhancement
             case (CV_BUTTON_2):
