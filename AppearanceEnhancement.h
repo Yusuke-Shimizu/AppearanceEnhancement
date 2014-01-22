@@ -18,10 +18,6 @@ const double NOISE_RANGE = 5 / 255.0;
 //#define NOISE_RANGE 0.05
 
 const std::string OUTPUT_DATA_PATH = "data/";
-const std::string C_FULL_FILE_NAME = OUTPUT_DATA_PATH + "cfull.png";
-const std::string C_0_FILE_NAME = OUTPUT_DATA_PATH + "c0.png";
-const std::string K_FILE_NAME = OUTPUT_DATA_PATH + "estK.png";
-const std::string F_FILE_NAME = OUTPUT_DATA_PATH + "estF.png";
 const std::string C_FILE_NAME = OUTPUT_DATA_PATH + "C.png";
 const std::string P_FILE_NAME = OUTPUT_DATA_PATH + "P.png";
 const std::string TARGET_FILE_NAME = OUTPUT_DATA_PATH + "target.png";
@@ -67,6 +63,7 @@ private:
     cv::Mat m_C, m_P, m_K, m_F, m_Cfull, m_C0;
     // experimental data
     cv::Mat m_KMap, m_FMap, m_CfullMap, m_C0Map;
+    cv::Mat m_CMax, m_CMin;
     mode m_currentMode;
     cv::Point m_printPoint;
 
@@ -89,15 +86,15 @@ public:
     ///////////////////////////////  set method ///////////////////////////////
     bool setKMap(const cv::Mat& _K);
     bool setFMap(const cv::Mat& _F);
-    bool setCfullMap(const bool _denoisingFlag = false);
-    bool setCfullMap(const cv::Mat& _Cfull);
-    bool setC0Map(const bool _denoisingFlag = false);
-    bool setC0Map(const cv::Mat& _C0);
+    bool setCfullMap(void);
+    bool setC0Map(void);
     ///////////////////////////////  get method ///////////////////////////////
     bool getCfull(cv::Mat* const Cfull);
     const cv::Mat& getCfullMap(void);
+    const cv::Mat& getCMax(void);
     bool getC0(cv::Mat* const C0);
     const cv::Mat& getC0Map(void);
+    const cv::Mat& getCMin(void);
     const cv::Mat& getKMap(void);
     const cv::Mat& getFMap(void);
     ProCam* getProCam(void);
@@ -112,14 +109,7 @@ public:
     bool printAmanoMethod(void);
     bool printAppearanceEnhancement(void);
     ///////////////////////////////  save method ///////////////////////////////
-    bool saveCfull(const std::string& _fileName = C_FULL_FILE_NAME);
-    bool saveC0(const std::string& _fileName = C_0_FILE_NAME);
-    bool saveK(const std::string& _fileName = K_FILE_NAME);
-    bool saveF(const std::string& _fileName = F_FILE_NAME);
     bool saveAll(const int _num);
-    ///////////////////////////////  load method ///////////////////////////////
-    bool loadCfull(const std::string& _fileName = C_FULL_FILE_NAME);
-    bool loadC0(const std::string& _fileName = C_0_FILE_NAME);
     ///////////////////////////////  calc method ///////////////////////////////
     bool calcReflectAndAmbient(cv::Mat* const _K, cv::Mat* const _F, const cv::Mat& _P1, const cv::Mat& _C1, const cv::Mat& _P2, const cv::Mat& _C2);
     bool calcReflect(cv::Mat* const _K, const cv::Mat& _P, const cv::Mat& _C, const cv::Mat& _F);
@@ -136,16 +126,12 @@ public:
     bool calcNextProjectionImageAtPixel(uchar* const _nextP, double* const _error, double* const _Cr, double* const _vrC, const double& _targetImage, const double& _targetImageBefore, const double& _C, const double& _P, const double& _K, const double& _F, const double& _FBefore, const double& _Cfull, const double& _C0, const double& _PMax, const double& _PMin, const double& _alpha = 0.1);
     bool test_calcNextProjectionImageAtPixel(void);
     bool calcReflectanceAtPixel(double* const _K, const double& _nC, const double& _nP, const double& _nCMax, const double& _nCMin, const double& _nPMax, const double& _nPMin);
-    bool test_calcReflectanceAtPixel(void);
     bool calcReflectanceAndAmbientLightAtPixel(double* const _K, double* const _F, const double& _nC1, const double& _nP1, const double& _nC2, const double& _nP2, const double& _nCMax, const double& _nCMin, const double& _nPMax, const double& _nPMin, const bool _printFlag = false);
-    bool test_calcReflectanceAndAmbientLightAtPixel(void);
     bool calcCaptureImageAddNoise(double* const _C, const double& _P, const double& _K, const double& _F, const double& _CMax, const double& _CMin, const double& _noiseRange = NOISE_RANGE);
     bool calcVirtualC(cv::Mat* const _vrC, const cv::Mat& _P);
     ////////////////////////////// estimate method //////////////////////////////
-    bool estimateK(const cv::Mat& _P);
     bool estimateK(const cv::Mat& _P, const cv::Mat& _C, const cv::Mat& _CMax, const cv::Mat& _CMin, const cv::Mat& _F);
     bool test_estimateK(const cv::Mat& _answerK, const cv::Mat& _CMax, const cv::Mat& _CMin, const cv::Scalar& _mask = cv::Scalar(1, 1, 1, 0));
-    bool estimateF(const cv::Mat& _P);
     bool estimateF(const cv::Mat& _P, const cv::Mat& _C, const cv::Mat& _CMax, const cv::Mat& _CMin);
     bool estimateKFByAmanoModel(const cv::Mat& _P1, const cv::Mat& _P2, const cv::Mat& _C1, const cv::Mat& _C2);
     bool estimateKFByAmanoModel(const cv::Mat& _P1, const cv::Mat& _P2);
@@ -154,10 +140,6 @@ public:
     ////////////////////////////// evaluate method //////////////////////////////
     bool evaluateEstimate(const cv::Mat& _C, const cv::Mat& _P, const int num);
     bool evaluateEstimationAndProjection(const cv::Mat& _ansK, const cv::Mat& _estK, const cv::Mat& _ansF, const cv::Mat& _estF, const cv::Mat& _targetImage, const cv::Mat& _captureImage);
-    ///////////////////////////////  round method ///////////////////////////////
-    bool roundDesireC(cv::Mat* const _desireC, const cv::Mat& _K, const cv::Mat& _F);
-    bool roundReflectance(cv::Mat* const _K);
-    bool roundAmbient(cv::Mat* const _F);
     ///////////////////////////////  show method ///////////////////////////////
     bool showKMap(void);
     bool showFMap(void);
@@ -167,9 +149,7 @@ public:
     ///////////////////////////////  other method ///////////////////////////////
     bool divideImage(cv::Mat* const _dst1, cv::Mat* const _dst2, const cv::Mat& _src, const cv::Scalar& _distance);
     bool divideImage(cv::Mat* const _dst1, cv::Mat* const _dst2, const cv::Mat& _src, const double& _distance = 10);
-    bool test_RadiometricModel(void);
     bool test_CMaxMin(const cv::Mat& _CMax, const cv::Mat& _CMin);
-    bool doAppearanceCrealy(cv::Mat* const _P, const double _s);
     bool doAppearanceEnhancementByAmano(void);
 };
 

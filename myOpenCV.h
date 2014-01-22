@@ -59,6 +59,16 @@ const float DEPTH_S16BIT_MAX = 32767;
 #define MY_IMWRITE9(path, num, oss, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7, tmp8, tmp9) MY_IMWRITE8(path, num, oss, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7, tmp8);MY_IMWRITE(path, num, oss, tmp9)
 #define MY_IMWRITE10(path, num, oss, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7, tmp8, tmp9, tmp10) MY_IMWRITE9(path, num, oss, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7, tmp8, tmp9);MY_IMWRITE(path, num, oss, tmp10)
 
+#define MY_IMWRITE_D(path, num, oss, tmp) oss.str("");oss.clear(std::stringstream::goodbit);oss<<path<<#tmp<<num<<".png";tmp.convertTo(tmp,CV_8UC3, 255);cv::imwrite(oss.str().c_str(), tmp)
+#define MY_IMWRITE_D2(path, num, oss, tmp1, tmp2) MY_IMWRITE_D(path, num, oss, tmp1);MY_IMWRITE_D(path, num, oss, tmp2)
+#define MY_IMWRITE_D3(path, num, oss, tmp1, tmp2, tmp3) MY_IMWRITE_D2(path, num, oss, tmp1, tmp2);MY_IMWRITE_D(path, num, oss, tmp3)
+#define MY_IMWRITE_D4(path, num, oss, tmp1, tmp2, tmp3, tmp4) MY_IMWRITE_D3(path, num, oss, tmp1, tmp2, tmp3);MY_IMWRITE_D(path, num, oss, tmp4)
+#define MY_IMWRITE_D5(path, num, oss, tmp1, tmp2, tmp3, tmp4, tmp5) MY_IMWRITE_D4(path, num, oss, tmp1, tmp2, tmp3, tmp4);MY_IMWRITE_D(path, num, oss, tmp5)
+#define MY_IMWRITE_D6(path, num, oss, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6) MY_IMWRITE_D5(path, num, oss, tmp1, tmp2, tmp3, tmp4, tmp5);MY_IMWRITE_D(path, num, oss, tmp6)
+#define MY_IMWRITE_D7(path, num, oss, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7) MY_IMWRITE_D6(path, num, oss, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6);MY_IMWRITE_D(path, num, oss, tmp7)
+#define MY_IMWRITE_D8(path, num, oss, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7, tmp8) MY_IMWRITE_D7(path, num, oss, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7);MY_IMWRITE_D(path, num, oss, tmp8)
+#define MY_IMWRITE_D9(path, num, oss, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7, tmp8, tmp9) MY_IMWRITE_D8(path, num, oss, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7, tmp8);MY_IMWRITE_D(path, num, oss, tmp9)
+#define MY_IMWRITE_D10(path, num, oss, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7, tmp8, tmp9, tmp10) MY_IMWRITE_D9(path, num, oss, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7, tmp8, tmp9);MY_IMWRITE_D(path, num, oss, tmp10)
 
 // print color
 #define _print_gnuplot_color(output, var) output<<(var)[0]<<"\t"<<(var)[1]<<"\t"<<(var)[2]<<"\t"

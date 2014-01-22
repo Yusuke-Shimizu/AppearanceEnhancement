@@ -226,11 +226,14 @@ bool ProCam::initV(void){
     
     // initialize
     m_V = Mat_<Vec9d>(*l_camSize);
+    m_invV = Mat_<Vec9d>(*l_camSize);
     const int rows = l_camSize->height, cols = l_camSize->width;
     for (int y = 0; y < rows; ++ y) {
         Vec9d* p_cmmm = m_V.ptr<Vec9d>(y);
+        Vec9d* p_invCmmm = m_invV.ptr<Vec9d>(y);
         for (int x = 0; x < cols; ++ x) {
             p_cmmm[x] = l_initV;
+            p_invCmmm[x] = l_initV;
         }
     }
     return true;
@@ -405,20 +408,13 @@ bool ProCam::setV(const std::vector<cv::Mat>& _vecC, const std::vector<cv::Vec3d
     }
     Mat l_matP(3, (int)l_vecPMat.size(), CV_64FC1, 0.0);
     convertVector2Mat(&l_matP, l_vecPMat);
-//    cv::merge(l_vecPMat, l_matP);
     _print(l_matP);
 
     //
     int rows = _vecC[0].rows, cols = _vecC[0].cols;
-//    Mat_<Vec9d> l_V(rows, cols, Vec9d(0,0,0,0,0,0,0,0,0));
     for (int y = 0; y < rows; ++ y) {
         Vec9d* l_pV = m_V.ptr<Vec9d>(y);
-//        vector<const Vec3d* const> l_pVecC;
-//        for (vector<Mat>::const_iterator l_itrC = _vecC.begin();
-//             l_itrC != _vecC.end();
-//             ++ l_itrC) {
-//            l_pVecC.push_back(l_itrC->ptr<Vec3b>(y));
-//        }
+        Vec9d* l_pInvV = m_invV.ptr<Vec9d>(y);
         
         for (int x = 0; x < cols; ++ x) {
             // create C mat
@@ -429,14 +425,15 @@ bool ProCam::setV(const std::vector<cv::Mat>& _vecC, const std::vector<cv::Vec3d
                 l_vecMatC.push_back((l_itrVecC->at<Vec3d>(y, x)));
             }
             Mat l_matC(3, (int)l_vecMatC.size(), CV_64FC1, 0.0);
-//            cv::merge(l_vecMatC, l_matC);
             convertVector2Mat(&l_matC, l_vecMatC);
             
             // calc
             const Mat l_matV = l_matC * l_matP.inv();
+            const Mat l_matInvV = l_matV.inv();
             
             // Mat -> Vec9d
             convertMatToVec(&l_pV[x], l_matV);
+            convertMatToVec(&l_pInvV[x], l_matInvV);
         }
     }
     return true;
@@ -627,6 +624,9 @@ void ProCam::getImageProjectorResponseP2I(cv::Mat* const _responseImage, const i
 // Vの取得
 const cv::Mat_<Vec9d>* ProCam::getV(void){
     return &m_V;
+}
+const cv::Mat_<Vec9d>* ProCam::getInvV(void){
+    return &m_invV;
 }
 
 const cv::Mat* ProCam::getF(void){
@@ -1491,6 +1491,7 @@ bool ProCam::convertPtoIBySomePoint(cv::Mat* const _I, const cv::Mat&  _P, const
 
 void ProCam::convertColorSpace(cv::Mat* const _dst, const cv::Mat& _src, const bool P2CFlag){
     const Mat_<Vec9d>* l_V = getV();
+    const Mat_<Vec9d>* l_invV = getInvV();
     
     // error handle
     if (!isEqualSize(*_dst, _src, *l_V)) {
@@ -1513,14 +1514,16 @@ void ProCam::convertColorSpace(cv::Mat* const _dst, const cv::Mat& _src, const b
         Vec3d* l_pDst = _dst->ptr<Vec3d>(y);
         const Vec3b* l_pSrc = _src.ptr<Vec3b>(y);
         const Vec9d* l_pV = l_V->ptr<Vec9d>(y);
+        const Vec9d* l_pInvV = l_invV->ptr<Vec9d>(y);
         const Vec3b* l_pF0 = g_F0.ptr<Vec3b>(y);
         
         for (int x = 0; x < cols; ++ x) {
             // vec -> mat
             const Mat l_srcMat = Mat(Vec3d(l_pSrc[x]));
             const Mat l_F0Mat = Mat(Vec3d(l_pF0[x]));
-            Mat l_VMat(3, 3, CV_64FC1);
+            Mat l_VMat(3, 3, CV_64FC1), l_invVMat(3, 3, CV_64FC1);
             convertVecToMat(&l_VMat, l_pV[x]);
+            convertVecToMat(&l_invVMat, l_pInvV[x]);
             
             // calc
             Mat colorMix, l_dstMat;
@@ -1528,7 +1531,7 @@ void ProCam::convertColorSpace(cv::Mat* const _dst, const cv::Mat& _src, const b
                 colorMix = l_VMat;
                 l_dstMat = colorMix * l_srcMat;
             } else {
-                colorMix = l_VMat.inv();
+                colorMix = l_invVMat;
                 l_dstMat = colorMix * (l_srcMat - l_F0Mat);
                 if (COLOR_CALIB_2003) {
                     l_dstMat = colorMix * l_srcMat;
@@ -1825,7 +1828,6 @@ bool ProCam::captureOfProjecctorColorFromLinearLightOnProjectorDomain(cv::Mat* c
     
     // convert color space camera to projector
     convertColorSpaceOfCameraToProjector(_captureImage, tmp);
-    
     return true;
 }
 bool ProCam::captureOfProjecctorColorFromLinearLightOnProjectorDomain(cv::Mat* const _captureImage, const cv::Vec3b& _projectionColor, const bool _denoiseFlag, const int _waitTimeNum){

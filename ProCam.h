@@ -104,7 +104,8 @@ private:
     cv::Mat m_projectorResponseP2I;    // プロジェクタの応答特性のインバース[0-255]
     
     // こっちはBGR色空間にしてる
-    cv::Mat_<Vec9d> m_V;     // 全カメラ画素分のV（プロジェクタからカメラへの色変換行列）
+    cv::Mat_<Vec9d> m_V;    // 全カメラ画素分のV（プロジェクタからカメラへの色変換行列）
+    cv::Mat_<Vec9d> m_invV; // 全カメラ画素分のV（カメラからプロジェクタへの色変換行列）
     cv::Mat m_F;             // 環境光の全画素分
     
     // カラーキャリブレーションに必要な色のリスト
@@ -176,6 +177,7 @@ public:
     void getImageProjectorResponseP2I(cv::Mat* const _responseImage, const cv::Mat& _responseMap, const int _index);
     void getImageProjectorResponseP2I(cv::Mat* const _responseImage, const int _index);
     const cv::Mat_<Vec9d>* getV(void);
+    const cv::Mat_<Vec9d>* getInvV(void);
     const cv::Mat* getF(void);
     void getNextProjectionImage(cv::Mat* const _P, const cv::Mat& _C);
     ///////////////////////////////  save method ///////////////////////////////
