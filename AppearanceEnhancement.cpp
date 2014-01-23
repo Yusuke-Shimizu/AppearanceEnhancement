@@ -56,7 +56,7 @@ bool AppearanceEnhancement::initRadiometricModel(void){
 // return   : 初期化出来たかどうか
 bool AppearanceEnhancement::initK(const cv::Size& _camSize){
     // init K map
-    m_KMap = Mat(_camSize, CV_64FC3, CV_SCALAR_D_WHITE);
+    m_KMap = Mat(_camSize, CV_64FC3, CV_SCALAR_D_WHITE*255.0);
     
     return true;
 }
@@ -504,13 +504,14 @@ bool AppearanceEnhancement::printAppearanceEnhancement(void){
 bool AppearanceEnhancement::saveAll(const int _num){
     // save
     ostringstream oss;
+    Mat l_mK = getKMap();
     Mat l_mF = getFMap();
     l_mF /= 255.0;
     Mat l_mCMax = getCfullMap();
     l_mCMax /= 255.0;
     Mat l_mCMin = getC0Map();
     l_mCMin /= 255.0;
-    MY_IMWRITE_D4(OUTPUT_DATA_PATH, _num, oss, m_KMap, l_mF, m_CfullMap, m_C0Map);
+    MY_IMWRITE_D4(OUTPUT_DATA_PATH, _num, oss, l_mK, l_mF, l_mCMax, l_mCMin);
     return true;
 }
 
@@ -1480,8 +1481,8 @@ bool AppearanceEnhancement::showAll(const int _num, const cv::Mat& _captureImage
     // create error image
     Mat l_errorOfProjection = l_R.clone();
     absdiff(l_R, l_C, l_errorOfProjection);
-    Mat l_errorOfEstimateK = _answerK.clone();
     const Mat l_estimatedK = getKMap();
+    Mat l_errorOfEstimateK = _answerK.clone();
     absdiff(_answerK, l_estimatedK, l_errorOfEstimateK);
     Mat l_errorOfEstimateF = _answerF.clone();
     const Mat l_estimatedF = getFMap();

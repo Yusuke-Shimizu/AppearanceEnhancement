@@ -404,6 +404,20 @@ void printMatPropaty(const Mat& m1){
     std::cout << "isSubmatrix:" << (m1.isSubmatrix()?"true":"false") << std::endl;
     // データは空か？
     std::cout << "empty:" << (m1.empty()?"true":"false") << std::endl;
+    // データの最大・最小・平均・合計
+    Mat l_max, l_min, l_avg, l_sum;
+    reduce(m1, l_max, 0, CV_REDUCE_MAX);
+    reduce(m1, l_min, 0, CV_REDUCE_MIN);
+    reduce(m1, l_avg, 0, CV_REDUCE_AVG, CV_64FC(m1.channels()));
+    reduce(m1, l_sum, 0, CV_REDUCE_SUM, CV_64FC(m1.channels()));
+    reduce(l_max, l_max, 1, CV_REDUCE_MAX);
+    reduce(l_min, l_min, 1, CV_REDUCE_MIN);
+    reduce(l_avg, l_avg, 1, CV_REDUCE_AVG, CV_64FC(m1.channels()));
+    reduce(l_sum, l_sum, 1, CV_REDUCE_SUM, CV_64FC(m1.channels()));
+    _print(l_max);
+    _print(l_min);
+    _print(l_avg);
+    _print(l_sum);
     _print_bar;
 }
 

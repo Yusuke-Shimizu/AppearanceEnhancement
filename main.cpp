@@ -96,8 +96,8 @@ int main(int argc, const char * argv[])
 //    double start, end, fps;
 //    while (true) {
 //        video>>frame;
+//        _print_mat_propaty(frame);
 //        frame.convertTo(frame, CV_64FC3, 1/255.0);
-//
 //        divideImage3_(&divFrame1, &divFrame2, frame);
 ////        Mat l_recFrame = (divFrame1 + divFrame2) / 2;
 ////        MY_IMSHOW4(frame, divFrame1, divFrame2, l_recFrame);

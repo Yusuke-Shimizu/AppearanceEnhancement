@@ -206,7 +206,6 @@ public:
     bool test_colorCalibration(void);
     ///////////////////////////////  convert method ///////////////////////////////
     bool convertProjectorDomainToCameraOne(cv::Mat* const _psImg, const cv::Mat&  _csImg);
-    bool convertNonLinearImageToLinearOne(cv::Mat* const _linearImg, const cv::Mat&  _nonLinearImg);
     bool convertPtoI(cv::Mat* const _I, const cv::Mat&  _P);
     bool convertPtoIBySomePoint(cv::Mat* const _I, const cv::Mat&  _P, const cv::Point& _point);
 //    bool convertCameraImageToProjectorOne(cv::Mat* const _prjImg, const cv::Mat&  _camImg);

@@ -1042,7 +1042,7 @@ bool ProCam::linearizeOfProjector(const bool _calcLinearFlag, const bool _showLi
         linearPrj.loadColorMixingMatrixOfByte(CMM_MAP_FILE_NAME_BYTE);
         loadProjectorResponseP2IForByte(PROJECTOR_RESPONSE_P2I_FILE_NAME_BYTE);
 //        loadProjectorResponseForByte(PROJECTOR_RESPONSE_I2P_FILE_NAME_BYTE);
-//        linearPrj.loadAllCImages();
+        linearPrj.loadAllCImages();
 //        linearPrj.test_responseFunction();
 //        linearPrj.saveEstimatedC();
     }
@@ -1384,47 +1384,6 @@ bool ProCam::convertProjectorDomainToCameraOne(cv::Mat* const _psImg, const cv::
     
     // deep copy
     *_psImg = l_psImg.clone();
-    
-    return true;
-}
-
-
-// プロジェクタの強度が線形化されていない画像から線形化された画像へ変換
-// output / _linearImg      : 線形化後の画像
-// input / _nonLinearImg    : 線形化前の画像
-bool ProCam::convertNonLinearImageToLinearOne(cv::Mat* const _linearImg, const cv::Mat&  _nonLinearImg){
-    // error processing
-    const Mat* l_prjRes = getProjectorResponseI2P();               // プロジェクタ強度の線形化ルックアップテーブル
-    const Mat l_compressedPrjRes(l_prjRes->rows, l_prjRes->cols / 256, CV_8UC3);
-    if (!isEqualSize(*_linearImg, _nonLinearImg, l_compressedPrjRes)) {
-        cerr << "different size" << endl;
-        _print_mat_propaty(*_linearImg);
-        _print_mat_propaty(_nonLinearImg);
-        _print_mat_propaty(l_compressedPrjRes);
-        exit(-1);
-    }
-    
-    // init lineared image
-    int rows = _nonLinearImg.rows, cols = _nonLinearImg.cols, imgCh = _nonLinearImg.channels(); // 投影サイズ
-    Mat l_linearImage(rows, cols, CV_8UC3, Scalar(0, 0, 0));    // プロジェクタ強度の線形化を行った後の投影像
-    
-    // scan all pixel and channel
-    for (int y = 0; y < rows; ++ y) {
-        // init pointer
-        const Vec3b* l_pPrjRes = l_prjRes->ptr<Vec3b>(y);
-        const Vec3b* l_pNonLinearImg = _nonLinearImg.ptr<Vec3b>(y);
-        Vec3b* l_pLinearImg = _linearImg->ptr<Vec3b>(y);
-        
-        for (int x = 0; x < cols; ++ x) {
-            for (int ch = 0; ch < imgCh; ++ ch) {
-                const int prjResIndex = x * 256 + l_pNonLinearImg[x][ch];   // 応答特性マップの座標
-                l_pLinearImg[x][ch] = l_pPrjRes[prjResIndex][ch];
-            }
-        }
-    }
-    
-    // deep copy
-    *_linearImg = l_linearImage.clone();
     
     return true;
 }

@@ -437,13 +437,6 @@ bool LinearizerOfProjector::showVMap(void){
     return true;
 }
 
-//
-bool LinearizerOfProjector::showAllCImages(void){
-//    const Mat* l_allCImages = getAllCImages();
-    
-    return true;
-}
-
 ///////////////////////////////  caprj method ///////////////////////////////
 bool LinearizerOfProjector::captureFromLightOnGeoP_ColP(cv::Mat* const _captureImage, const cv::Mat& _projectionImage, ProCam* _procam, const bool _denoiseFlag, const int _waitTimeNum){
     // capture from projection image

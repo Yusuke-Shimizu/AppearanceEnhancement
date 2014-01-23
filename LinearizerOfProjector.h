@@ -75,7 +75,6 @@ public:
     bool loadAllCImages(const char* _fileName = ALL_C_IMAGES_FILE_NAME_BYTE);
     ///////////////////////////////  show method ///////////////////////////////
     bool showVMap(void);
-    bool showAllCImages(void);
     ///////////////////////////////  caprj method ///////////////////////////////
     bool captureFromLightOnGeoP_ColP(cv::Mat* const _captureImage, const cv::Mat& _projectionImage, ProCam* _procam, const bool _denoiseFlag = false, const int _waitTimeNum = SLEEP_TIME);
     bool captureFromLightOnGeoP_ColP(cv::Mat* const _captureImage, const cv::Vec3b& _projectionColor, ProCam* _procam, const bool _denoiseFlag = false, const int _waitTimeNum = SLEEP_TIME);
