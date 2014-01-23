@@ -37,10 +37,8 @@ enum mode {
 
 class PhotometricModel{
 public:
-    cv::Mat estK;
-    cv::Mat estF;
-    cv::Mat ansK;
-    cv::Mat ansF;
+    cv::Mat K;
+    cv::Mat F;
     cv::Mat C;
     cv::Mat P;
     cv::Mat Cmax;
@@ -149,6 +147,10 @@ public:
     ///////////////////////////////  other method ///////////////////////////////
     bool divideImage(cv::Mat* const _dst1, cv::Mat* const _dst2, const cv::Mat& _src, const cv::Scalar& _distance);
     bool divideImage(cv::Mat* const _dst1, cv::Mat* const _dst2, const cv::Mat& _src, const double& _distance = 10);
+    bool divideImage2(cv::Mat* const _dst1, cv::Mat* const _dst2, const cv::Mat& _src, const cv::Scalar& _distance);
+    bool divideImage2(cv::Mat* const _dst1, cv::Mat* const _dst2, const cv::Mat& _src, const double& _distance=10);
+    bool divideImage3(cv::Mat* const _dst1, cv::Mat* const _dst2, const cv::Mat& _src, const cv::Scalar& _rate);
+    bool divideImage3(cv::Mat* const _dst1, cv::Mat* const _dst2, const cv::Mat& _src, const double& _rate = 1.0);
     bool test_CMaxMin(const cv::Mat& _CMax, const cv::Mat& _CMin);
     bool doAppearanceEnhancementByAmano(void);
 };
