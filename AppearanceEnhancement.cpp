@@ -246,265 +246,11 @@ bool AppearanceEnhancement::getImageDrawingPrintPoint(cv::Mat* const _img) const
     return true;
 }
 
-///////////////////////////////  print method ///////////////////////////////
-// 光学モデルの１から２５５までの平均・標準偏差を出力する
-bool AppearanceEnhancement::printStandardDeviationOfRadiometricModel(void){
-    // init
-    Mat ansK = Mat::eye(3, 3, CV_64FC1) * 0.5;
-    Mat ansF = Mat::ones(3, 1, CV_64FC1) * 0.1;
-    Mat ansK2 = Mat::eye(3, 3, CV_64FC1) * 0.5;
-    Mat ansF2 = Mat::ones(3, 1, CV_64FC1) * 0.1;
-    Mat estK = Mat::zeros(3, 3, CV_64FC1);
-    Mat estF = Mat::zeros(3, 1, CV_64FC1);
-    Mat estOnlyK = Mat::zeros(3, 3, CV_64FC1);
-    Mat estOnlyF = Mat::zeros(3, 1, CV_64FC1);
-    Mat P1 = Mat::ones(3, 1, CV_64FC1);
-    Mat P2 = Mat::zeros(3, 1, CV_64FC1);
-    Mat C1 = Mat::zeros(3, 1, CV_64FC1);
-    Mat C2 = Mat::zeros(3, 1, CV_64FC1);
-    const int sampling = 256;
-    const double step = 1.0 / sampling;
-    //    const int cstStep = 200;
-    const int variance_sampling = 100;
-    
-    //    cout << "index\tansK\tansK2\testK\testOnlyK\tansF\tansF2\testF\testOnlyF" << endl;
-    ofstream ofs("output.txt");
-    for (int i = 0; i <= sampling; ++ i) {
-        // init
-        vector<double> vec[4];
-        double vec_ave[4] = {0, 0, 0, 0};
-        double vec_var[4] = {0, 0, 0, 0};
-        double vec_sb[4] = {0, 0, 0, 0};
-        double index = step * (double)i;
-//        ansK = Mat::eye(3, 3, CV_64FC1) * index;
-//        ansK2 = Mat::eye(3, 3, CV_64FC1) * index;
-        ansF = Mat::ones(3, 1, CV_64FC1) * index;
-        ansF2 = Mat::ones(3, 1, CV_64FC1) * index;
-//        ansK = Mat::eye(3, 3, CV_64FC1) * 0;
-//        ansK2 = Mat::eye(3, 3, CV_64FC1) * 0;
-        //        double up = 0.11, dw = 0.09;
-        //        double index_comp = (up - dw) * index + dw;
-//        setColor(&P1, index);
-        //        setColor(&P1, step * cstStep);
-        
-        for (int j = 0; j < variance_sampling; ++ j) {
-//            calcIdealCamera(&C1, ansK, ansF, P1);
-//            calcIdealCamera(&C2, ansK, ansF, P2);
-            calcCameraAddedNoise(&C1, ansK, ansF, P1, NOISE_RANGE);
-            calcCameraAddedNoise(&C2, ansK2, ansF2, P2, NOISE_RANGE);
-//            calcCameraAddedFixNoise(&C1, ansK, ansF, P1, NOISE_RANGE);
-//            calcCameraAddedFixNoise(&C2, ansK, ansF, P2, NOISE_RANGE);
-            
-            // 反射率と環境光を計算
-            calcReflectAndAmbient(&estK, &estF, P1, C1, P2, C2);
-            calcReflect(&estOnlyK, P1, C1, ansF);
-            calcAmbient(&estOnlyF, P1, C1, ansK);
-            
-            // 推定値をベクターに入れる
-            vec[0].push_back(estK.at<double>(0, 0));
-            vec[1].push_back(estF.at<double>(0, 0));
-            vec[2].push_back(estOnlyK.at<double>(0, 0));
-            vec[3].push_back(estOnlyF.at<double>(0, 0));
-//            _print(estK);
-        }
-        
-        // calc average, variance and standard derivation
-        for (int k = 0; k < 4; ++ k) {
-            vec_ave[k] = mean(vec[k]);
-            vec_var[k] = var(vec[k]);
-            vec_sb[k] = sd(vec[k]);
-        }
-        
-        // output
-        _print_excel9(i, vec_ave[0], vec_sb[0], vec_ave[1], vec_sb[1], vec_ave[2], vec_sb[2], vec_ave[3], vec_sb[3]);
-        _print_gnuplot9(ofs, i, vec_ave[0], vec_sb[0], vec_ave[1], vec_sb[1], vec_ave[2], vec_sb[2], vec_ave[3], vec_sb[3]);
-    }
-    ofs.close();
-    
-    
-    return true;
-}
-
-// 光学モデルの繰り返し使用による誤差を出力
-bool AppearanceEnhancement::printSwitchIteratorError(void){
-    // init
-    Mat ansK = Mat::eye(3, 3, CV_64FC1) * 1.0;
-    Mat ansF = Mat::ones(3, 1, CV_64FC1) * 0.0;
-//    Mat estOnlyK = Mat::zeros(3, 3, CV_64FC1);
-//    Mat estOnlyF = Mat::zeros(3, 1, CV_64FC1);
-//    Mat estOnlyK = ansK.clone();
-//    Mat estOnlyF = ansF.clone();
-    Mat estOnlyK = Mat::eye(3, 3, CV_64FC1) * 0.95;
-    Mat estOnlyF = Mat::ones(3, 1, CV_64FC1) * 0.05;
-    Mat P1 = Mat::zeros(3, 1, CV_64FC1);
-    Mat C1 = Mat::zeros(3, 1, CV_64FC1);
-    Mat desireC = Mat::ones(3, 1, CV_64FC1) * 0.3;
-//    roundDesireC(&desireC, ansK, ansF);
-    const double loopNum = 1000;
-    
-    ofstream ofs("output_iterator_onlyK.txt");
-    cout << "i\tC1\tdesireC\tP1\tansK\testOnlyK\tansF\testOnlyF" << endl;
-    for (int i = 0; i < loopNum; ++ i) {
-        Mat C0, Cfull;
-        getC0(&C0);
-        getCfull(&Cfull);
-
-        // カメラ値を取得
-//        if ( !calcCameraAddedNoise(&C1, ansK, ansF, P1, NOISE_RANGE) ) return false;
-        if ( !calcIdealCamera(&C1, ansK, ansF, P1) ) return false;
-        
-        // 反射率か環境光を計算
-        if (i % 2 == 1) {
-            if ( !calcReflect(&estOnlyK, P1, C1, estOnlyF) ) return false;
-        } else {
-            if ( !calcAmbient(&estOnlyF, P1, C1, estOnlyK) ) return false;
-        }
-        
-        // 目標値の決定
-        desireC = estOnlyK.diag() * 0.5;
-//        roundDesireC(&desireC, ansK, ansF);
-        
-        _print_gnuplot_mat7(ofs, i, C1, desireC, P1, ansK, estOnlyK, ansF, estOnlyF);
-        _print_gnuplot_mat7(std::cout, i, C1, desireC, P1, ansK, estOnlyK, ansF, estOnlyF);
-
-        // 次の投影値を取得
-        if ( !calcNextProjection(&P1, desireC, estOnlyK, estOnlyF) ) return false;
-    }
-    ofs.close();
-    
-    return true;
-}
-
-//
-bool AppearanceEnhancement::printSimultaneousIteratorError(void){
-    // init
-    Mat ansK = Mat::eye(3, 3, CV_64FC1) * 0.5;
-    Mat ansF = Mat::ones(3, 1, CV_64FC1) * 0.2;
-    Mat estK = Mat::zeros(3, 3, CV_64FC1);
-    Mat estF = Mat::zeros(3, 1, CV_64FC1);
-    Mat P1 = Mat::zeros(3, 1, CV_64FC1);
-    Mat C1 = Mat::zeros(3, 1, CV_64FC1);
-    Mat P2 = Mat::zeros(3, 1, CV_64FC1);
-    Mat C2 = Mat::zeros(3, 1, CV_64FC1);
-    Mat desireC = Mat::ones(3, 1, CV_64FC1) * 0.3;
-    const double loopNum = 200;
-    
-    ofstream ofs("output_iterator_onlyK.txt");
-    
-    for (int i = 0; i < loopNum; ++ i) {
-        Mat C0, Cfull;
-        getC0(&C0);
-        getCfull(&Cfull);
-        double rate = 0.3;
-        if (i > 150) {
-            rate = 0.5;
-        } else if (i > 120) {
-            rate = 0.4;
-        }
-//        ansK = Mat::eye(3, 3, CV_64FC1) * rate;
-//        ansF = Mat::ones(3, 1, CV_64FC1) * rate;
-//        desireC = Mat::ones(3, 1, CV_64FC1) * ((double)(i+1) / loopNum);
-        
-        // カメラ値を取得
-        if ( !calcCameraAddedNoise(&C1, ansK, ansF, P1, NOISE_RANGE) ) return false;
-        
-        // 反射率と環境光を推定
-        calcReflectAndAmbient(&estK, &estF, P1, C1, P2, C2);
-
-        // print
-        _print_gnuplot_mat8(ofs, i, C1, P1, ansK, estK, ansF, estF, Cfull, C0);
-        _print_gnuplot_mat8(std::cout, i, C1, P1, ansK, estK, ansF, estF, Cfull, C0);
-        
-        // 次の投影値を取得
-        P2 = P1;
-        C2 = C1;
-        if ( !calcNextProjection(&P1, desireC, estK, estF) ) return false;
-    }
-    ofs.close();
-    
-    return true;
-}
-
-// 天野先生論文のシミュレーション結果を出力
-bool AppearanceEnhancement::printAmanoMethod(void){
-    // init
-    Mat ansK = Mat::eye(3, 3, CV_64FC1) * 1.0;
-    Mat ansF = Mat::zeros(3, 1, CV_64FC1);
-    Mat estOnlyK = Mat::zeros(3, 3, CV_64FC1);
-    Mat P1 = Mat::zeros(3, 1, CV_64FC1);
-    Mat C1 = Mat::zeros(3, 1, CV_64FC1);
-    Mat desireC = Mat::ones(3, 1, CV_64FC1) * 0.3;
-    const double loopNum = 200;
-    
-    ofstream ofs("output_iterator_onlyK.txt");
-    cout << "i\tC1\tdesireC\tP1\tansK\testOnlyK\tCfull\tC0" << endl;
-    for (int i = 0; i < loopNum; ++ i) {
-        // get C0 and Cfull
-        Mat C0, Cfull;
-        getC0(&C0);
-        getCfull(&Cfull);
-        
-        // カメラ値を取得
-        if ( !calcCameraAddedNoise(&C1, ansK, ansF, P1, NOISE_RANGE) ) return false;
-//        if ( !calcIdealCamera(&C1, ansK, ansF, P1) ) return false;
-        
-        // 反射率を計算
-        if ( !calcReflect(&estOnlyK, P1, C1, ansF) ) return false;
-        
-        desireC = estOnlyK.diag() * 0.1;
-        
-        _print_gnuplot_mat7(ofs, i, C1, desireC, P1, ansK, estOnlyK, Cfull, C0);
-        _print_gnuplot_mat7(std::cout, i, C1, desireC, P1, ansK, estOnlyK, Cfull, C0);
-        
-        // 次の投影値を取得
-        if ( !calcNextProjection(&P1, desireC, estOnlyK, ansF) ) return false;
-    }
-    ofs.close();
-    
-    return true;
-}
-
-// 見えの強調の数値シミュレーション
-bool AppearanceEnhancement::printAppearanceEnhancement(void){
-    const double l_CMax = 0.99, l_CMin = 0.02;
-    const double l_ansK = 0.5, l_ansF = 0.0;
-    double l_estK = 0.0, l_estF = 0.0, l_estFBefore = 0.0;
-    double l_P = 0, l_C = 0, l_target = 0.0;
-    double l_error = 0, l_Cr = 0, l_vrC = 0;
-    uchar l_Puchar = 0;
-
-    calcCaptureImageAddNoise(&l_C, l_P, l_ansK, l_ansF, l_CMax, l_CMin);
-    cout << (int)l_Puchar << endl;
-    _print4(l_C, l_target, l_estK, l_P);
-    for (int i = 0; i < 256; ++ i) {
-        // estimate K
-        l_estFBefore = l_estF;
-        calcReflectanceAtPixel(&l_estK, l_C, l_P, l_CMax, l_CMin, g_maxPrjLuminance[0], g_minPrjLuminance[0]);
-        
-        // calc target number
-        calcTargetImageAtPixel(&l_target, l_estK, l_estF, l_CMin, l_estK * 1.2);
-        l_target /= 255.0;
-        
-        // calc next projection number
-        calcNextProjectionImageAtPixel(&l_Puchar, &l_error, &l_Cr, &l_vrC, l_target, l_target, l_C, l_P, l_estK, l_estF, l_estFBefore, l_CMax, l_CMin, g_maxPrjLuminance[0]/255.0, g_minPrjLuminance[0]/255.0);
-        l_P = (double)l_Puchar / 255.0;
-        l_P = i / 255.0;
-        
-        // capture
-        calcCaptureImageAddNoise(&l_C, l_P, l_ansK, l_ansF, l_CMax, l_CMin);
-        
-        // print
-//        _print4(l_C, l_target, l_estK, l_P);
-//        cout << (int)l_Puchar << endl;
-        _print_gnuplot3(std::cout, i, l_estK, l_ansK);
-    }
-    return true;
-}
 ///////////////////////////////  save method ///////////////////////////////
 bool AppearanceEnhancement::saveAll(const int _num){
     // save
     ostringstream oss;
-    Mat l_mK = getKMap();
+    const Mat l_mK = getKMap();
     Mat l_mF = getFMap();
     l_mF /= 255.0;
     Mat l_mCMax = getCfullMap();
@@ -1660,7 +1406,8 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
     double l_startTime = 0, l_endTime = 0, l_fps = 0;
     int l_frameNum = 0;
     bool l_calcNextPrj = true;
-    Scalar l_prjColor = CV_SCALAR_WHITE;
+    Scalar l_prjColor = CV_SCALAR_WHITE, l_currentColor = CV_SCALAR_D_WHITE;
+    double l_prjLuminance = 255.0;
     double l_divideSize = 10;
     
     // init
@@ -1670,6 +1417,7 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
     while (l_loopFlag) {
         // estimate
         Mat l_KMapBefore = getKMap(), l_FMapBefore = getFMap();
+        l_prjColor = l_currentColor * l_prjLuminance;
         switch (l_estTarget) {
             case 0:
                 cout << "estimate K" << endl;
@@ -1770,8 +1518,8 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
                 if (l_calcNextPrj) {
                     l_procam->geometricCalibration();
                 } else {
-                    l_prjColor = CV_SCALAR_GREEN;
-                    _print(l_prjColor);
+                    l_currentColor = CV_SCALAR_D_GREEN;
+                    _print(l_currentColor);
                     break;
                 }
             case (CV_BUTTON_c): // have to get Cfull and C0 after color calibration
@@ -1788,8 +1536,8 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
                 if (l_calcNextPrj) {
                     l_estTarget = 0;
                 } else {
-                    l_prjColor = CV_SCALAR_RED;
-                    _print(l_prjColor);
+                    l_currentColor = CV_SCALAR_D_RED;
+                    _print(l_currentColor);
                 }
                 break;
             case (CV_BUTTON_l):
@@ -1799,8 +1547,9 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
                 if (l_calcNextPrj) {
                     l_estTarget = 2;
                 } else {
-                    l_prjColor = CV_SCALAR_RED / 2.0 ;
-                    _print(l_prjColor);
+                    l_currentColor = CV_SCALAR_D_RED;
+                    l_prjLuminance = 255.0 / 2.0;
+                    _print2(l_currentColor, l_prjLuminance);
                 }
                 break;
             case (CV_BUTTON_L):
@@ -1830,14 +1579,18 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
                 _print(l_alphaMPC);
                 break;
             case (CV_BUTTON_RIGHT):
-                prj = std::min(prj + 10, 255);
-                _print2(prj, prj2);
-                l_projectionImage2 = Mat(l_camSize, CV_8UC3, Scalar(prj, prj, prj));
+//                prj = std::min(prj + 10, 255);
+//                _print2(prj, prj2);
+//                l_projectionImage2 = Mat(l_camSize, CV_8UC3, Scalar(prj, prj, prj));
+                l_prjLuminance = std::min(l_prjLuminance + 10, 255.0);
+                _print(l_prjLuminance);
                 break;
             case (CV_BUTTON_LEFT):
-                prj = std::max(prj - 10, 0);
-                _print2(prj, prj2);
-                l_projectionImage2 = Mat(l_camSize, CV_8UC3, Scalar(prj, prj, prj));
+//                prj = std::max(prj - 10, 0);
+//                _print2(prj, prj2);
+//                l_projectionImage2 = Mat(l_camSize, CV_8UC3, Scalar(prj, prj, prj));
+                l_prjLuminance = std::max(l_prjLuminance - 10, 0.0);
+                _print(l_prjLuminance);
                 break;
             case (CV_BUTTON_v):
                 l_divideSize += 10;
@@ -1885,8 +1638,8 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
                     l_answerF = Scalar(0, 0, 0, 0);
                     test_calcNextProjectionImage(l_answerK, l_answerF, l_CMax, l_CMin);
                 } else {
-                    l_prjColor = CV_SCALAR_WHITE;
-                    _print(l_prjColor);
+                    l_currentColor = CV_SCALAR_D_WHITE;
+                    _print(l_currentColor);
                 }
                 break;
             case (CV_BUTTON_W):
@@ -1894,26 +1647,30 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
                     cout << "check CMax and CMin" << endl;
                     test_CMaxMin(l_CMax, l_CMin);
                 } else {
-                    l_prjColor = CV_SCALAR_WHITE / 2.0;
-                    _print(l_prjColor);
+                    l_currentColor = CV_SCALAR_D_WHITE;
+                    l_prjLuminance = 255.0 / 2.0;
+                    _print2(l_currentColor, l_prjLuminance);
                 }
                 break;
             // set next projection color
             case (CV_BUTTON_G):
-                l_prjColor = CV_SCALAR_RED / 2.0 ;
-                _print(l_prjColor);
+                l_currentColor = CV_SCALAR_D_RED;
+                l_prjLuminance = 255.0 / 2.0;
+                _print2(l_currentColor, l_prjLuminance);
                 break;
             case (CV_BUTTON_b):
-                l_prjColor = CV_SCALAR_BLUE;
-                _print(l_prjColor);
+                l_currentColor = CV_SCALAR_D_BLUE;
+                _print(l_currentColor);
                 break;
             case (CV_BUTTON_B):
-                l_prjColor = CV_SCALAR_BLUE / 2.0 ;
-                _print(l_prjColor);
+                l_currentColor = CV_SCALAR_D_BLUE;
+                l_prjLuminance = 255.0 / 2.0;
+                _print2(l_currentColor, l_prjLuminance);
                 break;
             case (CV_BUTTON_k):
-                l_prjColor = CV_SCALAR_BLACK;
-                _print(l_prjColor);
+                l_currentColor = CV_SCALAR_D_WHITE;
+                l_prjLuminance = 0.0;
+                _print2(l_currentColor, l_prjLuminance);
                 break;
             // other
             case (CV_BUTTON_s):
@@ -1947,6 +1704,8 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
                 initF(l_camSize);
 //                l_projectionImage = Mat(l_camSize, CV_8UC3, CV_SCALAR_WHITE);
                 l_projectionImage = Scalar(g_maxPrjLuminance);
+                l_projectionImage2 = Scalar(g_maxPrjLuminance);
+                l_projectionImageBefore2 = Scalar(g_minPrjLuminance);
                 l_procam->captureOfProjecctorColorFromLinearLightOnProjectorDomain(&l_captureImage, l_projectionImage, l_bDenoise);
 //                l_targetImage = Mat(l_camSize, CV_64FC3, CV_SCALAR_WHITE);
                 l_targetImage = CV_SCALAR_D_WHITE;

@@ -328,6 +328,7 @@ void meanMat(cv::Mat* const _meanMat, const std::vector<cv::Mat>& _matVec);
 void test_meanMat(void);
 bool calcMeanStddevOfDiffImage(cv::Scalar* const _mean, cv::Scalar* const _stddev, const cv::Mat& _mat1, const cv::Mat& _mat2);
 bool test_calcMeanStddevOfDiffImage(void);
+bool margeImage(cv::Mat* const _dst, const cv::Mat& _src1, const cv::Mat& _src2);
 ///////////////////////////////  inline method ///////////////////////////////
 inline void MY_WAIT_KEY(void){
     std::cout << "push any key" << std::endl;

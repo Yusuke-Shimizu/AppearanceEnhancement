@@ -100,12 +100,6 @@ public:
     bool isAmanoMode(void) const;
     bool isPrintFlag(const int _x, const int _y, const int _rows, const bool _contFlag) const;
     bool getImageDrawingPrintPoint(cv::Mat* const _img) const;
-    ///////////////////////////////  print method ///////////////////////////////
-    bool printStandardDeviationOfRadiometricModel(void);
-    bool printSwitchIteratorError(void);
-    bool printSimultaneousIteratorError(void);
-    bool printAmanoMethod(void);
-    bool printAppearanceEnhancement(void);
     ///////////////////////////////  save method ///////////////////////////////
     bool saveAll(const int _num);
     ///////////////////////////////  calc method ///////////////////////////////

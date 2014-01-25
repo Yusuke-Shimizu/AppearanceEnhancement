@@ -1347,3 +1347,21 @@ bool test_calcMeanStddevOfDiffImage(void){
     
     return true;
 }
+
+bool margeImage(cv::Mat* const _dst, const cv::Mat& _src1, const cv::Mat& _src2){
+    const int rows = _src1.rows, cols = _src1.cols;
+    const int dstRows = std::max(_src1.rows, _src2.rows), dstCols = _src1.cols + _src2.cols;
+    *_dst = Mat(dstRows, dstCols, _src1.type(), CV_SCALAR_BLACK);
+    for (int y = 0; y < rows; ++ y) {
+        Vec3d* l_pDst = _dst->ptr<Vec3d>(y);
+        const Vec3d* l_pSrc1 = _src1.ptr<Vec3d>(y);
+        const Vec3d* l_pSrc2 = _src2.ptr<Vec3d>(y);
+        
+        for (int x = 0; x < cols; ++ x) {
+            l_pDst[x] = l_pSrc1[x];
+            l_pDst[x + cols] = l_pSrc2[x];
+        }
+    }
+    return true;
+}
+
