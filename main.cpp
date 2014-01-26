@@ -86,32 +86,35 @@ bool divideImage3_(cv::Mat* const _dst1, cv::Mat* const _dst2, const cv::Mat& _s
 // main method
 int main(int argc, const char * argv[])
 {
-    VideoCapture video(0);
-    Mat frame;
-    video >> frame;
-    const Size camSize(frame.cols, frame.rows);
-    Mat divFrame1(camSize, CV_64FC3, CV_SCALAR_D_BLACK);
-    Mat divFrame2(camSize, CV_64FC3, CV_SCALAR_D_BLACK);
-    ostringstream oss;
-    double start, end, fps;
-    namedWindow("margeDiv");
-    while (true) {
-        video>>frame;
-        _print_mat_propaty(frame);
-        frame.convertTo(frame, CV_64FC3, 1/255.0);
-        divideImage3_(&divFrame1, &divFrame2, frame);
-        Mat margeDiv;
-        margeImage(&margeDiv, divFrame1, divFrame2);
-        MY_IMSHOW(margeDiv);
-//        Mat l_recFrame = (divFrame1 + divFrame2) / 2;
-//        MY_IMSHOW4(frame, divFrame1, divFrame2, l_recFrame);
+//    VideoCapture video(0);
+//    Mat frame;
+//    video >> frame;
+//    const Size camSize(frame.cols, frame.rows);
+//    Mat divFrame1(camSize, CV_64FC3, CV_SCALAR_D_BLACK);
+//    Mat divFrame2(camSize, CV_64FC3, CV_SCALAR_D_BLACK);
+//    ostringstream oss;
+//    double start, end, fps;
+//    Scalar l_mean, l_stddev;
+//    namedWindow("margeDiv");
+//    while (true) {
+//        video>>frame;
+//        _print_mat_propaty(frame);
+//        frame.convertTo(frame, CV_64FC3, 1/255.0);
+//        divideImage3_(&divFrame1, &divFrame2, frame);
+//        Mat margeDiv;
+//        margeImage(&margeDiv, divFrame1, divFrame2);
+//        MY_IMSHOW(margeDiv);
+//        meanStddevOfLocalImage(&l_mean, &l_stddev, frame, 0.2);
+////        Mat l_recFrame = (divFrame1 + divFrame2) / 2;
+////        MY_IMSHOW4(frame, divFrame1, divFrame2, l_recFrame);
 //        MY_IMSHOW3(frame, divFrame1, divFrame2);
-        getFps(&start, &end, &fps);
-        _print(fps);
-//        if (waitKey(30) == CV_BUTTON_ESC) {
-//            return 0;
-//        }
-    }
+//        getFps(&start, &end, &fps);
+//        _print(fps);
+//        _print2(l_mean, l_stddev);
+////        if (waitKey(30) == CV_BUTTON_ESC) {
+////            return 0;
+////        }
+//    }
 #ifdef EXPERIMENT_FLAG
     // experimentation
     AppearanceEnhancement ae(PRJ_SIZE);

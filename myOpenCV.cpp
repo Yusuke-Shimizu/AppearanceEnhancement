@@ -1365,3 +1365,11 @@ bool margeImage(cv::Mat* const _dst, const cv::Mat& _src1, const cv::Mat& _src2)
     return true;
 }
 
+bool meanStddevOfLocalImage(cv::Scalar* const _mean, cv::Scalar* const _stddev, const cv::Mat& _image, const double _rate){
+    const Range rows(_image.rows*_rate, _image.rows*(1-_rate));
+    const Range cols(_image.cols*_rate, _image.cols*(1-_rate));
+    Mat localImage = _image(rows, cols);
+    MY_IMSHOW(localImage);
+    meanStdDev(localImage, *_mean, *_stddev);
+    return true;
+}

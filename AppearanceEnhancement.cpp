@@ -56,7 +56,7 @@ bool AppearanceEnhancement::initRadiometricModel(void){
 // return   : 初期化出来たかどうか
 bool AppearanceEnhancement::initK(const cv::Size& _camSize){
     // init K map
-    m_KMap = Mat(_camSize, CV_64FC3, CV_SCALAR_D_WHITE*255.0);
+    m_KMap = Mat(_camSize, CV_64FC3, CV_SCALAR_D_WHITE);
     
     return true;
 }
@@ -250,14 +250,15 @@ bool AppearanceEnhancement::getImageDrawingPrintPoint(cv::Mat* const _img) const
 bool AppearanceEnhancement::saveAll(const int _num){
     // save
     ostringstream oss;
-    const Mat l_mK = getKMap();
-    Mat l_mF = getFMap();
-    l_mF /= 255.0;
-    Mat l_mCMax = getCfullMap();
-    l_mCMax /= 255.0;
+    const Mat l_K_ = getKMap();
+    const Mat l_K = l_K_.clone();
+    const Mat l_F_ = getFMap();
+    const Mat l_F = l_F_.clone() / 255.0;
+    const Mat l_CMax_ = getCfullMap();
+    const Mat l_CMax = l_CMax_.clone() / 255.0;
     Mat l_mCMin = getC0Map();
     l_mCMin /= 255.0;
-    MY_IMWRITE_D4(OUTPUT_DATA_PATH, _num, oss, l_mK, l_mF, l_mCMax, l_mCMin);
+    MY_IMWRITE_D4(OUTPUT_DATA_PATH, _num, oss, l_K, l_F, l_CMax, l_mCMin);
     return true;
 }
 
@@ -657,7 +658,8 @@ bool AppearanceEnhancement::calcNextProjectionImageAtPixel(uchar* const _nextP, 
     double l_interC = (_CMax - _CMin) * l_interP + _CMin;
     switch (m_currentMode) {
         case e_Amano:
-            l_nNextP = ((1 - _alpha) * (_targetImage - _C) * (_PMax - _PMin)) / (_K * (_CMax - _CMin)) + _P;
+//            l_nNextP = ((1 - _alpha) * (_targetImage - _C) * (_PMax - _PMin)) / (_K * (_CMax - _CMin)) + _P;
+            l_nNextP = _PMin + _targetImage * (0.5 - _PMin) / _K + (_PMax - _PMin) * (_CMin + _F) * (1 + _targetImage / _K) / (_CMax - _CMin);
             break;
         case e_Shimizu:
             l_nNextP = (((1 - _alpha) * (_targetImage - _C) - _F + _FBefore) / (_CMax - _CMin) + _P * _K) / _K;
@@ -927,17 +929,17 @@ bool AppearanceEnhancement::estimateF(const cv::Mat& _P, const cv::Mat& _C, cons
             // K = C / {(Cf - C0) * P + C0}
             for (int c = 0; c < 3; ++ c) {
                 // normalize
-                double l_nC = l_pC[x][c] / 255.0;
-                double l_nP = (double)l_pP[x][c] / 255.0;
-                double l_nCfull = l_pCMax[x][c] / 255.0;
-                double l_nC0 = l_pCMin[x][c] / 255.0;
-                double l_nPMax = (double)g_maxPrjLuminance[c] / 255.0;
-                double l_nPMin = (double)g_minPrjLuminance[c] / 255.0;
+                const double l_nC = l_pC[x][c] / 255.0;
+                const double l_nP = (double)l_pP[x][c] / 255.0;
+                const double l_nCMax = l_pCMax[x][c] / 255.0;
+                const double l_nCMin = l_pCMin[x][c] / 255.0;
+                const double l_nPMax = (double)g_maxPrjLuminance[c] / 255.0;
+                const double l_nPMin = (double)g_minPrjLuminance[c] / 255.0;
 
                 // calculation
-                double l_interP = (l_nP - l_nPMin) / (l_nPMax - l_nPMin);
-                double l_vrCOnWhiteLight = (l_nCfull - l_nC0) * l_interP + l_nC0;
-                double l_nF = l_nC / l_pK[x][c] - l_vrCOnWhiteLight;
+                const double l_interP = (l_nP - l_nPMin) / (l_nPMax - l_nPMin);
+                const double l_vrCOnWhiteLight = (l_nCMax - l_nCMin) * l_interP + l_nCMin;
+                const double l_nF = l_nC / l_pK[x][c] - l_vrCOnWhiteLight;
                 
                 // inverse normalize
                 //                round0to1(&l_nF);
@@ -1167,13 +1169,16 @@ bool AppearanceEnhancement::evaluateEstimationAndProjection(const cv::Mat& _ansK
     
     // get mean and standard deviation
     cv::Scalar l_estKMean(0, 0, 0, 0), l_estKStddev(0, 0, 0, 0);
-    meanStdDev(_estK, l_estKMean, l_estKStddev);
+//    meanStdDev(_estK, l_estKMean, l_estKStddev);
+    meanStddevOfLocalImage(&l_estKMean, &l_estKStddev, _estK, 0.1);
 
     cv::Scalar l_estFMean(0, 0, 0, 0), l_estFStddev(0, 0, 0, 0);
-    meanStdDev(_estF, l_estFMean, l_estFStddev);
+//    meanStdDev(_estF, l_estFMean, l_estFStddev);
+    meanStddevOfLocalImage(&l_estFMean, &l_estFStddev, _estF, 0.1);
 
     cv::Scalar l_prjMean(0, 0, 0, 0), l_prjStddev(0, 0, 0, 0);
-    meanStdDev(_captureImage, l_prjMean, l_prjStddev);
+//    meanStdDev(_captureImage, l_prjMean, l_prjStddev);
+    meanStddevOfLocalImage(&l_prjMean, &l_prjStddev, _captureImage, 0.1);
 
     cv::Scalar l_estKDiffMean(0, 0, 0, 0), l_estKDiffStddev(0, 0, 0, 0);
     calcMeanStddevOfDiffImage(&l_estKDiffMean, &l_estKDiffStddev, _ansK, _estK);
@@ -1408,7 +1413,7 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
     bool l_calcNextPrj = true;
     Scalar l_prjColor = CV_SCALAR_WHITE, l_currentColor = CV_SCALAR_D_WHITE;
     double l_prjLuminance = 255.0;
-    double l_divideSize = 10;
+    double l_divideSize = 10, l_divideRate = 1.0;
     
     // init
     l_procam->captureOfProjecctorColorFromLinearLightOnProjectorDomain(&l_captureImage, l_projectionImage);
@@ -1474,7 +1479,8 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
         } else {    // Shimizu mode
             Mat l_target1 = l_targetImage.clone(), l_target2 = l_targetImage.clone();
             Mat l_target = l_targetImage.clone() / 255.0;
-            divideImage(&l_target1, &l_target2, l_target, l_divideSize);
+//            divideImage(&l_target1, &l_target2, l_target, l_divideSize);
+            divideImage3(&l_target1, &l_target2, l_target, l_divideRate);
             l_target1 *= 255.0;
             l_target2 *= 255.0;
             
@@ -1594,11 +1600,13 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
                 break;
             case (CV_BUTTON_v):
                 l_divideSize += 10;
-                _print(l_divideSize);
+                l_divideRate = std::min(l_divideRate+50/255.0, 1.0);
+                _print2(l_divideSize, l_divideRate);
                 break;
             case (CV_BUTTON_V):
                 l_divideSize -= 10;
-                _print(l_divideSize);
+                l_divideRate = std::max(l_divideRate-50/255.0, 0.0);
+                _print2(l_divideSize, l_divideRate);
                 break;
             // what is type of enhancement
             case (CV_BUTTON_2):

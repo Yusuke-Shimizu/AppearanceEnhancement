@@ -1513,7 +1513,6 @@ void ProCam::convertColorSpaceOfCameraToProjector(cv::Mat* const _imageOnPrj, co
 void ProCam::convertColorSpaceOfProjectorToCamera(cv::Mat* const _imageOnCam, const cv::Mat& _imageOnPrj){
     convertColorSpace(_imageOnCam, _imageOnPrj, true);
 }
-
 ///////////////////////////////  show method ///////////////////////////////
 
 // アクセスマップの表示
