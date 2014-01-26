@@ -24,7 +24,6 @@ const float DEPTH_S16BIT_MIN = -32768;
 const float DEPTH_S16BIT_MAX = 32767;
 
 #define _print_vector(vec) std::cout<<#vec<<"[b, g, r] = "<<(vec)<<" ("<<&(vec)<<") ("<<__FUNCTION__<<")"<<std::endl
-#define _print_mat_propaty(mat) _print_name(mat);printMatPropaty(mat)
 
 // show
 #define MY_IMSHOW(img) cv::imshow(#img, img);cv::waitKey(30)
@@ -274,9 +273,21 @@ bool getUnderExposureImage(cv::Mat* const _dst, const cv::Mat& _src);
 bool getThresholdColorImage(cv::Mat* const _dst, const cv::Mat& _src, const cv::Vec3b _thresh);
 bool getFps(double* const _start, double* const _end, double* const _fps);
 ///////////////////////////////  print method ///////////////////////////////
-void printMatPropaty(const cv::Mat& m1);
+void printMatPropaty(const cv::Mat& m1, const bool _onlyContentFlag = true);
+void printMatPropatyOfLocalImage(const cv::Mat& m1, const double& _rate = 0.1, const bool _onlyContentFlag = true);
 void printOpenCVVersion(void);
 void printVideoPropaty(cv::VideoCapture& _video);
+#define _print_mat_propaty(mat) _print_name(mat);printMatPropaty(mat)
+#define _print_mat_content_propaty(rate, mat) _print_name(mat);printMatPropatyOfLocalImage(mat, rate, false)
+#define _print_mat_content_propaty2(rate, m1, m2) _print_mat_content_propaty(rate, m1);_print_mat_content_propaty(rate, m2)
+#define _print_mat_content_propaty3(rate, m1, m2, m3) _print_mat_content_propaty2(rate, m1, m2);_print_mat_content_propaty(rate, m3)
+#define _print_mat_content_propaty4(rate, m1, m2, m3, m4) _print_mat_content_propaty3(rate, m1, m2, m3);_print_mat_content_propaty(rate, m4)
+#define _print_mat_content_propaty5(rate, m1, m2, m3, m4, m5) _print_mat_content_propaty4(rate, m1, m2, m3, m4);_print_mat_content_propaty(rate, m5)
+#define _print_mat_content_propaty6(rate, m1, m2, m3, m4, m5, m6) _print_mat_content_propaty5(rate, m1, m2, m3, m4, m5);_print_mat_content_propaty(rate, m6)
+#define _print_mat_content_propaty7(rate, m1, m2, m3, m4, m5, m6, m7) _print_mat_content_propaty6(rate, m1, m2, m3, m4, m5, m6);_print_mat_content_propaty(rate, m7)
+#define _print_mat_content_propaty8(rate, m1, m2, m3, m4, m5, m6, m7, m8) _print_mat_content_propaty7(rate, m1, m2, m3, m4, m5, m6, m7);_print_mat_content_propaty(rate, m8)
+#define _print_mat_content_propaty9(rate, m1, m2, m3, m4, m5, m6, m7, m8, m9) _print_mat_content_propaty8(rate, m1, m2, m3, m4, m5, m6, m7, m8);_print_mat_content_propaty(rate, m9)
+#define _print_mat_content_propaty10(rate, m1, m2, m3, m4, m5, m6, m7, m8, m9, m10) _print_mat_content_propaty9(rate, m1, m2, m3, m4, m5, m6, m7, m8, m9);_print_mat_content_propaty(rate, m10)
 ///////////////////////////////  init method ///////////////////////////////
 void initPoint(cv::Point* const p, const int size);
 void initMat(cv::Mat* const _aMat, const int _size);

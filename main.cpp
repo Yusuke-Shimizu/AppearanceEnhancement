@@ -98,22 +98,17 @@ int main(int argc, const char * argv[])
 //    namedWindow("margeDiv");
 //    while (true) {
 //        video>>frame;
-//        _print_mat_propaty(frame);
 //        frame.convertTo(frame, CV_64FC3, 1/255.0);
 //        divideImage3_(&divFrame1, &divFrame2, frame);
 //        Mat margeDiv;
 //        margeImage(&margeDiv, divFrame1, divFrame2);
 //        MY_IMSHOW(margeDiv);
 //        meanStddevOfLocalImage(&l_mean, &l_stddev, frame, 0.2);
-////        Mat l_recFrame = (divFrame1 + divFrame2) / 2;
-////        MY_IMSHOW4(frame, divFrame1, divFrame2, l_recFrame);
 //        MY_IMSHOW3(frame, divFrame1, divFrame2);
 //        getFps(&start, &end, &fps);
-//        _print(fps);
-//        _print2(l_mean, l_stddev);
-////        if (waitKey(30) == CV_BUTTON_ESC) {
-////            return 0;
-////        }
+//        if (waitKey(30) == CV_BUTTON_ESC) {
+//            return 0;
+//        }
 //    }
 #ifdef EXPERIMENT_FLAG
     // experimentation

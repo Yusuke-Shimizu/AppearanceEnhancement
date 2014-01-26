@@ -91,7 +91,7 @@ public:
     const cv::Mat& getCfullMap(void);
     const cv::Mat& getCMax(void);
     bool getC0(cv::Mat* const C0);
-    const cv::Mat& getC0Map(void);
+    const cv::Mat& getC0Map(void)const;
     const cv::Mat& getCMin(void);
     const cv::Mat& getKMap(void);
     const cv::Mat& getFMap(void);

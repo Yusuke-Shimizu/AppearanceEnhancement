@@ -125,15 +125,13 @@ bool AppearanceEnhancement::setCfullMap(void){
     ProCam* l_procam = getProCam();
     l_procam->captureOfProjecctorColorFromLinearLightOnProjectorDomain(&m_CfullMap, g_maxPrjLuminance);
     showCfullMap();
-//    Scalar l_meanOfCfull(0,0,0,0), l_stddevOfCfull(0,0,0,0);
-//    meanStdDev(m_CfullMap, l_meanOfCfull, l_stddevOfCfull);
-//    _print2(l_meanOfCfull, l_stddevOfCfull);
     
     // Cmaxの設定
     m_CMax = m_CfullMap.clone() / 255.0;
     
-    _print_mat_propaty(m_CfullMap);
-    _print_mat_propaty(m_CMax);
+//    _print_mat_propaty(m_CfullMap);
+//    _print_mat_propaty(m_CMax);
+    _print_mat_content_propaty2(0.1, m_CfullMap, m_CMax);
     return true;
 }
 
@@ -144,15 +142,13 @@ bool AppearanceEnhancement::setC0Map(void){
     ProCam* l_procam = getProCam();
     l_procam->captureOfProjecctorColorFromLinearLightOnProjectorDomain(&m_C0Map, g_minPrjLuminance);
     showC0Map();
-//    Scalar l_meanOfC0(0,0,0,0), l_stddevOfC0(0,0,0,0);
-//    meanStdDev(m_C0Map, l_meanOfC0, l_stddevOfC0);
-//    _print2(l_meanOfC0, l_stddevOfC0);
     
     // CMinの設定
     m_CMin = m_C0Map.clone() / 255.0;
 
-    _print_mat_propaty(m_C0Map);
-    _print_mat_propaty(m_CMin);
+//    _print_mat_propaty(m_C0Map);
+//    _print_mat_propaty(m_CMin);
+    _print_mat_content_propaty2(0.1, m_C0Map, m_CMin);
     return true;
 }
 
@@ -178,7 +174,7 @@ bool AppearanceEnhancement::getC0(cv::Mat* const C0){
 }
 
 // m_C0Mapの取得
-const cv::Mat& AppearanceEnhancement::getC0Map(void){
+const cv::Mat& AppearanceEnhancement::getC0Map(void)const{
     return m_C0Map;
 }
 
@@ -738,8 +734,9 @@ bool AppearanceEnhancement::calcReflectanceAtPixel(double* const _K, const doubl
     
 //    if (l_K > 2.0) {
 //        _print_bar;
-//        cout <<l_nCest<<" = ("<<_nCMax<<" - "<<_nCMin<<") * "<<_nP<<" + "<<_nCMin<<endl;
-//        cout <<l_K<<" = "<<l_nC<<" / "<<l_nCest<<endl;
+//        cout<<"l_interP "<<l_interP<<"= ("<<_nP<<" - "<<_nPMin<<")/("<<_nPMax<<" - "<<_nPMin<<")"<<endl;
+//        cout<<"l_idealC "<<l_idealC<<"= ("<<_nCMax<<" - "<<_nCMin<<") * "<<l_interP<<" + "<<_nCMin<<endl;
+//        cout<<"l_K "<<l_K<<" = "<<l_nC<<" / "<<l_idealC<<endl;
 //    }
     
     // copy
@@ -851,12 +848,12 @@ bool AppearanceEnhancement::estimateK(const cv::Mat& _P, const cv::Mat& _C, cons
             // K = C / {(Cf - C0) * P + C0}
             for (int c = 0; c < 3; ++ c) {
                 // normalize
-                double l_nC = l_pC[x][c] / 255.0;
-                double l_nP = (double)l_pP[x][c] / 255.0;
-                double l_nCMax = l_pCMax[x][c] / 255.0;
-                double l_nCMin = l_pCMin[x][c] / 255.0;
-                double l_nPMax = (double)g_maxPrjLuminance[c] / 255.0;
-                double l_nPMin = (double)g_minPrjLuminance[c] / 255.0;
+                const double l_nC = l_pC[x][c] / 255.0;
+                const double l_nP = (double)l_pP[x][c] / 255.0;
+                const double l_nCMax = l_pCMax[x][c] / 255.0;
+                const double l_nCMin = l_pCMin[x][c] / 255.0;
+                const double l_nPMax = (double)g_maxPrjLuminance[c] / 255.0;
+                const double l_nPMin = (double)g_minPrjLuminance[c] / 255.0;
                 
                 // calculation
                 calcReflectanceAtPixel(&(l_pK[x][c]), l_nC, l_nP, l_nCMax, l_nCMin, l_nPMax, l_nPMin, &(l_pIdealC[x][c]));
@@ -889,7 +886,7 @@ bool AppearanceEnhancement::test_estimateK(const cv::Mat& _answerK, const cv::Ma
         
         // estimation
         estimateK(l_projectionImage, l_captureImage, _CMax, _CMin, l_F, &l_idealC);
-        Mat l_estK = getKMap();
+        const Mat l_estK = getKMap();
         
         // calc
         calcMeanStddevOfDiffImage(&l_meanDiff, &l_stddevDiff, _answerK, l_estK);
@@ -1063,7 +1060,7 @@ bool AppearanceEnhancement::test_estimateKFByAmanoModel(const cv::Mat& _answerK,
         
         // estimation
         estimateKFByAmanoModel(l_projectionImage1, l_projectionImage2, l_captureImage1, l_captureImage2);
-        Mat l_estK = getKMap(), l_estF = getFMap() / 255.0;
+        const Mat l_estK = getKMap(), l_estF = getFMap() / 255.0;
         
         // calc
         calcMeanStddevOfDiffImage(&l_mean, &l_stddev, _answerK, l_estK);
@@ -1222,19 +1219,20 @@ bool AppearanceEnhancement::showKMap(void){
     return true;
 }
 bool AppearanceEnhancement::showFMap(void){
-    Mat l_F = getFMap();
-    l_F /= 255.0;
+    const Mat l_F_ = getFMap();
+    const Mat l_F = l_F_ / 255.0;
     MY_IMSHOW(l_F);
     return true;
 }
 bool AppearanceEnhancement::showCfullMap(void){
-    const Mat l_Cfull = getCfullMap();
+    const Mat l_Cfull_ = getCfullMap();
+    const Mat l_Cfull = l_Cfull_ / 255.0;
     MY_IMSHOW(l_Cfull);
     return true;
 }
 bool AppearanceEnhancement::showC0Map(void){
-    Mat l_C0 = getC0Map();
-    l_C0 /= 255.0;
+    const Mat l_C0_ = getC0Map();
+    const Mat l_C0 = l_C0_ / 255.0;
     MY_IMSHOW(l_C0);
     return true;
 }
@@ -1270,6 +1268,8 @@ bool AppearanceEnhancement::showAll(const int _num, const cv::Mat& _captureImage
     MY_IMSHOW3(l_errorOfMPC, _vrC, l_answerKDrawing);
     showKMap();
     showFMap();
+    showCfullMap();
+    showC0Map();
     
     // save (error image only)
     Mat l_answerK, l_answerF;
@@ -1397,8 +1397,6 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
     // init
     setCfullMap();
     setC0Map();
-    Mat l_CMax = getCfullMap();
-    Mat l_CMin = getC0Map();
     
     //
     ProCam* l_procam = getProCam();
@@ -1436,8 +1434,11 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
 
     // loop
     while (l_loopFlag) {
+        const Mat l_CMax = getCfullMap();
+        const Mat l_CMin = getC0Map();
+
         // estimate
-        Mat l_KMapBefore = getKMap(), l_FMapBefore = getFMap();
+        const Mat l_KMapBefore = getKMap(), l_FMapBefore = getFMap();
         l_prjColor = l_currentColor * l_prjLuminance;
         switch (l_estTarget) {
             case 0:
@@ -1545,8 +1546,6 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
             case (CV_BUTTON_f):
                 setCfullMap();
                 setC0Map();
-                l_CMax = getCfullMap();
-                l_CMin = getC0Map();
                 break;
             // what is target to estimate
             case (CV_BUTTON_r):

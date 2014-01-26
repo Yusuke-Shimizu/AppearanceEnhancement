@@ -374,36 +374,38 @@ bool getFps(double* const _start, double* const _end, double* const _fps){
 
 ///////////////////////////////  print method ///////////////////////////////
 // Matの様々な要素を表示
-void printMatPropaty(const Mat& m1){
+void printMatPropaty(const Mat& m1, const bool _onlyContentFlag){
     std::cout << "--------------------------"  << std::endl;
-    // 行数
-    std::cout << "rows:" << m1.rows <<std::endl;
-    // 列数
-    std::cout << "cols:" << m1.cols << std::endl;
-    // 次元数
-    std::cout << "dims:" << m1.dims << std::endl;
-    // サイズ（2次元の場合）
-    std::cout << "size[]:" << m1.size().width << "," << m1.size().height << std::endl;
-    // ビット深度ID
-    std::cout << "depth (ID):" << m1.depth() << "(=" << CV_64F << ")" << std::endl;
-    // チャンネル数
-    std::cout << "channels:" << m1.channels() << std::endl;
-    // （複数チャンネルから成る）1要素のサイズ [バイト単位]
-    std::cout << "elemSize:" << m1.elemSize() << "[byte]" << std::endl;
-    // 1要素内の1チャンネル分のサイズ [バイト単位]
-    std::cout << "elemSize1 (elemSize/channels):" << m1.elemSize1() << "[byte]" << std::endl;
-    // 要素の総数
-    std::cout << "total:" << m1.total() << std::endl;
-    // ステップ数 [バイト単位]
-    std::cout << "step:" << m1.step << "[byte]" << std::endl;
-    // 1ステップ内のチャンネル総数
-    std::cout << "step1 (step/elemSize1):" << m1.step1()  << std::endl;
-    // データは連続か？
-    std::cout << "isContinuous:" << (m1.isContinuous()?"true":"false") << std::endl;
-    // 部分行列か？
-    std::cout << "isSubmatrix:" << (m1.isSubmatrix()?"true":"false") << std::endl;
-    // データは空か？
-    std::cout << "empty:" << (m1.empty()?"true":"false") << std::endl;
+    if (_onlyContentFlag) {
+        // 行数
+        std::cout << "rows:" << m1.rows <<std::endl;
+        // 列数
+        std::cout << "cols:" << m1.cols << std::endl;
+        // 次元数
+        std::cout << "dims:" << m1.dims << std::endl;
+        // サイズ（2次元の場合）
+        std::cout << "size[]:" << m1.size().width << "," << m1.size().height << std::endl;
+        // ビット深度ID
+        std::cout << "depth (ID):" << m1.depth() << "(=" << CV_64F << ")" << std::endl;
+        // チャンネル数
+        std::cout << "channels:" << m1.channels() << std::endl;
+        // （複数チャンネルから成る）1要素のサイズ [バイト単位]
+        std::cout << "elemSize:" << m1.elemSize() << "[byte]" << std::endl;
+        // 1要素内の1チャンネル分のサイズ [バイト単位]
+        std::cout << "elemSize1 (elemSize/channels):" << m1.elemSize1() << "[byte]" << std::endl;
+        // 要素の総数
+        std::cout << "total:" << m1.total() << std::endl;
+        // ステップ数 [バイト単位]
+        std::cout << "step:" << m1.step << "[byte]" << std::endl;
+        // 1ステップ内のチャンネル総数
+        std::cout << "step1 (step/elemSize1):" << m1.step1()  << std::endl;
+        // データは連続か？
+        std::cout << "isContinuous:" << (m1.isContinuous()?"true":"false") << std::endl;
+        // 部分行列か？
+        std::cout << "isSubmatrix:" << (m1.isSubmatrix()?"true":"false") << std::endl;
+        // データは空か？
+        std::cout << "empty:" << (m1.empty()?"true":"false") << std::endl;
+    }
     // データの最大・最小・平均・合計
     Mat l_max, l_min, l_avg, l_sum;
     reduce(m1, l_max, 0, CV_REDUCE_MAX);
@@ -419,6 +421,12 @@ void printMatPropaty(const Mat& m1){
     _print(l_avg);
     _print(l_sum);
     _print_bar;
+}
+void printMatPropatyOfLocalImage(const cv::Mat& m1, const double& _rate, const bool _onlyContentFlag){
+    const Range rows(m1.rows*_rate, m1.rows*(1-_rate));
+    const Range cols(m1.cols*_rate, m1.cols*(1-_rate));
+    const Mat l_localm1 = m1(rows, cols);
+    printMatPropaty(l_localm1, _onlyContentFlag);
 }
 
 // OpenCVのバージョン表示
