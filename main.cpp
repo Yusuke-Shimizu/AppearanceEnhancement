@@ -106,6 +106,7 @@ int main(int argc, const char * argv[])
         meanStddevOfLocalImage(&l_mean, &l_stddev, frame, 0.2);
         MY_IMSHOW3(frame, divFrame1, divFrame2);
         getFps(&start, &end, &fps);
+        _print_diff_mat_content_propaty(0.1, divFrame1, divFrame2);
         if (waitKey(30) == CV_BUTTON_ESC) {
             return 0;
         }

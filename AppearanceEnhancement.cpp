@@ -1175,41 +1175,19 @@ bool AppearanceEnhancement::evaluateEstimate(const cv::Mat& _C, const cv::Mat& _
 }
 
 bool AppearanceEnhancement::evaluateEstimationAndProjection(const cv::Mat& _ansK, const cv::Mat& _estK, const cv::Mat& _ansF, const cv::Mat& _estF, const cv::Mat& _targetImage, const cv::Mat& _captureImage, const cv::Mat& _idealC){
+    const double l_rate = 0.1;
+    // error of estimated K
+    _print_diff_mat_content_propaty(l_rate, _ansK, _estK);
     
-    // get mean and standard deviation
-    cv::Scalar l_CMean(0, 0, 0, 0), l_CStddev(0, 0, 0, 0);
-    meanStddevOfLocalImage(&l_CMean, &l_CStddev, _captureImage, 0.1);
+    // error of estimated F
+    const Mat l_nEstF = _estF.clone() / 255.0;
+    const Mat l_nAnsF = _ansF.clone() / 255.0;
+    _print_diff_mat_content_propaty(l_rate, l_nEstF, l_nAnsF);
     
-    cv::Scalar l_idealCMean(0, 0, 0, 0), l_idealCStddev(0, 0, 0, 0);
-    meanStddevOfLocalImage(&l_idealCMean, &l_idealCStddev, _idealC, 0.1);
-    
-    cv::Scalar l_estKMean(0, 0, 0, 0), l_estKStddev(0, 0, 0, 0);
-    meanStddevOfLocalImage(&l_estKMean, &l_estKStddev, _estK, 0.1);
-    
-    cv::Scalar l_estFMean(0, 0, 0, 0), l_estFStddev(0, 0, 0, 0);
-    meanStddevOfLocalImage(&l_estFMean, &l_estFStddev, _estF, 0.1);
-
-    cv::Scalar l_prjMean(0, 0, 0, 0), l_prjStddev(0, 0, 0, 0);
-    meanStddevOfLocalImage(&l_prjMean, &l_prjStddev, _captureImage, 0.1);
-
-    cv::Scalar l_estKDiffMean(0, 0, 0, 0), l_estKDiffStddev(0, 0, 0, 0);
-    calcMeanStddevOfDiffImage(&l_estKDiffMean, &l_estKDiffStddev, _ansK, _estK);
-    
-    cv::Scalar l_estFDiffMean(0, 0, 0, 0), l_estFDiffStddev(0, 0, 0, 0);
-    calcMeanStddevOfDiffImage(&l_estFDiffMean, &l_estFDiffStddev, _ansF, _estF);
-    
-    cv::Scalar l_prjDiffMean(0, 0, 0, 0), l_prjDiffStddev(0, 0, 0, 0);
-    calcMeanStddevOfDiffImage(&l_prjDiffMean, &l_prjDiffStddev, _targetImage, _captureImage);
-    
-    // print
-    _print2(l_CMean, l_CStddev);
-    _print2(l_idealCMean, l_idealCStddev);
-    _print2(l_estKMean, l_estKStddev);
-    _print2(l_estFMean, l_estFStddev);
-    _print2(l_prjMean, l_prjStddev);
-    _print2(l_estKDiffMean, l_estKDiffStddev);
-    _print2(l_estFDiffMean, l_estFDiffStddev);
-    _print2(l_prjDiffMean, l_prjDiffStddev);
+    // error of project
+    const Mat l_nPredict = _targetImage.clone() / 255.0;
+    const Mat l_nResult = _captureImage.clone() / 255.0;
+    _print_diff_mat_content_propaty(l_rate, l_nPredict, l_nResult);
     
     return true;
 }

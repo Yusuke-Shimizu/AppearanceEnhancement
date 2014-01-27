@@ -375,7 +375,7 @@ bool getFps(double* const _start, double* const _end, double* const _fps){
 ///////////////////////////////  print method ///////////////////////////////
 // Matの様々な要素を表示
 void printMatPropaty(const Mat& m1, const bool _onlyContentFlag){
-    std::cout << "--------------------------"  << std::endl;
+//    std::cout << "--------------------------"  << std::endl;
     if (_onlyContentFlag) {
         // 行数
         std::cout << "rows:" << m1.rows <<std::endl;
@@ -416,9 +416,12 @@ void printMatPropaty(const Mat& m1, const bool _onlyContentFlag){
     reduce(l_min, l_min, 1, CV_REDUCE_MIN);
     reduce(l_avg, l_avg, 1, CV_REDUCE_AVG, CV_64FC(m1.channels()));
     reduce(l_sum, l_sum, 1, CV_REDUCE_SUM, CV_64FC(m1.channels()));
+    Scalar l_mean, l_dev;
+    meanStdDev(m1, l_mean, l_dev);
     _print(l_max);
     _print(l_min);
     _print(l_avg);
+    _print(l_dev);
     _print(l_sum);
     _print_bar;
 }
@@ -427,6 +430,17 @@ void printMatPropatyOfLocalImage(const cv::Mat& m1, const double& _rate, const b
     const Range cols(m1.cols*_rate, m1.cols*(1-_rate));
     const Mat l_localm1 = m1(rows, cols);
     printMatPropaty(l_localm1, _onlyContentFlag);
+}
+
+// 二つの画像の差の特徴を表示
+void printPropatyOfDiffImage(const cv::Mat& _m1, const cv::Mat& _m2, const double& _rate){
+    const Range rows(_m1.rows*_rate, _m1.rows*(1-_rate));
+    const Range cols(_m1.cols*_rate, _m1.cols*(1-_rate));
+    const Mat l_m1Local = _m1(rows, cols);
+    const Mat l_m2Local = _m2(rows, cols);
+    const Mat l_diff(l_m1Local.size(), l_m1Local.type());
+    absdiff(l_m1Local, l_m2Local, l_diff);
+    printMatPropaty(l_diff, false);
 }
 
 // OpenCVのバージョン表示

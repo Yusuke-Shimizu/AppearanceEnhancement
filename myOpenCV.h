@@ -275,8 +275,6 @@ bool getFps(double* const _start, double* const _end, double* const _fps);
 ///////////////////////////////  print method ///////////////////////////////
 void printMatPropaty(const cv::Mat& m1, const bool _onlyContentFlag = true);
 void printMatPropatyOfLocalImage(const cv::Mat& m1, const double& _rate = 0.1, const bool _onlyContentFlag = true);
-void printOpenCVVersion(void);
-void printVideoPropaty(cv::VideoCapture& _video);
 #define _print_mat_propaty(mat) _print_name(mat);printMatPropaty(mat)
 #define _print_mat_content_propaty(rate, mat) _print_name(mat);printMatPropatyOfLocalImage(mat, rate, false)
 #define _print_mat_content_propaty2(rate, m1, m2) _print_mat_content_propaty(rate, m1);_print_mat_content_propaty(rate, m2)
@@ -288,6 +286,10 @@ void printVideoPropaty(cv::VideoCapture& _video);
 #define _print_mat_content_propaty8(rate, m1, m2, m3, m4, m5, m6, m7, m8) _print_mat_content_propaty7(rate, m1, m2, m3, m4, m5, m6, m7);_print_mat_content_propaty(rate, m8)
 #define _print_mat_content_propaty9(rate, m1, m2, m3, m4, m5, m6, m7, m8, m9) _print_mat_content_propaty8(rate, m1, m2, m3, m4, m5, m6, m7, m8);_print_mat_content_propaty(rate, m9)
 #define _print_mat_content_propaty10(rate, m1, m2, m3, m4, m5, m6, m7, m8, m9, m10) _print_mat_content_propaty9(rate, m1, m2, m3, m4, m5, m6, m7, m8, m9);_print_mat_content_propaty(rate, m10)
+void printPropatyOfDiffImage(const cv::Mat& _m1, const cv::Mat& _m2, const double& _rate = 0.0);
+#define _print_diff_mat_content_propaty(rate, mat1, mat2) _print_mat_content_propaty2(rate, mat1, mat2);std::cout<<#mat1<<"-"<<#mat2<<std::endl;printPropatyOfDiffImage(mat1, mat2, rate)
+void printOpenCVVersion(void);
+void printVideoPropaty(cv::VideoCapture& _video);
 ///////////////////////////////  init method ///////////////////////////////
 void initPoint(cv::Point* const p, const int size);
 void initMat(cv::Mat* const _aMat, const int _size);
