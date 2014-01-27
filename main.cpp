@@ -86,30 +86,30 @@ bool divideImage3_(cv::Mat* const _dst1, cv::Mat* const _dst2, const cv::Mat& _s
 // main method
 int main(int argc, const char * argv[])
 {
-//    VideoCapture video(0);
-//    Mat frame;
-//    video >> frame;
-//    const Size camSize(frame.cols, frame.rows);
-//    Mat divFrame1(camSize, CV_64FC3, CV_SCALAR_D_BLACK);
-//    Mat divFrame2(camSize, CV_64FC3, CV_SCALAR_D_BLACK);
-//    ostringstream oss;
-//    double start, end, fps;
-//    Scalar l_mean, l_stddev;
-//    namedWindow("margeDiv");
-//    while (true) {
-//        video>>frame;
-//        frame.convertTo(frame, CV_64FC3, 1/255.0);
-//        divideImage3_(&divFrame1, &divFrame2, frame);
-//        Mat margeDiv;
-//        margeImage(&margeDiv, divFrame1, divFrame2);
-//        MY_IMSHOW(margeDiv);
-//        meanStddevOfLocalImage(&l_mean, &l_stddev, frame, 0.2);
-//        MY_IMSHOW3(frame, divFrame1, divFrame2);
-//        getFps(&start, &end, &fps);
-//        if (waitKey(30) == CV_BUTTON_ESC) {
-//            return 0;
-//        }
-//    }
+    VideoCapture video(0);
+    Mat frame;
+    video >> frame;
+    const Size camSize(frame.cols, frame.rows);
+    Mat divFrame1(camSize, CV_64FC3, CV_SCALAR_D_BLACK);
+    Mat divFrame2(camSize, CV_64FC3, CV_SCALAR_D_BLACK);
+    ostringstream oss;
+    double start, end, fps;
+    Scalar l_mean, l_stddev;
+    namedWindow("margeDiv");
+    while (true) {
+        video>>frame;
+        frame.convertTo(frame, CV_64FC3, 1/255.0);
+        divideImage3_(&divFrame1, &divFrame2, frame);
+        Mat margeDiv;
+        margeImage(&margeDiv, divFrame1, divFrame2);
+        MY_IMSHOW(margeDiv);
+        meanStddevOfLocalImage(&l_mean, &l_stddev, frame, 0.2);
+        MY_IMSHOW3(frame, divFrame1, divFrame2);
+        getFps(&start, &end, &fps);
+        if (waitKey(30) == CV_BUTTON_ESC) {
+            return 0;
+        }
+    }
 #ifdef EXPERIMENT_FLAG
     // experimentation
     AppearanceEnhancement ae(PRJ_SIZE);

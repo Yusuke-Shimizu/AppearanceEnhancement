@@ -720,11 +720,11 @@ bool AppearanceEnhancement::test_calcNextProjectionImageAtPixel(void){
 }
 
 // 反射率の計算
-bool AppearanceEnhancement::calcReflectanceAtPixel(double* const _K, const double& _nC, const double& _nP, const double& _nCMax, const double& _nCMin, const double& _nPMax, const double& _nPMin, double* const _idealC){
+bool AppearanceEnhancement::calcReflectanceAtPixel(double* const _K, const double& _nC, const double& _nP, const double& _nCMax, const double& _nCMin, const double& _nPMax, const double& _nPMin, const double& _nF, double* const _idealC){
     // calc
     // normalized linear interpolation P
     const double l_interP = (_nP - _nPMin)/(_nPMax - _nPMin);
-    double l_idealC = (_nCMax - _nCMin) * l_interP + _nCMin;
+    double l_idealC = (_nCMax - _nCMin) * l_interP + _nCMin + _nF;
     *_idealC = l_idealC;
     // avoid 0
     l_idealC = std::max(l_idealC, 1.0/255.0);
@@ -828,7 +828,7 @@ bool AppearanceEnhancement::estimateK(const cv::Mat& _P, const cv::Mat& _C, cons
     // init
     int rows = _P.rows, cols = _P.cols;
     Mat l_K(rows, cols, CV_64FC3, CV_SCALAR_BLACK);
-    if (isContinuous(_P, _C, _CMax, _CMin, l_K, *_idealC)) {
+    if (isContinuous(_P, _C, _CMax, _CMin, l_K, _F, *_idealC)) {
         cols *= rows;
         rows = 1;
     }
@@ -841,6 +841,7 @@ bool AppearanceEnhancement::estimateK(const cv::Mat& _P, const cv::Mat& _C, cons
         const Vec3d* l_pC = _C.ptr<Vec3d>(y);
         const Vec3d* l_pCMax = _CMax.ptr<Vec3d>(y);
         const Vec3d* l_pCMin = _CMin.ptr<Vec3d>(y);
+        const Vec3d* l_pF = _F.ptr<Vec3d>(y);
         Vec3d* l_pIdealC = _idealC->ptr<Vec3d>(y);
         
         for (int x = 0; x < cols; ++ x) {
@@ -850,13 +851,14 @@ bool AppearanceEnhancement::estimateK(const cv::Mat& _P, const cv::Mat& _C, cons
                 // normalize
                 const double l_nC = l_pC[x][c] / 255.0;
                 const double l_nP = (double)l_pP[x][c] / 255.0;
+                const double l_nF = (double)l_pF[x][c] / 255.0;
                 const double l_nCMax = l_pCMax[x][c] / 255.0;
                 const double l_nCMin = l_pCMin[x][c] / 255.0;
                 const double l_nPMax = (double)g_maxPrjLuminance[c] / 255.0;
                 const double l_nPMin = (double)g_minPrjLuminance[c] / 255.0;
                 
                 // calculation
-                calcReflectanceAtPixel(&(l_pK[x][c]), l_nC, l_nP, l_nCMax, l_nCMin, l_nPMax, l_nPMin, &(l_pIdealC[x][c]));
+                calcReflectanceAtPixel(&(l_pK[x][c]), l_nC, l_nP, l_nCMax, l_nCMin, l_nPMax, l_nPMin, l_nF, &(l_pIdealC[x][c]));
             }
         }
     }
@@ -1721,7 +1723,8 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
                 initK(l_camSize);
                 initF(l_camSize);
 //                l_projectionImage = Mat(l_camSize, CV_8UC3, CV_SCALAR_WHITE);
-                l_projectionImage = Scalar(g_maxPrjLuminance);
+//                l_projectionImage = Scalar(g_maxPrjLuminance);
+                l_projectionImage = Scalar(125, 125, 125);
                 l_projectionImage2 = Scalar(g_maxPrjLuminance);
                 l_projectionImageBefore2 = Scalar(g_minPrjLuminance);
                 l_procam->captureOfProjecctorColorFromLinearLightOnProjectorDomain(&l_captureImage, l_projectionImage, l_bDenoise);
