@@ -112,6 +112,7 @@ const int CV_BUTTON_SMALL_TO_CAPITAL = 65504;
 const int CV_BUTTON_a       = 1048673;
 const int CV_BUTTON_0       = 1048624;
 #endif
+const int CV_BUTTON_A       = CV_BUTTON_a + CV_BUTTON_SMALL_TO_CAPITAL;
 const int CV_BUTTON_b       = CV_BUTTON_a + 1;
 const int CV_BUTTON_B       = CV_BUTTON_b + CV_BUTTON_SMALL_TO_CAPITAL;
 const int CV_BUTTON_c       = CV_BUTTON_a + 2;  // 1048675
@@ -287,7 +288,7 @@ void printMatPropatyOfLocalImage(const cv::Mat& m1, const double& _rate = 0.1, c
 #define _print_mat_content_propaty9(rate, m1, m2, m3, m4, m5, m6, m7, m8, m9) _print_mat_content_propaty8(rate, m1, m2, m3, m4, m5, m6, m7, m8);_print_mat_content_propaty(rate, m9)
 #define _print_mat_content_propaty10(rate, m1, m2, m3, m4, m5, m6, m7, m8, m9, m10) _print_mat_content_propaty9(rate, m1, m2, m3, m4, m5, m6, m7, m8, m9);_print_mat_content_propaty(rate, m10)
 void printPropatyOfDiffImage(const cv::Mat& _m1, const cv::Mat& _m2, const double& _rate = 0.0);
-#define _print_diff_mat_content_propaty(rate, mat1, mat2) _print_mat_content_propaty2(rate, mat1, mat2);std::cout<<#mat1<<"-"<<#mat2<<std::endl;printPropatyOfDiffImage(mat1, mat2, rate)
+#define _print_diff_mat_content_propaty(rate, mat1, mat2) _print_mat_content_propaty2(rate, mat1, mat2);std::cout<<#mat1<<" - "<<#mat2<<std::endl;printPropatyOfDiffImage(mat1, mat2, rate)
 void printOpenCVVersion(void);
 void printVideoPropaty(cv::VideoCapture& _video);
 ///////////////////////////////  init method ///////////////////////////////

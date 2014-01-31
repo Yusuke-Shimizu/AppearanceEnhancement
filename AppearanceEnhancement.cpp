@@ -554,11 +554,12 @@ bool AppearanceEnhancement::calcTargetImageAtPixel(double* const _targetImage, c
 }
 
 // 次に投影する画像を決定
-bool AppearanceEnhancement::calcNextProjectionImage(cv::Mat* const _nextP, cv::Mat* const _error, cv::Mat* const _Cr, cv::Mat* const _vrC, const cv::Mat& _targetImage, const cv::Mat& _targetImageBefore, const cv::Mat& _C, const cv::Mat& _P, const cv::Mat& _K, const cv::Mat& _F, const cv::Mat& _FBefore, const cv::Mat& _CMax, const cv::Mat& _CMin, const double& _alpha){
+bool AppearanceEnhancement::calcNextProjectionImage(cv::Mat* const _nextP, cv::Mat* const _error, cv::Mat* const _Cr, cv::Mat* const _vrC, cv::Mat* const _desireC, const cv::Mat& _targetImage, const cv::Mat& _targetImageBefore, const cv::Mat& _C, const cv::Mat& _P, const cv::Mat& _K, const cv::Mat& _F, const cv::Mat& _FBefore, const cv::Mat& _CMax, const cv::Mat& _CMin, const double& _alpha){
     
     // init
     int rows = _targetImage.rows, cols = _targetImage.cols, channel = _targetImage.channels();
-    if (isContinuous(*_nextP, _targetImage, _targetImageBefore, _C, _P, _K, _F, _FBefore, _CMax, _CMin)) {
+    if (isContinuous(*_nextP, _targetImage, _targetImageBefore, _C, _P, _K, _F, _FBefore, _CMax, _CMin) &&
+        isContinuous(*_error, *_Cr, *_vrC, *_desireC)) {
         cols *= rows;
         rows = 1;
     }
@@ -569,6 +570,7 @@ bool AppearanceEnhancement::calcNextProjectionImage(cv::Mat* const _nextP, cv::M
         Vec3d* l_pError = _error->ptr<Vec3d>(y);
         Vec3d* l_pCr = _Cr->ptr<Vec3d>(y);
         Vec3d* l_pVrC = _vrC->ptr<Vec3d>(y);
+        Vec3d* l_pDesireC = _desireC->ptr<Vec3d>(y);
         const Vec3d* l_pTargetImage = _targetImage.ptr<Vec3d>(y);
         const Vec3d* l_pTargetImageBefore = _targetImageBefore.ptr<Vec3d>(y);
         const Vec3d* l_pC = _C.ptr<Vec3d>(y);
@@ -595,7 +597,7 @@ bool AppearanceEnhancement::calcNextProjectionImage(cv::Mat* const _nextP, cv::M
                 const double l_nPMin = (double)g_minPrjLuminance[c] / 255.0;
 
                 // calculation
-                calcNextProjectionImageAtPixel(&(l_pNextP[x][c]), &(l_pError[x][c]), &(l_pCr[x][c]), &(l_pVrC[x][c]), l_nTargetImage, l_nTargetImageBefore, l_nC, l_nP, l_nK, l_nF, l_nFBefore, l_nCMax, l_nCMin, l_nPMax, l_nPMin, _alpha);
+                calcNextProjectionImageAtPixel(&(l_pNextP[x][c]), &(l_pError[x][c]), &(l_pCr[x][c]), &(l_pVrC[x][c]), &(l_pDesireC[x][c]), l_nTargetImage, l_nTargetImageBefore, l_nC, l_nP, l_nK, l_nF, l_nFBefore, l_nCMax, l_nCMin, l_nPMax, l_nPMin, _alpha);
             }
         }
     }
@@ -614,6 +616,7 @@ bool AppearanceEnhancement::test_calcNextProjectionImage(const cv::Mat& _answerK
     Mat l_error(*l_camSize, CV_64FC3, CV_SCALAR_BLACK);
     Mat l_Cr(*l_camSize, CV_64FC3, CV_SCALAR_BLACK);
     Mat l_vrC(*l_camSize, CV_64FC3, CV_SCALAR_BLACK);
+    Mat l_desireC(*l_camSize, CV_64FC3, CV_SCALAR_BLACK);
     Scalar l_mean(0,0,0,0), l_stddev(0,0,0,0);
     Scalar l_meanCap(0,0,0,0), l_stddevCap(0,0,0,0);
     Scalar l_meanTarget(0,0,0,0), l_stddeTarget(0,0,0,0);
@@ -629,7 +632,7 @@ bool AppearanceEnhancement::test_calcNextProjectionImage(const cv::Mat& _answerK
         l_projectionImageBefore = l_projectionImage.clone();
         
         // calc next projection image
-        calcNextProjectionImage(&l_projectionImage, &l_error, &l_Cr, &l_vrC, l_targetImage, l_targetImageBefore, l_captureImage, l_projectionImageBefore, _answerK, _answerF, _answerF, _CMax, _CMin, l_alphaMPC);
+        calcNextProjectionImage(&l_projectionImage, &l_error, &l_Cr, &l_vrC, &l_desireC, l_targetImage, l_targetImageBefore, l_captureImage, l_projectionImageBefore, _answerK, _answerF, _answerF, _CMax, _CMin, l_alphaMPC);
         
         // projection
         l_procam->captureOfProjecctorColorFromLinearLightOnProjectorDomain(&l_captureImage, l_projectionImage);
@@ -653,39 +656,25 @@ bool AppearanceEnhancement::test_calcNextProjectionImage(const cv::Mat& _answerK
     return true;
 }
 
-bool AppearanceEnhancement::calcNextProjectionImageAtPixel(uchar* const _nextP, double* const _error, double* const _Cr, double* const _vrC, const double& _targetImage, const double& _targetImageBefore, const double& _C, const double& _P, const double& _K, const double& _F, const double& _FBefore, const double& _CMax, const double& _CMin, const double& _PMax, const double& _PMin, const double& _alpha){
+bool AppearanceEnhancement::calcNextProjectionImageAtPixel(uchar* const _nextP, double* const _error, double* const _Cr, double* const _vrC, double* const _desireC, const double& _targetImage, const double& _targetImageBefore, const double& _C, const double& _P, const double& _K, const double& _F, const double& _FBefore, const double& _CMax, const double& _CMin, const double& _PMax, const double& _PMin, const double& _alpha){
     // calculation
-    double l_nNextP = 0;
     const double l_interP = (_P - _PMin) / (_PMax - _PMin);
-    double l_interC = (_CMax - _CMin) * l_interP + _CMin;
-    switch (m_currentMode) {
-        case e_Amano:
-//            l_nNextP = ((1 - _alpha) * (_targetImage - _C) * (_PMax - _PMin)) / (_K * (_CMax - _CMin)) + _P;
-            l_nNextP = _PMin + _targetImage * (0.5 - _PMin) / _K + (_PMax - _PMin) * (_CMin + _F) * (1 + _targetImage / _K) / (_CMax - _CMin);
-            break;
-        case e_Shimizu:
-            l_nNextP = (((1 - _alpha) * (_targetImage - _C) - _F + _FBefore) / (_CMax - _CMin) + _P * _K) / _K;
-            l_interC += _F;
-            break;
-            
-        default:
-            break;
-    }
+    const double l_interC = (_CMax - _CMin) * l_interP + _CMin + _F;
+    const double l_baseP = 0.5;
+    const double l_interBaseP = (l_baseP - _PMin) / (_PMax - _PMin);
+    const double l_idealBaseC = (_CMax - _CMin) * l_interBaseP + _CMin + _F;
+    *_desireC = _targetImage * l_idealBaseC;
+    
+    double l_nNextP = _PMin + _targetImage * (l_baseP - _PMin) / _K + (_PMax - _PMin) * (_CMin + _F) * (1 + _targetImage / _K) / (_CMax - _CMin);
     *_vrC = _K * l_interC;
     *_error = _C - *_vrC;
     *_Cr = _alpha * _C + (1 - _alpha) * _targetImage;
     
-//    *_error = _C - _K * ();
-//    double l_nNextP = ((1 - _alpha) * ((_targetImage - _C) / _K) - _F + _FBefore) / (_Cfull - _C0) + _P;
-//    double l_nNextP = ((1 - _alpha) * (_targetImage - _C) / _K) / (_Cfull - _C0) + _P;
-//    double l_nNextP = (_targetImage - _C0 * _K) / ((_Cfull - _C0) * _K);
-//    double l_nNextP = _targetImage;
-//    cout << l_nNextP<<" = ((1 - "<<_alpha<<") * (("<<_targetImage<<" - "<<_C<<") / "<<_K<<") - "<<_F<<" + "<<_FBefore<<") / ("<<_Cfull<<" - "<<_C0<<") + "<<_P << endl;
     round0to1(&l_nNextP);
     
     // unnormalize
-    *_nextP = std::max((uchar)(l_nNextP * 255), (uchar)50);
-//    *_nextP = std::max((uchar)(l_nNextP * 255), (uchar)0);
+//    *_nextP = std::max((uchar)(l_nNextP * 255), (uchar)50);
+    *_nextP = std::max((uchar)(l_nNextP * 255), (uchar)0);
 //    *_nextP = std::min(*_nextP, _maxLuminance);
     return true;
 }
@@ -696,7 +685,7 @@ bool AppearanceEnhancement::test_calcNextProjectionImageAtPixel(void){
     double l_noise = NOISE_RANGE * 5;
     double l_target = 0.25, l_alpha = 0.5;
     ofstream ofs(SIM_PROJECTION_FILE_NAME.c_str());
-    double l_error = 0, l_Cr = 0, l_vrC = 0;
+    double l_error = 0, l_Cr = 0, l_vrC = 0, l_desireC;
     
     for (int i = 0; i < 256; ++ i) {
 //        if (i % 10 == 0) {
@@ -705,7 +694,7 @@ bool AppearanceEnhancement::test_calcNextProjectionImageAtPixel(void){
         //
         l_PBefore = l_P;
         uchar l_ucP = 0;
-        calcNextProjectionImageAtPixel(&l_ucP, &l_error, &l_Cr, &l_vrC, l_target, l_target, l_C, l_PBefore, l_ansK, l_ansF, l_ansF, l_CMax, l_CMin, g_maxPrjLuminance[0]/255.0, g_minPrjLuminance[0]/255.0, l_alpha);
+        calcNextProjectionImageAtPixel(&l_ucP, &l_error, &l_Cr, &l_vrC, &l_desireC, l_target, l_target, l_C, l_PBefore, l_ansK, l_ansF, l_ansF, l_CMax, l_CMin, g_maxPrjLuminance[0]/255.0, g_minPrjLuminance[0]/255.0, l_alpha);
         l_P = (double)l_ucP / 255.0;
         
         // capture
@@ -1174,7 +1163,7 @@ bool AppearanceEnhancement::evaluateEstimate(const cv::Mat& _C, const cv::Mat& _
     return true;
 }
 
-bool AppearanceEnhancement::evaluateEstimationAndProjection(const cv::Mat& _ansK, const cv::Mat& _estK, const cv::Mat& _ansF, const cv::Mat& _estF, const cv::Mat& _targetImage, const cv::Mat& _captureImage, const cv::Mat& _idealC){
+bool AppearanceEnhancement::evaluateEstimationAndProjection(const cv::Mat& _ansK, const cv::Mat& _estK, const cv::Mat& _ansF, const cv::Mat& _estF, const cv::Mat& _targetImage, const cv::Mat& _captureImage, const cv::Mat& _desireC){
     const double l_rate = 0.1;
     // error of estimated K
     _print_diff_mat_content_propaty(l_rate, _ansK, _estK);
@@ -1185,9 +1174,9 @@ bool AppearanceEnhancement::evaluateEstimationAndProjection(const cv::Mat& _ansK
     _print_diff_mat_content_propaty(l_rate, l_nEstF, l_nAnsF);
     
     // error of project
-    const Mat l_nPredict = _targetImage.clone() / 255.0;
+    const Mat l_nDesire = _desireC.clone() / 255.0;
     const Mat l_nResult = _captureImage.clone() / 255.0;
-    _print_diff_mat_content_propaty(l_rate, l_nPredict, l_nResult);
+    _print_diff_mat_content_propaty(l_rate, l_nDesire, l_nResult);
     
     return true;
 }
@@ -1216,11 +1205,11 @@ bool AppearanceEnhancement::showC0Map(void){
     MY_IMSHOW(l_C0);
     return true;
 }
-bool AppearanceEnhancement::showAll(const int _num, const cv::Mat& _captureImage, const cv::Mat& _projectionImage, const cv::Mat& _targetImage, const cv::Mat& _answerK, const cv::Mat& _answerF, const cv::Mat& _errorOfMPC, const cv::Mat& _CrOfMPC, const cv::Mat& _vrC){
+bool AppearanceEnhancement::showAll(const int _num, const cv::Mat& _captureImage, const cv::Mat& _projectionImage, const cv::Mat& _desireC, const cv::Mat& _answerK, const cv::Mat& _answerF, const cv::Mat& _errorOfMPC, const cv::Mat& _CrOfMPC, const cv::Mat& _vrC){
     const Mat l_C = _captureImage / 255.0;
     Mat l_P = _projectionImage.clone();
     l_P.convertTo(l_P, CV_64FC3, 1.0/255.0);
-    const Mat l_R = _targetImage / 255.0;
+    const Mat l_R = _desireC / 255.0;
     
     // create error image
     Mat l_errorOfProjection = l_R.clone();
@@ -1234,16 +1223,13 @@ bool AppearanceEnhancement::showAll(const int _num, const cv::Mat& _captureImage
     _print3(_answerK.at<Vec3d>(m_printPoint), l_estimatedK.at<Vec3d>(m_printPoint), l_errorOfEstimateK.at<Vec3d>(m_printPoint));
     _print3(_answerF.at<Vec3d>(m_printPoint), l_estimatedF.at<Vec3d>(m_printPoint), l_errorOfEstimateF.at<Vec3d>(m_printPoint));
     
-    // create over and under exposure image
-    Mat l_overP = _projectionImage.clone();
-    getThresholdColorImage(&l_overP, _projectionImage, g_maxPrjLuminance);
-    
     // show
     l_errorOfEstimateK.convertTo(l_errorOfEstimateK, CV_8UC3, 255);
     l_errorOfEstimateF.convertTo(l_errorOfEstimateF, CV_8UC3);
     Mat l_answerKDrawing = _answerK.clone();
+    const Mat l_answerF = _answerF.clone() / 255.0;
     getImageDrawingPrintPoint(&l_answerKDrawing);
-    MY_IMSHOW10(l_C, l_P, l_R, _answerK, _answerF, l_errorOfProjection, l_errorOfEstimateK, l_errorOfEstimateF, l_overP, _CrOfMPC);
+    MY_IMSHOW9(l_C, l_P, l_R, _answerK, l_answerF, l_errorOfProjection, l_errorOfEstimateK, l_errorOfEstimateF, _CrOfMPC);
     Mat l_errorOfMPC = abs(_errorOfMPC);
     MY_IMSHOW3(l_errorOfMPC, _vrC, l_answerKDrawing);
     showKMap();
@@ -1252,11 +1238,17 @@ bool AppearanceEnhancement::showAll(const int _num, const cv::Mat& _captureImage
     showC0Map();
     
     // save (error image only)
-    Mat l_answerK, l_answerF;
+    Mat l_answerK;
     _answerK.convertTo(l_answerK, CV_8UC3, 255.0);
-    _answerF.convertTo(l_answerF, CV_8UC3);
+    l_answerF.convertTo(l_answerF, CV_8UC3);
+    Mat l_C_(l_C.size(), CV_8UC3);
+    l_C.convertTo(l_C_, CV_8UC3);
+    Mat l_P_(l_P.size(), CV_8UC3);
+    l_P.convertTo(l_P_, CV_8UC3);
+    Mat l_desireC(_desireC.size(), CV_8UC3);
+    _desireC.convertTo(l_desireC, CV_8UC3);
     std::ostringstream oss;
-    MY_IMWRITE10(OUTPUT_DATA_PATH, _num, oss, l_C, l_P, l_R, l_errorOfEstimateK, l_errorOfEstimateF, l_errorOfProjection, l_errorOfMPC, _CrOfMPC, _vrC, l_overP);
+    MY_IMWRITE9(OUTPUT_DATA_PATH, _num, oss, l_C_, l_P_, l_desireC, l_errorOfEstimateK, l_errorOfEstimateF, l_errorOfProjection, l_errorOfMPC, _CrOfMPC, _vrC);
     MY_IMWRITE2(OUTPUT_DATA_PATH, _num, oss, l_answerK, l_answerF);
     
     return true;
@@ -1400,6 +1392,7 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
     Mat l_CrOfMPC(l_camSize, CV_64FC3, CV_SCALAR_D_BLACK);
     Mat l_virtualC(l_camSize, CV_64FC3, CV_SCALAR_D_BLACK);
     Mat l_idealC(l_camSize, CV_64FC3, CV_SCALAR_D_BLACK);
+    Mat l_desireC(l_camSize, CV_64FC3, CV_SCALAR_D_BLACK);
     double l_enhanceRate = 1.3, l_alphaMPC = 0.1;
     int l_estTarget = 0, l_enhanceType = 0, l_stopTime = -1;
     double l_startTime = 0, l_endTime = 0, l_fps = 0;
@@ -1461,7 +1454,7 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
         // calc next projection image
         if (isAmanoMode()) {
             if (l_calcNextPrj) {
-                calcNextProjectionImage(&l_projectionImage, &l_errorOfMPC, &l_CrOfMPC, &l_virtualC, l_targetImage, l_targetImageBefore, l_captureImageBefore, l_projectionImageBefore, l_KMap, l_FMap, l_FMapBefore, l_CMax, l_CMin, l_alphaMPC);
+                calcNextProjectionImage(&l_projectionImage, &l_errorOfMPC, &l_CrOfMPC, &l_virtualC, &l_desireC, l_targetImage, l_targetImageBefore, l_captureImageBefore, l_projectionImageBefore, l_KMap, l_FMap, l_FMapBefore, l_CMax, l_CMin, l_alphaMPC);
             } else {
                 l_projectionImage = l_prjColor;
             }
@@ -1477,8 +1470,8 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
             l_target2 *= 255.0;
             
             // calc next projection image
-            calcNextProjectionImage(&l_projectionImage2, &l_errorOfMPC, &l_CrOfMPC, &l_virtualC, l_target1, l_targetImageBefore, l_captureImageBefore, l_projectionImageBefore, l_KMap, l_FMap, l_FMapBefore, l_CMax, l_CMin, l_alphaMPC);
-            calcNextProjectionImage(&l_projectionImageBefore2, &l_errorOfMPC, &l_CrOfMPC, &l_virtualC, l_target2, l_targetImageBefore, l_captureImageBefore, l_projectionImageBefore, l_KMap, l_FMap, l_FMapBefore, l_CMax, l_CMin, l_alphaMPC);
+            calcNextProjectionImage(&l_projectionImage2, &l_errorOfMPC, &l_CrOfMPC, &l_virtualC, &l_desireC, l_target1, l_targetImageBefore, l_captureImageBefore, l_projectionImageBefore, l_KMap, l_FMap, l_FMapBefore, l_CMax, l_CMin, l_alphaMPC);
+            calcNextProjectionImage(&l_projectionImageBefore2, &l_errorOfMPC, &l_CrOfMPC, &l_virtualC, &l_desireC, l_target2, l_targetImageBefore, l_captureImageBefore, l_projectionImageBefore, l_KMap, l_FMap, l_FMapBefore, l_CMax, l_CMin, l_alphaMPC);
             MY_IMSHOW4(l_target1, l_target2, l_projectionImage2, l_projectionImageBefore2);
             
             // projection
@@ -1493,10 +1486,10 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
         
         // save and show
         saveAll(l_frameNum);
-        showAll(l_frameNum, l_captureImage, l_projectionImage, l_targetImage, l_answerK, l_answerF, l_errorOfMPC, l_CrOfMPC, l_virtualC);
+        showAll(l_frameNum, l_captureImage, l_projectionImage, l_desireC, l_answerK, l_answerF, l_errorOfMPC, l_CrOfMPC, l_virtualC);
         
         // evaluate
-        evaluateEstimationAndProjection(l_answerK, l_KMap, l_answerF, l_FMap, l_targetImage, l_captureImage, l_idealC);
+        evaluateEstimationAndProjection(l_answerK, l_KMap, l_answerF, l_FMap, l_targetImage, l_captureImage, l_desireC);
 
         // calc time
         getFps(&l_startTime, &l_endTime, &l_fps);
@@ -1553,9 +1546,14 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
                 break;
             // what control
             case (CV_BUTTON_a):
-                // 現在推定している反射率を正解にする
+                // 現在推定している反射率と環境光を正解にする
                 cout << "l_answerK = l_KMap, l_answerF = l_FMap" << endl;
                 l_answerK = l_KMap.clone();
+                l_answerF = l_FMap.clone();
+                break;
+            case (CV_BUTTON_A):
+                // 現在推定している環境光を正解にする
+                cout << "l_answerF = l_FMap" << endl;
                 l_answerF = l_FMap.clone();
                 break;
             case (CV_BUTTON_e):
@@ -1567,24 +1565,28 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
                 _print(l_enhanceRate);
                 break;
             case (CV_BUTTON_UP):
-                l_alphaMPC += 0.1;
-                _print(l_alphaMPC);
+                if (l_calcNextPrj) {
+                    l_alphaMPC += 0.1;
+                    _print(l_alphaMPC);
+                } else {
+                    l_prjLuminance = std::min(l_prjLuminance + 10, 255.0);
+                    _print(l_prjLuminance);
+                }
                 break;
             case (CV_BUTTON_DOWN):
-                l_alphaMPC -= 0.1;
-                _print(l_alphaMPC);
+                if (l_calcNextPrj) {
+                    l_alphaMPC -= 0.1;
+                    _print(l_alphaMPC);
+                } else {
+                    l_prjLuminance = std::min(l_prjLuminance - 10, 255.0);
+                    _print(l_prjLuminance);
+                }
                 break;
             case (CV_BUTTON_RIGHT):
-//                prj = std::min(prj + 10, 255);
-//                _print2(prj, prj2);
-//                l_projectionImage2 = Mat(l_camSize, CV_8UC3, Scalar(prj, prj, prj));
                 l_prjLuminance = std::min(l_prjLuminance + 50, 255.0);
                 _print(l_prjLuminance);
                 break;
             case (CV_BUTTON_LEFT):
-//                prj = std::max(prj - 10, 0);
-//                _print2(prj, prj2);
-//                l_projectionImage2 = Mat(l_camSize, CV_8UC3, Scalar(prj, prj, prj));
                 l_prjLuminance = std::max(l_prjLuminance - 50, 0.0);
                 _print(l_prjLuminance);
                 break;
