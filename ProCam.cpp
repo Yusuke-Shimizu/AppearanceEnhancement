@@ -1244,7 +1244,7 @@ bool ProCam::colorCalibration3(const bool _denoisingFlag){
     
     int i = 0;
     vector<Mat> l_vecCapImg;
-    while (true) {
+//    while (true) {
         for (vector<Vec3b>::const_iterator l_itr = l_vecPrjColor.begin();
              l_itr != l_vecPrjColor.end();
              ++ l_itr, ++ i) {
@@ -1258,12 +1258,12 @@ bool ProCam::colorCalibration3(const bool _denoisingFlag){
             imshow(oss.str().c_str(), l_capImg);
         }
         
-        if (yes_no()) {
-            break;
-        } else {
-            l_vecCapImg.clear();
-        }
-    }
+//        if (yes_no()) {
+//            break;
+//        } else {
+//            l_vecCapImg.clear();
+//        }
+//    }
     
     // get vec C
     const double rate = 1.0 / 255.0;

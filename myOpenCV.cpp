@@ -474,6 +474,26 @@ void printVideoPropaty(cv::VideoCapture& _video){
     std::cout << "CV_CAP_PROP_RECTIFICATION = " << _video.get(CV_CAP_PROP_RECTIFICATION) << std::endl;
 }
 
+///////////////////////////////  save method ///////////////////////////////
+bool saveAndShowImage(const std::string& _wname, const cv::Mat& _image, const int _type){
+    imshow(_wname, _image);
+    
+    Mat l_image = _image.clone();
+    switch (_type) {
+        case CV_8UC3:
+            break;
+        case CV_64FC3:
+            l_image.convertTo(l_image, CV_8UC3, 255);
+            break;
+        default:
+            _print(_type);
+            return false;
+    }
+    string l_fileName = _wname + ".png";
+    imwrite(l_fileName, l_image);
+    return true;
+}
+
 ///////////////////////////////  init method ///////////////////////////////
 // Pointの初期化
 void initPoint(cv::Point* const p, const int size){

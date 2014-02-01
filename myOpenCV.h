@@ -291,6 +291,18 @@ void printPropatyOfDiffImage(const cv::Mat& _m1, const cv::Mat& _m2, const doubl
 #define _print_diff_mat_content_propaty(rate, mat1, mat2) _print_mat_content_propaty2(rate, mat1, mat2);std::cout<<#mat1<<" - "<<#mat2<<std::endl;printPropatyOfDiffImage(mat1, mat2, rate)
 void printOpenCVVersion(void);
 void printVideoPropaty(cv::VideoCapture& _video);
+///////////////////////////////  save method ///////////////////////////////
+bool saveAndShowImage(const std::string& _wname, const cv::Mat& _image, const int _type);
+#define _save_show_image1(type, m1) saveAndShowImage(#m1, m1, type)
+#define _save_show_image2(type, m1, m2) _save_show_image1(type, m1);_save_show_image1(type, m2)
+#define _save_show_image3(type, m1, m2, m3) _save_show_image1(type, m1);_save_show_image2(type, m2, m3)
+#define _save_show_image4(type, m1, m2, m3, m4) _save_show_image1(type, m1);_save_show_image3(type, m2, m3, m4)
+#define _save_show_image5(type, m1, m2, m3, m4, m5) _save_show_image1(type, m1);_save_show_image4(type, m2, m3, m4, m5)
+#define _save_show_image6(type, m1, m2, m3, m4, m5, m6) _save_show_image1(type, m1);_save_show_image5(type, m2, m3, m4, m5, m6)
+#define _save_show_image7(type, m1, m2, m3, m4, m5, m6, m7) _save_show_image1(type, m1);_save_show_image6(type, m2, m3, m4, m5, m6, m7)
+#define _save_show_image8(type, m1, m2, m3, m4, m5, m6, m7, m8) _save_show_image1(type, m1);_save_show_image7(type, m2, m3, m4, m5, m6, m7, m8)
+#define _save_show_image9(type, m1, m2, m3, m4, m5, m6, m7, m8, m9) _save_show_image1(type, m1);_save_show_image8(type, m2, m3, m4, m5, m6, m7, m8, m9)
+#define _save_show_image10(type, m1, m2, m3, m4, m5, m6, m7, m8, m9, m10) _save_show_image1(type, m1);_save_show_image9(type, m2, m3, m4, m5, m6, m7, m8, m9, m10)
 ///////////////////////////////  init method ///////////////////////////////
 void initPoint(cv::Point* const p, const int size);
 void initMat(cv::Mat* const _aMat, const int _size);

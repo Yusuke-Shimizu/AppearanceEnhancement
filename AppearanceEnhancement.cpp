@@ -1014,11 +1014,13 @@ bool AppearanceEnhancement::estimateKFByAmanoModel(const cv::Mat& _P1, const cv:
     const Mat l_C1d = l_C1.clone() / 255.0;
     const Mat l_C2d = l_C2.clone() / 255.0;
     MY_IMSHOW2(l_C1d, l_C2d);
+    Mat l_C1b = l_C1.clone(), l_C2b = l_C2.clone();
+    l_C1.convertTo(l_C1b, CV_8UC3);
+    l_C2.convertTo(l_C2b, CV_8UC3);
+    imwrite("./data/l_C1.png", l_C1b);
+    imwrite("./data/l_C2.png", l_C2b);
     
     estimateKFByAmanoModel(_P1, _P2, l_C1, l_C2);
-    
-    //    evaluateEstimate(l_C1, _P1, 1);
-    //    evaluateEstimate(l_C2, _P2, 2);
     
     return true;
 }
@@ -1167,14 +1169,14 @@ bool AppearanceEnhancement::evaluateEstimationAndProjection(const cv::Mat& _ansK
     const double l_rate = 0.1;
     // error of estimated K
     _print_diff_mat_content_propaty(l_rate, _ansK, _estK);
-    
+
     // error of estimated F
     const Mat l_nEstF = _estF.clone() / 255.0;
     const Mat l_nAnsF = _ansF.clone() / 255.0;
     _print_diff_mat_content_propaty(l_rate, l_nEstF, l_nAnsF);
     
     // error of project
-    const Mat l_nDesire = _desireC.clone() / 255.0;
+    const Mat l_nDesire = _desireC.clone();
     const Mat l_nResult = _captureImage.clone() / 255.0;
     _print_diff_mat_content_propaty(l_rate, l_nDesire, l_nResult);
     
@@ -1205,15 +1207,12 @@ bool AppearanceEnhancement::showC0Map(void){
     MY_IMSHOW(l_C0);
     return true;
 }
-bool AppearanceEnhancement::showAll(const int _num, const cv::Mat& _captureImage, const cv::Mat& _projectionImage, const cv::Mat& _desireC, const cv::Mat& _answerK, const cv::Mat& _answerF, const cv::Mat& _errorOfMPC, const cv::Mat& _CrOfMPC, const cv::Mat& _vrC){
-    const Mat l_C = _captureImage / 255.0;
-    Mat l_P = _projectionImage.clone();
-    l_P.convertTo(l_P, CV_64FC3, 1.0/255.0);
-    const Mat l_R = _desireC / 255.0;
+bool AppearanceEnhancement::showAll(const int _num, const cv::Mat& _C, const cv::Mat& _P, const cv::Mat& _desireC, const cv::Mat& _answerK, const cv::Mat& _answerF, const cv::Mat& _errorOfMPC, const cv::Mat& _CrOfMPC, const cv::Mat& _vrC){
+    const Mat l_C = _C.clone() / 255.0;
     
     // create error image
-    Mat l_errorOfProjection = l_R.clone();
-    absdiff(l_R, l_C, l_errorOfProjection);
+    Mat l_errorOfProjection = l_C.clone();
+    absdiff(_desireC, l_C, l_errorOfProjection);
     const Mat l_estimatedK = getKMap();
     Mat l_errorOfEstimateK = _answerK.clone();
     absdiff(_answerK, l_estimatedK, l_errorOfEstimateK);
@@ -1227,9 +1226,9 @@ bool AppearanceEnhancement::showAll(const int _num, const cv::Mat& _captureImage
     l_errorOfEstimateK.convertTo(l_errorOfEstimateK, CV_8UC3, 255);
     l_errorOfEstimateF.convertTo(l_errorOfEstimateF, CV_8UC3);
     Mat l_answerKDrawing = _answerK.clone();
-    const Mat l_answerF = _answerF.clone() / 255.0;
+    Mat l_answerF = _answerF.clone() / 255.0;
     getImageDrawingPrintPoint(&l_answerKDrawing);
-    MY_IMSHOW9(l_C, l_P, l_R, _answerK, l_answerF, l_errorOfProjection, l_errorOfEstimateK, l_errorOfEstimateF, _CrOfMPC);
+    MY_IMSHOW9(l_C, _P, _desireC, _answerK, l_answerF, l_errorOfProjection, l_errorOfEstimateK, l_errorOfEstimateF, _CrOfMPC);
     Mat l_errorOfMPC = abs(_errorOfMPC);
     MY_IMSHOW3(l_errorOfMPC, _vrC, l_answerKDrawing);
     showKMap();
@@ -1242,13 +1241,13 @@ bool AppearanceEnhancement::showAll(const int _num, const cv::Mat& _captureImage
     _answerK.convertTo(l_answerK, CV_8UC3, 255.0);
     l_answerF.convertTo(l_answerF, CV_8UC3);
     Mat l_C_(l_C.size(), CV_8UC3);
-    l_C.convertTo(l_C_, CV_8UC3);
-    Mat l_P_(l_P.size(), CV_8UC3);
-    l_P.convertTo(l_P_, CV_8UC3);
+    l_C.convertTo(l_C_, CV_8UC3, 255);
+//    Mat l_P_(l_P.size(), CV_8UC3);
+//    l_P.convertTo(l_P_, CV_8UC3);
     Mat l_desireC(_desireC.size(), CV_8UC3);
-    _desireC.convertTo(l_desireC, CV_8UC3);
+    _desireC.convertTo(l_desireC, CV_8UC3, 255);
     std::ostringstream oss;
-    MY_IMWRITE9(OUTPUT_DATA_PATH, _num, oss, l_C_, l_P_, l_desireC, l_errorOfEstimateK, l_errorOfEstimateF, l_errorOfProjection, l_errorOfMPC, _CrOfMPC, _vrC);
+    MY_IMWRITE9(OUTPUT_DATA_PATH, _num, oss, l_C_, _P, l_desireC, l_errorOfEstimateK, l_errorOfEstimateF, l_errorOfProjection, l_errorOfMPC, _CrOfMPC, _vrC);
     MY_IMWRITE2(OUTPUT_DATA_PATH, _num, oss, l_answerK, l_answerF);
     
     return true;
@@ -1398,8 +1397,8 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
     double l_startTime = 0, l_endTime = 0, l_fps = 0;
     int l_frameNum = 0;
     bool l_calcNextPrj = true;
-    Scalar l_prjColor = CV_SCALAR_WHITE, l_currentColor = CV_SCALAR_D_WHITE;
-    double l_prjLuminance = 255.0;
+    Scalar l_prjColor = CV_SCALAR_WHITE, l_currentColor = CV_SCALAR_D_WHITE, l_prjColor2 = CV_SCALAR_BLACK;
+    double l_prjLuminance = 255.0, l_prjLuminance2 = 0.0;
     double l_divideSize = 10, l_divideRate = 1.0;
     
     // init
@@ -1413,6 +1412,7 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
         // estimate
         const Mat l_KMapBefore = getKMap(), l_FMapBefore = getFMap();
         l_prjColor = l_currentColor * l_prjLuminance;
+        l_prjColor2 = l_currentColor * l_prjLuminance2;
         switch (l_estTarget) {
             case 0:
                 cout << "estimate K" << endl;
@@ -1426,6 +1426,7 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
                 cout << "estimate K and F by Amano model" << endl;
                 if (!l_calcNextPrj) {
                     l_projectionImage2 = l_prjColor;
+                    l_projectionImageBefore2 = l_prjColor2;
                 }
                 estimateKFByAmanoModel(l_projectionImage2, l_projectionImageBefore2);
                 break;
@@ -1569,8 +1570,8 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
                     l_alphaMPC += 0.1;
                     _print(l_alphaMPC);
                 } else {
-                    l_prjLuminance = std::min(l_prjLuminance + 10, 255.0);
-                    _print(l_prjLuminance);
+                    l_prjLuminance2 = std::min(l_prjLuminance2 + 50, 255.0);
+                    _print(l_prjLuminance2);
                 }
                 break;
             case (CV_BUTTON_DOWN):
@@ -1578,8 +1579,8 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
                     l_alphaMPC -= 0.1;
                     _print(l_alphaMPC);
                 } else {
-                    l_prjLuminance = std::min(l_prjLuminance - 10, 255.0);
-                    _print(l_prjLuminance);
+                    l_prjLuminance2 = std::min(l_prjLuminance2 - 50, 255.0);
+                    _print(l_prjLuminance2);
                 }
                 break;
             case (CV_BUTTON_RIGHT):
