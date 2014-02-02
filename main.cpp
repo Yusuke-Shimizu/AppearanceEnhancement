@@ -40,7 +40,7 @@ void mfunc(int event, int x, int y, int flags, void  *param){
 	mparam->y = y;
 	mparam->event = event;
 	mparam->flags = flags;
-    
+    std::vector<Scalar> l_vMean;
     switch (event) {
         case 1:
             mparam->start = Point(x, y);
@@ -54,10 +54,19 @@ void mfunc(int event, int x, int y, int flags, void  *param){
                 Mat part = (*itr)(Range(mparam->start.y, mparam->end.y), Range(mparam->start.x, mparam->end.x));
                 Scalar l_mean, l_stddev;
                 meanStdDev(part, l_mean, l_stddev);
-                cout<<l_mean;
+//                cout<<l_mean;
+                l_vMean.push_back(l_mean);
+            }
+//            cout<<endl;
+            for (int c = 0; c < 3; ++ c) {
+                for (vector<Scalar>::const_iterator itr = l_vMean.begin();
+                     itr != l_vMean.end();
+                     ++ itr) {
+                    const Scalar l_meanItr(*itr);
+                    cout<<l_meanItr[c]<<"\t";
+                }
             }
             cout<<endl;
-            
             
             break;
         default:
@@ -70,22 +79,31 @@ int main(int argc, const char * argv[])
 {
 #ifdef MAC
     std::vector<cv::Mat> imgV;
-    imgV.push_back(imread("./img/project/onlyK/l_K9.png"));
-    imgV.push_back(imread("./img/project/onlyK/l_errorOfProjection9.png"));
-    imgV.push_back(imread("./img/project/onlyK/l_C_9.png"));
-    imgV.push_back(imread("./img/project/onlyK/l_desireC9.png"));
+    imgV.push_back(imread("./img/estimateK/prj0/l_answerK139.png"));
+    imgV.push_back(imread("./img/estimateK/prj0/l_K139.png"));
+    imgV.push_back(imread("./img/estimateK/prj0/l_errorOfEstimateK139.png"));
+    imgV.push_back(imread("./img/estimateK/prj0/l_answerF139.png"));
+    imgV.push_back(imread("./img/estimateK/prj0/l_F139.png"));
+    imgV.push_back(imread("./img/estimateK/prj0/l_errorOfEstimateF139.png"));
+//    imgV.push_back(imread("./img/project/changeBoth/l_C_116.png"));
+    imgV.push_back(imread("./img/estimateK/prj0/l_C_139.png"));
+    imgV.push_back(imread("./img/estimateK/prj0/l_desireC139.png"));
+    imgV.push_back(imread("./img/estimateK/prj0/l_errorOfProjection139.png"));
+    imgV.push_back(imread("./img/estimateK/prj0/_P139.png"));
+//    imgV.push_back(imread("./img/estimateK/prj0/l_C1.png"));
+//    imgV.push_back(imread("./img/estimateK/prj0/l_C2.png"));
+//    imgV.push_back(imread("./img/estimateK/prj0/l_errorOfMPC139.png"));
+    imgV.push_back(imread("./img/estimateK/prj0/_vrC139.png"));
+    imgV.push_back(imread("./img/estimateK/prj0/_CrOfMPC139.png"));
     
-    imgV.push_back(imread("./img/project/both/changeK/l_K12.png"));
-    imgV.push_back(imread("./img/project/both/changeK/l_errorOfProjection12.png"));
-    imgV.push_back(imread("./img/project/both/changeK/l_C_12.png"));
-    imgV.push_back(imread("./img/project/both/changeK/l_desireC12.png"));
+    // bgr -> lab
+//    for (vector<Mat>::iterator itr = imgV.begin();
+//         itr != imgV.end();
+//         ++ itr) {
+//        cvtColor(*itr, *itr, CV_BGR2HSV);
+//    }
     
-    imgV.push_back(imread("./img/project/both/changeBoth/l_K13.png"));
-    imgV.push_back(imread("./img/project/both/changeBoth/l_errorOfProjection13.png"));
-    imgV.push_back(imread("./img/project/both/changeBoth/l_C_13.png"));
-    imgV.push_back(imread("./img/project/both/changeBoth/l_desireC13.png"));
-    imgV.push_back(imread("./img/project/both/changeBoth/l_F13.png"));
-    
+    // 8bit -> 64bit
     for (vector<Mat>::iterator itr = imgV.begin();
          itr != imgV.end();
          ++ itr) {

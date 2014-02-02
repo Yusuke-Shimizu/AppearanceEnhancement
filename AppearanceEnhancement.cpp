@@ -531,11 +531,10 @@ bool AppearanceEnhancement::calcTargetImage(cv::Mat* const _desireK, cv::Mat* co
     if (_desireFType == 0) {
         *_desireF = _estF;
     } else {
-        Mat l_max;
-        reduce(_estF, l_max, 0, CV_REDUCE_MAX);
-        reduce(l_max, l_max, 1, CV_REDUCE_MAX);
-        const Vec3d l_maxVec = l_max.at<Vec3d>(0, 0);
-        const double l_lum = std::max(std::max(l_maxVec[0], l_maxVec[1]), l_maxVec[2]);
+        Scalar l_mean, l_stddev;
+        meanStdDev(_estF, l_mean, l_stddev);
+        const Scalar l_max = l_mean + l_stddev;
+        const double l_lum = std::max(l_max[0], std::max(l_max[1], l_max[2]));
         *_desireF = Scalar(l_lum, l_lum, l_lum);
     }
     return true;
@@ -668,18 +667,21 @@ bool AppearanceEnhancement::test_calcNextProjectionImage(const cv::Mat& _answerK
 
 bool AppearanceEnhancement::calcNextProjectionImageAtPixel(uchar* const _nextP, double* const _error, double* const _Cr, double* const _vrC, double* const _desireC, const double& _desireK, const double& _desireKBefore, const double& _desireF, const double& _C, const double& _P, const double& _estK, const double& _estF, const double& _FBefore, const double& _CMax, const double& _CMin, const double& _PMax, const double& _PMin, const double& _alpha){
     // calculation
-    const double l_interP = (_P - _PMin) / (_PMax - _PMin);
-    const double l_interC = (_CMax - _CMin) * l_interP + _CMin + _estF;
     const double l_baseP = 0.5;
-    const double l_interBaseP = (l_baseP - _PMin) / (_PMax - _PMin);
-    const double l_idealBaseC = (_CMax - _CMin) * l_interBaseP + _CMin + _estF;
-    *_desireC = _desireK * l_idealBaseC;
     const double l_Trate = (_CMax - _CMin) / (_PMax - _PMin);
     const double l_Tdiff = _CMin - _PMin * l_Trate;
     
     double l_nNextP =
 //    _PMin + _desireK * (l_baseP - _PMin) / _estK + (_PMax - _PMin) * (_CMin + _estF) * (1 + _desireK / _estK) / (_CMax - _CMin);
     ((l_baseP * l_Trate + l_Tdiff + _desireF) * _desireK - (_estF + l_Tdiff) *_estK) / (l_Trate * _estK);
+    
+    // output
+    const double l_interBaseP = (l_baseP - _PMin) / (_PMax - _PMin);
+    const double l_idealBaseC = (_CMax - _CMin) * l_interBaseP + _CMin + _desireF;
+    *_desireC = _desireK * l_idealBaseC;
+
+    const double l_interP = (_P - _PMin) / (_PMax - _PMin);
+    const double l_interC = (_CMax - _CMin) * l_interP + _CMin + _estF;
     *_vrC = _estK * l_interC;
     *_error = _C - *_vrC;
     *_Cr = _alpha * _C + (1 - _alpha) * _desireK;
@@ -761,10 +763,14 @@ bool AppearanceEnhancement::calcReflectanceAndAmbientLightAtPixel(double* const 
     *_K = 1 / l_nKF.at<double>(0, 0);
     // F
     double l_nRoundF = l_nKF.at<double>(1, 0);
+    bool l_printFlag = false;
+    if (l_nRoundF > 3 || l_nRoundF < -3) {
+        l_printFlag = true;
+    }
 //    round0to1(&l_nRoundF);
     *_F = l_nRoundF * 255.0;
     
-    if (_printFlag) {
+    if (_printFlag || l_printFlag) {
         cout << l_nKF<<" = "<<l_C12<<".inv() * "<<l_P12<<" * "<<l_mCPmm << endl;
         _print2(*_K, *_F);
         _print_bar;
@@ -1245,6 +1251,7 @@ bool AppearanceEnhancement::showAll(const int _num, const cv::Mat& _C, const cv:
     getImageDrawingPrintPoint(&l_answerKDrawing);
     MY_IMSHOW9(l_C, _P, _desireC, _answerK, l_answerF, l_errorOfProjection, l_errorOfEstimateK, l_errorOfEstimateF, _CrOfMPC);
     Mat l_errorOfMPC = abs(_errorOfMPC);
+    l_errorOfProjection.convertTo(l_errorOfMPC, CV_8UC3, 255);
     MY_IMSHOW3(l_errorOfMPC, _vrC, l_answerKDrawing);
     showKMap();
     showFMap();
