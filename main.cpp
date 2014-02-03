@@ -79,22 +79,29 @@ int main(int argc, const char * argv[])
 {
 #ifdef MAC
     std::vector<cv::Mat> imgV;
-    imgV.push_back(imread("./img/estimateK/prj0/l_answerK139.png"));
-    imgV.push_back(imread("./img/estimateK/prj0/l_K139.png"));
-    imgV.push_back(imread("./img/estimateK/prj0/l_errorOfEstimateK139.png"));
-    imgV.push_back(imread("./img/estimateK/prj0/l_answerF139.png"));
-    imgV.push_back(imread("./img/estimateK/prj0/l_F139.png"));
-    imgV.push_back(imread("./img/estimateK/prj0/l_errorOfEstimateF139.png"));
-//    imgV.push_back(imread("./img/project/changeBoth/l_C_116.png"));
-    imgV.push_back(imread("./img/estimateK/prj0/l_C_139.png"));
-    imgV.push_back(imread("./img/estimateK/prj0/l_desireC139.png"));
-    imgV.push_back(imread("./img/estimateK/prj0/l_errorOfProjection139.png"));
-    imgV.push_back(imread("./img/estimateK/prj0/_P139.png"));
-//    imgV.push_back(imread("./img/estimateK/prj0/l_C1.png"));
-//    imgV.push_back(imread("./img/estimateK/prj0/l_C2.png"));
-//    imgV.push_back(imread("./img/estimateK/prj0/l_errorOfMPC139.png"));
-    imgV.push_back(imread("./img/estimateK/prj0/_vrC139.png"));
-    imgV.push_back(imread("./img/estimateK/prj0/_CrOfMPC139.png"));
+//    imgV.push_back(imread("./img/estimateK/prj0/l_answerK139.png"));
+//    imgV.push_back(imread("./img/estimateK/prj0/l_K139.png"));
+//    imgV.push_back(imread("./img/estimateK/prj0/l_errorOfEstimateK139.png"));
+//    imgV.push_back(imread("./img/estimateK/prj0/l_answerF139.png"));
+//    imgV.push_back(imread("./img/estimateK/prj0/l_F139.png"));
+//    imgV.push_back(imread("./img/estimateK/prj0/l_errorOfEstimateF139.png"));
+////    imgV.push_back(imread("./img/project/changeBoth/l_C_116.png"));
+//    imgV.push_back(imread("./img/estimateK/prj0/l_C_139.png"));
+//    imgV.push_back(imread("./img/estimateK/prj0/l_desireC139.png"));
+//    imgV.push_back(imread("./img/estimateK/prj0/l_errorOfProjection139.png"));
+//    imgV.push_back(imread("./img/estimateK/prj0/_P139.png"));
+////    imgV.push_back(imread("./img/estimateK/prj0/l_C1.png"));
+////    imgV.push_back(imread("./img/estimateK/prj0/l_C2.png"));
+////    imgV.push_back(imread("./img/estimateK/prj0/l_errorOfMPC139.png"));
+//    imgV.push_back(imread("./img/estimateK/prj0/_vrC139.png"));
+//    imgV.push_back(imread("./img/estimateK/prj0/_CrOfMPC139.png"));
+    imgV.push_back(imread("./img/estimateF/l_answerF.png"));
+    imgV.push_back(imread("./img/estimateF/l_errorOfEstimateF000.png"));
+    imgV.push_back(imread("./img/estimateF/l_errorOfEstimateF050.png"));
+    imgV.push_back(imread("./img/estimateF/l_errorOfEstimateF100.png"));
+    imgV.push_back(imread("./img/estimateF/l_errorOfEstimateF150.png"));
+    imgV.push_back(imread("./img/estimateF/l_errorOfEstimateF200.png"));
+    imgV.push_back(imread("./img/estimateF/l_errorOfEstimateF250.png"));
     
     // bgr -> lab
 //    for (vector<Mat>::iterator itr = imgV.begin();

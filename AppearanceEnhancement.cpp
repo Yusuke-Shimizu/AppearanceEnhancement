@@ -1496,10 +1496,33 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
             calcNextProjectionImage(&l_projectionImageBefore2, &l_errorOfMPC, &l_CrOfMPC, &l_virtualC, &l_desireC, l_target2, l_desireKBefore, l_desireF, l_captureImageBefore, l_projectionImageBefore, l_KMap, l_FMap, l_FMapBefore, l_CMax, l_CMin, l_alphaMPC);
             MY_IMSHOW4(l_target1, l_target2, l_projectionImage2, l_projectionImageBefore2);
             
+            // make projection color(after geometric calibration and linearize)
+            // geometric translate
+            const Size l_prjSize = l_procam->getProjectorSize_();
+            Mat l_projectionImageOnProjectorSpace1(l_prjSize, CV_8UC3, Scalar(0, 0, 0));
+            Mat l_projectionImageOnProjectorSpace2(l_prjSize, CV_8UC3, Scalar(0, 0, 0));
+            l_procam->convertProjectorDomainToCameraOne(&l_projectionImageOnProjectorSpace1, l_projectionImage2);
+            l_procam->convertProjectorDomainToCameraOne(&l_projectionImageOnProjectorSpace2, l_projectionImageBefore2);
+            
+            // linearize
+            Mat l_linearProjectionImage1(l_projectionImageOnProjectorSpace1.size(), CV_8UC3, Scalar(0, 0, 0));
+            Mat l_linearProjectionImage2(l_projectionImageOnProjectorSpace2.size(), CV_8UC3, Scalar(0, 0, 0));
+            
+            // non linear image -> linear one
+            // Pointの値を変えて，線形化LUTの参照ポイントを変更可能
+            l_procam->convertPtoI(&l_linearProjectionImage1, l_projectionImageOnProjectorSpace1);
+            l_procam->convertPtoI(&l_linearProjectionImage2, l_projectionImageOnProjectorSpace2);
+
+            
             // projection
             while (true) {
-                l_procam->captureOfProjecctorColorFromLinearLightOnProjectorDomain(&l_captureImage, l_projectionImage2);
-                l_procam->captureOfProjecctorColorFromLinearLightOnProjectorDomain(&l_captureImage, l_projectionImageBefore2);
+//                l_procam->captureOfProjecctorColorFromLinearLightOnProjectorDomain(&l_captureImage, l_projectionImage2);
+//                l_procam->captureOfProjecctorColorFromLinearLightOnProjectorDomain(&l_captureImage, l_projectionImageBefore2);
+                imshow(WINDOW_NAME, l_linearProjectionImage1);
+//                cvMoveWindow(WINDOW_NAME, POSITION_OF_PROJECTION_IMAGE.x, POSITION_OF_PROJECTION_IMAGE.y);
+                cv::waitKey(30);
+                imshow(WINDOW_NAME, l_linearProjectionImage2);
+
                 if (waitKey(30) == CV_BUTTON_DELETE) {
                     break;
                 }
@@ -1735,8 +1758,10 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
 //                l_projectionImage = Mat(l_camSize, CV_8UC3, CV_SCALAR_WHITE);
 //                l_projectionImage = Scalar(g_maxPrjLuminance);
                 l_projectionImage = Scalar(125, 125, 125);
-                l_projectionImage2 = Scalar(g_maxPrjLuminance);
-                l_projectionImageBefore2 = Scalar(g_minPrjLuminance);
+//                l_projectionImage2 = Scalar(g_maxPrjLuminance);
+//                l_projectionImageBefore2 = Scalar(g_minPrjLuminance);
+                l_projectionImage2 = Scalar(200, 200, 200);
+                l_projectionImageBefore2 = Scalar(50, 50, 50);
                 l_procam->captureOfProjecctorColorFromLinearLightOnProjectorDomain(&l_captureImage, l_projectionImage, l_bDenoise);
 //                l_targetImage = Mat(l_camSize, CV_64FC3, CV_SCALAR_WHITE);
                 l_desireK = CV_SCALAR_D_WHITE;
