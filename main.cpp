@@ -74,35 +74,81 @@ void mfunc(int event, int x, int y, int flags, void  *param){
     }
 }
 
+bool divideImage2_(cv::Mat* const _dst1, cv::Mat* const _dst2, const cv::Mat& _src, const cv::Scalar& _distance){
+    Mat l_srcRGB, l_srcLab;
+    _src.convertTo(l_srcRGB, CV_32FC3);
+    cv::cvtColor(l_srcRGB, l_srcLab, CV_BGR2Lab);
+    l_srcLab += _distance;
+    Mat l_dstRGB1, l_dstRGB2 = l_srcRGB.clone();
+    cv::cvtColor(l_srcLab, l_dstRGB1, CV_Lab2BGR);
+    l_dstRGB2 += l_srcRGB - l_dstRGB1;
+    
+    l_dstRGB1.convertTo(*_dst1, CV_64FC3);
+    l_dstRGB2.convertTo(*_dst2, CV_64FC3);
+    return true;
+}
+bool divideImage2_(cv::Mat* const _dst1, cv::Mat* const _dst2, const cv::Mat& _src, const double& _distance=10){
+    //    return divideImage2_(_dst1, _dst2, _src, Scalar(0, _distance, _distance));
+    return divideImage2_(_dst1, _dst2, _src, Scalar(_distance, _distance, _distance));
+}
+// rgbで変化させる
+bool divideImage3_(cv::Mat* const _dst1, cv::Mat* const _dst2, const cv::Mat& _src, const cv::Scalar& _rate){
+    int rows = _src.rows, cols = _src.cols;
+    double l_diff = 0;
+    if (isContinuous(*_dst1, *_dst2, _src)) {
+        cols *= rows;
+        rows = 1;
+    }
+    for (int y = 0; y < rows; ++ y) {
+        Vec3d* l_pDst1 = _dst1->ptr<Vec3d>(y);
+        Vec3d* l_pDst2 = _dst2->ptr<Vec3d>(y);
+        const Vec3d* l_pSrc = _src.ptr<Vec3d>(y);
+        
+        for (int x = 0; x < cols; ++ x) {
+            for (int c = 0; c < 3; ++ c) {
+                double l_srcNum = l_pSrc[x][c];
+                l_diff = (std::min(l_srcNum, 1.0 - l_srcNum)) * _rate[c];
+                l_pDst1[x][c] = l_srcNum + l_diff;
+                l_pDst2[x][c] = l_srcNum - l_diff;
+            }
+        }
+    }
+    return true;
+}
+bool divideImage3_(cv::Mat* const _dst1, cv::Mat* const _dst2, const cv::Mat& _src, const double& _rate = 1.0){
+    return divideImage3_(_dst1, _dst2, _src, Scalar(_rate, _rate, _rate));
+}
 // main method
 int main(int argc, const char * argv[])
 {
 #ifdef MAC
     std::vector<cv::Mat> imgV;
-//    imgV.push_back(imread("./img/estimateK/prj0/l_answerK139.png"));
-//    imgV.push_back(imread("./img/estimateK/prj0/l_K139.png"));
-//    imgV.push_back(imread("./img/estimateK/prj0/l_errorOfEstimateK139.png"));
-//    imgV.push_back(imread("./img/estimateK/prj0/l_answerF139.png"));
-//    imgV.push_back(imread("./img/estimateK/prj0/l_F139.png"));
-//    imgV.push_back(imread("./img/estimateK/prj0/l_errorOfEstimateF139.png"));
-////    imgV.push_back(imread("./img/project/changeBoth/l_C_116.png"));
-//    imgV.push_back(imread("./img/estimateK/prj0/l_C_139.png"));
-//    imgV.push_back(imread("./img/estimateK/prj0/l_desireC139.png"));
-//    imgV.push_back(imread("./img/estimateK/prj0/l_errorOfProjection139.png"));
-//    imgV.push_back(imread("./img/estimateK/prj0/_P139.png"));
-////    imgV.push_back(imread("./img/estimateK/prj0/l_C1.png"));
-////    imgV.push_back(imread("./img/estimateK/prj0/l_C2.png"));
-////    imgV.push_back(imread("./img/estimateK/prj0/l_errorOfMPC139.png"));
-//    imgV.push_back(imread("./img/estimateK/prj0/_vrC139.png"));
-//    imgV.push_back(imread("./img/estimateK/prj0/_CrOfMPC139.png"));
-    imgV.push_back(imread("./img/estimateF/l_answerF.png"));
-    imgV.push_back(imread("./img/estimateF/l_errorOfEstimateF000.png"));
-    imgV.push_back(imread("./img/estimateF/l_errorOfEstimateF050.png"));
-    imgV.push_back(imread("./img/estimateF/l_errorOfEstimateF100.png"));
-    imgV.push_back(imread("./img/estimateF/l_errorOfEstimateF150.png"));
-    imgV.push_back(imread("./img/estimateF/l_errorOfEstimateF200.png"));
-    imgV.push_back(imread("./img/estimateF/l_errorOfEstimateF250.png"));
+    imgV.push_back(imread("./img/estimateKF/divide/02/mono/l_answerK.png"));
+    imgV.push_back(imread("./img/estimateKF/divide/02/mono/l_errorOfEstimateK.png"));
+    imgV.push_back(imread("./img/estimateKF/divide/02/mono/l_errorOfEstimateF.png"));
+    imgV.push_back(imread("./img/estimateKF/divide/02/compensation/l_errorOfEstimateK.png"));
+    imgV.push_back(imread("./img/estimateKF/divide/02/compensation/l_errorOfEstimateF.png"));
     
+    Mat l_image = imread("./img/picture.JPG");
+    const float l_rate = -0.7;
+    l_image.convertTo(l_image, CV_32FC3, 1.0 / 255.0);
+    Mat l_imageProcess(l_image.size(), l_image.type(), 0);
+    cvtColor(l_image, l_imageProcess, CV_BGR2HSV);
+    for (int y = 0; y < l_imageProcess.rows; ++ y) {
+        Vec3f* l_pImg = l_imageProcess.ptr<Vec3f>(y);
+        for (int x = 0; x < l_imageProcess.cols; ++ x) {
+            float l_base = 0;
+            if (l_rate > 0) {
+                l_base = 255.0;
+            }
+            l_pImg[x][0] = l_pImg[x][0] * l_rate + (1 - l_rate) * l_base;
+        }
+    }
+    Mat l_image2(l_image.size(), l_image.type(), 0);
+    cvtColor(l_imageProcess, l_image2, CV_HSV2BGR);
+    
+    MY_IMSHOW2(l_image, l_image2);
+    MY_WAIT_KEY();
     // bgr -> lab
 //    for (vector<Mat>::iterator itr = imgV.begin();
 //         itr != imgV.end();
@@ -116,7 +162,7 @@ int main(int argc, const char * argv[])
          ++ itr) {
         itr->convertTo(*itr, CV_64FC3, 1.0 / 255.0);
     }
-
+    
     MouseParam mparam;
 	mparam.x = 0; mparam.y = 0; mparam.event = 0; mparam.flags = 0;
     mparam.image = &imgV[0]; mparam.color = Vec3b(0,0,0);

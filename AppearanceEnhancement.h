@@ -13,6 +13,7 @@
 #include <string>
 #include "ProCam.h"
 #include "myOpenCV.h"
+#include "PhotometricModel.h"
 
 const double NOISE_RANGE = 5 / 255.0;
 //#define NOISE_RANGE 0.05
@@ -33,23 +34,6 @@ enum mode {
     e_Amano,
     e_Fujii,
     e_Shimizu
-};
-
-class PhotometricModel{
-public:
-    cv::Mat K;
-    cv::Mat F;
-    cv::Mat C;
-    cv::Mat P;
-    cv::Mat Cmax;
-    cv::Mat Cmin;
-    cv::Mat Pmax;
-    cv::Mat Pmin;
-    
-    //
-    PhotometricModel(void){
-        
-    }
 };
 
 class ProCam;
@@ -128,7 +112,6 @@ public:
     bool estimateKFByAmanoModel(const cv::Mat& _P1, const cv::Mat& _P2, const cv::Mat& _C1, const cv::Mat& _C2);
     bool estimateKFByAmanoModel(const cv::Mat& _P1, const cv::Mat& _P2);
     bool test_estimateKFByAmanoModel(const cv::Mat& _answerK, const cv::Scalar& _mask = cv::Scalar(1, 1, 1, 0));
-    bool estimateKFByFujiiModel(const cv::Mat& _P1, const cv::Mat& _P2);
     ////////////////////////////// evaluate method //////////////////////////////
     bool evaluateEstimate(const cv::Mat& _C, const cv::Mat& _P, const int num);
     bool evaluateEstimationAndProjection(const cv::Mat& _ansK, const cv::Mat& _estK, const cv::Mat& _ansF, const cv::Mat& _estF, const cv::Mat& _targetImage, const cv::Mat& _captureImage, const cv::Mat& _idealC);
