@@ -1509,9 +1509,22 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
         // check key
         bool l_keyLoopFlag = true;
         while (l_keyLoopFlag) {
+            _print5(l_estTarget, l_enhanceType, l_desireFType, l_enhanceRate, l_alphaMPC);
+            _print2(l_currentColor, l_prjLuminance);
+            if (l_estFlag) {
+                cout << "estimate flag on" << endl;
+            } else {
+                cout << "estimate flag off" << endl;
+            }
+            if (l_calcPrjFlag) {
+                cout << "calculate next project image flag on" << endl;
+            } else {
+                cout << "calculate next project image flag off" << endl;
+            }
+
             int l_key = waitKey(l_stopTime);
             switch (l_key) {
-                    // what does calibrate
+                // what does calibrate
 //                case (CV_BUTTON_p):
 //                    cout << "本当にプロジェクタを線形化しますか？(y/n)" << endl;
 //                    if (yes_no()) {
