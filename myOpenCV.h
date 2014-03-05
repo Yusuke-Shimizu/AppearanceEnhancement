@@ -93,6 +93,7 @@ const float DEPTH_S16BIT_MAX = 32767;
 #ifdef MAC
 const int CV_BUTTON_SMALL_TO_CAPITAL = -32;
 const int CV_BUTTON_ESC    = 27;
+const int CV_BUTTON_ENTER   = 13;
 const int CV_BUTTON_UP     = 63232;
 const int CV_BUTTON_DOWN   = CV_BUTTON_UP + 1;
 const int CV_BUTTON_LEFT   = CV_BUTTON_UP + 2;
@@ -103,6 +104,7 @@ const int CV_BUTTON_0      = 48;
 #endif
 #ifdef LINUX
 const int CV_BUTTON_ESC     = 1048603;
+const int CV_BUTTON_ENTER   = 1048586;
 const int CV_BUTTON_LEFT    = 1113937;
 const int CV_BUTTON_UP      = CV_BUTTON_LEFT + 1;
 const int CV_BUTTON_RIGHT   = CV_BUTTON_LEFT + 2;

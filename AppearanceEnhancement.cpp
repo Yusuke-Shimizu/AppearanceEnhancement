@@ -1507,253 +1507,259 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
         cout << l_fps << " fps" << endl;
         
         // check key
-        int l_key = waitKey(l_stopTime);
-        switch (l_key) {
-            // what does calibrate
-//            case (CV_BUTTON_p):
-//                cout << "本当にプロジェクタを線形化しますか？(y/n)" << endl;
-//                if (yes_no()) {
-//                    l_procam->linearizeOfProjector(true, false);
-//                }
-//                break;
-            case (CV_BUTTON_g):
-                if (l_calcPrjFlag) {
-                    l_procam->geometricCalibration();
-                } else {
-                    l_currentColor = CV_SCALAR_D_GREEN;
+        bool l_keyLoopFlag = true;
+        while (l_keyLoopFlag) {
+            int l_key = waitKey(l_stopTime);
+            switch (l_key) {
+                    // what does calibrate
+//                case (CV_BUTTON_p):
+//                    cout << "本当にプロジェクタを線形化しますか？(y/n)" << endl;
+//                    if (yes_no()) {
+//                        l_procam->linearizeOfProjector(true, false);
+//                    }
+//                    break;
+                case (CV_BUTTON_g):
+                    if (l_calcPrjFlag) {
+                        l_procam->geometricCalibration();
+                    } else {
+                        l_currentColor = CV_SCALAR_D_GREEN;
+                        _print(l_currentColor);
+                        break;
+                    }
+                case (CV_BUTTON_c): // have to get Cfull and C0 after color calibration
+//                    l_procam->colorCalibration();
+                    l_procam->colorCalibration3();
+                case (CV_BUTTON_f):
+                    setCfullMap();
+                    setC0Map();
+                    break;
+                    // what is target to estimate
+                case (CV_BUTTON_r):
+                    if (l_calcPrjFlag) {
+                        l_estTarget = 0;
+                    } else {
+                        l_currentColor = CV_SCALAR_D_RED;
+                        _print(l_currentColor);
+                    }
+                    break;
+                case (CV_BUTTON_l):
+                    l_estTarget = 1;
+                    break;
+                case (CV_BUTTON_R):
+                    if (l_calcPrjFlag) {
+                        l_estTarget = 2;
+                    } else {
+                        l_currentColor = CV_SCALAR_D_RED;
+                        l_prjLuminance = 255.0 / 2.0;
+                        _print2(l_currentColor, l_prjLuminance);
+                    }
+                    break;
+                    // what control
+                case (CV_BUTTON_a):
+                    // 現在推定している反射率と環境光を正解にする
+                    cout << "l_answerK = l_KMap, l_answerF = l_FMap" << endl;
+                    l_answerK = l_KMap.clone();
+                    l_answerF = l_FMap.clone();
+                    break;
+                case (CV_BUTTON_A):
+                    // 現在推定している環境光を正解にする
+                    cout << "l_answerF = l_FMap" << endl;
+                    l_answerF = l_FMap.clone();
+                    break;
+                case (CV_BUTTON_e):
+                    l_enhanceRate += 0.1;
+                    _print(l_enhanceRate);
+                    break;
+                case (CV_BUTTON_E):
+                    l_enhanceRate -= 0.1;
+                    _print(l_enhanceRate);
+                    break;
+                case (CV_BUTTON_UP):
+                    if (l_calcPrjFlag) {
+                        l_alphaMPC += 0.1;
+                        _print(l_alphaMPC);
+                    } else {
+                        l_prjLuminance2 = std::min(l_prjLuminance2 + 50, 255.0);
+                        _print2(l_prjLuminance, l_prjLuminance2);
+                    }
+                    break;
+                case (CV_BUTTON_DOWN):
+                    if (l_calcPrjFlag) {
+                        l_alphaMPC -= 0.1;
+                        _print(l_alphaMPC);
+                    } else {
+                        l_prjLuminance2 = std::min(l_prjLuminance2 - 50, 255.0);
+                        _print2(l_prjLuminance, l_prjLuminance2);
+                    }
+                    break;
+                case (CV_BUTTON_RIGHT):
+                    l_prjLuminance = std::min(l_prjLuminance + 50, 255.0);
+                    _print2(l_prjLuminance, l_prjLuminance2);
+                    break;
+                case (CV_BUTTON_LEFT):
+                    l_prjLuminance = std::max(l_prjLuminance - 50, 0.0);
+                    _print2(l_prjLuminance, l_prjLuminance2);
+                    break;
+                case (CV_BUTTON_v):
+                    l_divideSize += 10;
+                    l_divideRate = std::min(l_divideRate+50/255.0, 1.0);
+                    _print2(l_divideSize, l_divideRate);
+                    break;
+                case (CV_BUTTON_V):
+                    l_divideSize -= 10;
+                    l_divideRate = std::max(l_divideRate-50/255.0, 0.0);
+                    _print2(l_divideSize, l_divideRate);
+                    break;
+                    // what is type of enhancement
+                case (CV_BUTTON_1):
+                    l_estFlag = false;
+                    l_calcPrjFlag = false;
+                    l_currentColor = CV_SCALAR_D_WHITE;
+                    l_prjLuminance = 255.0 / 2.0;
+                    break;
+                case (CV_BUTTON_2):
+                    l_estFlag = true;
+                    l_calcPrjFlag = true;
+                    l_enhanceType = 0;
+                    l_enhanceRate = 1.3;
+                    break;
+                case (CV_BUTTON_3):
+                    l_estFlag = true;
+                    l_calcPrjFlag = true;
+                    l_enhanceType = 0;
+                    l_enhanceRate = -1.0;
+                    break;
+                case (CV_BUTTON_4):
+                    l_estFlag = true;
+                    l_calcPrjFlag = true;
+                    l_enhanceType = 1;
+                    break;
+                case (CV_BUTTON_5):
+                    l_estFlag = true;
+                    l_calcPrjFlag = true;
+                    if (l_desireFType == 0) {
+                        l_desireFType = 1;
+                    } else {
+                        l_desireFType = 0;
+                    }
+                    _print(l_desireFType);
+                    break;
+//                case (CV_BUTTON_9):
+//                    l_procam->saveRelationI2C();
+//                    break;
+                    // check calibration
+                case (CV_BUTTON_t):
+                    l_procam->test_colorCalibration();
+                    break;
+                case (CV_BUTTON_T):
+                    l_procam->test_linearizeOfProjector();
+                    break;
+                case (CV_BUTTON_q):
+                    cout << "check estimate K start" << endl;
+                    test_estimateK(l_answerK, l_CMax, l_CMin);
+                    cout << "check estimate K finish" << endl;
+                    break;
+                case (CV_BUTTON_Q):
+                    cout << "check estimate KF start" << endl;
+                    test_estimateKFByAmanoModel(l_answerK);
+                    cout << "check estimate KF finish" << endl;
+                    break;
+                case (CV_BUTTON_w):
+                    if (l_calcPrjFlag) {
+                        l_answerK = Scalar(1.0, 1.0, 1.0, 0.0);
+                        l_answerF = Scalar(0, 0, 0, 0);
+                        test_calcNextProjectionImage(l_answerK, l_answerF, l_CMax, l_CMin);
+                    } else {
+                        l_currentColor = CV_SCALAR_D_WHITE;
+                        _print(l_currentColor);
+                    }
+                    break;
+                case (CV_BUTTON_W):
+                    if (l_calcPrjFlag) {
+                        cout << "check CMax and CMin" << endl;
+                        test_CMaxMin(l_CMax, l_CMin);
+                    } else {
+                        l_currentColor = CV_SCALAR_D_WHITE;
+                        l_prjLuminance = 255.0 / 2.0;
+                        _print2(l_currentColor, l_prjLuminance);
+                    }
+                    break;
+                    // set next projection color
+                case (CV_BUTTON_G):
+                    l_currentColor = CV_SCALAR_D_RED;
+                    l_prjLuminance = 255.0 / 2.0;
+                    _print2(l_currentColor, l_prjLuminance);
+                    break;
+                case (CV_BUTTON_b):
+                    l_currentColor = CV_SCALAR_D_BLUE;
                     _print(l_currentColor);
                     break;
-                }
-            case (CV_BUTTON_c): // have to get Cfull and C0 after color calibration
-//                l_procam->colorCalibration();
-                l_procam->colorCalibration3();
-            case (CV_BUTTON_f):
-                setCfullMap();
-                setC0Map();
-                break;
-            // what is target to estimate
-            case (CV_BUTTON_r):
-                if (l_calcPrjFlag) {
-                    l_estTarget = 0;
-                } else {
-                    l_currentColor = CV_SCALAR_D_RED;
-                    _print(l_currentColor);
-                }
-                break;
-            case (CV_BUTTON_l):
-                l_estTarget = 1;
-                break;
-            case (CV_BUTTON_R):
-                if (l_calcPrjFlag) {
-                    l_estTarget = 2;
-                } else {
-                    l_currentColor = CV_SCALAR_D_RED;
+                case (CV_BUTTON_B):
+                    l_currentColor = CV_SCALAR_D_BLUE;
                     l_prjLuminance = 255.0 / 2.0;
                     _print2(l_currentColor, l_prjLuminance);
-                }
-                break;
-            // what control
-            case (CV_BUTTON_a):
-                // 現在推定している反射率と環境光を正解にする
-                cout << "l_answerK = l_KMap, l_answerF = l_FMap" << endl;
-                l_answerK = l_KMap.clone();
-                l_answerF = l_FMap.clone();
-                break;
-            case (CV_BUTTON_A):
-                // 現在推定している環境光を正解にする
-                cout << "l_answerF = l_FMap" << endl;
-                l_answerF = l_FMap.clone();
-                break;
-            case (CV_BUTTON_e):
-                l_enhanceRate += 0.1;
-                _print(l_enhanceRate);
-                break;
-            case (CV_BUTTON_E):
-                l_enhanceRate -= 0.1;
-                _print(l_enhanceRate);
-                break;
-            case (CV_BUTTON_UP):
-                if (l_calcPrjFlag) {
-                    l_alphaMPC += 0.1;
-                    _print(l_alphaMPC);
-                } else {
-                    l_prjLuminance2 = std::min(l_prjLuminance2 + 50, 255.0);
-                    _print2(l_prjLuminance, l_prjLuminance2);
-                }
-                break;
-            case (CV_BUTTON_DOWN):
-                if (l_calcPrjFlag) {
-                    l_alphaMPC -= 0.1;
-                    _print(l_alphaMPC);
-                } else {
-                    l_prjLuminance2 = std::min(l_prjLuminance2 - 50, 255.0);
-                    _print2(l_prjLuminance, l_prjLuminance2);
-                }
-                break;
-            case (CV_BUTTON_RIGHT):
-                l_prjLuminance = std::min(l_prjLuminance + 50, 255.0);
-                _print2(l_prjLuminance, l_prjLuminance2);
-                break;
-            case (CV_BUTTON_LEFT):
-                l_prjLuminance = std::max(l_prjLuminance - 50, 0.0);
-                _print2(l_prjLuminance, l_prjLuminance2);
-                break;
-            case (CV_BUTTON_v):
-                l_divideSize += 10;
-                l_divideRate = std::min(l_divideRate+50/255.0, 1.0);
-                _print2(l_divideSize, l_divideRate);
-                break;
-            case (CV_BUTTON_V):
-                l_divideSize -= 10;
-                l_divideRate = std::max(l_divideRate-50/255.0, 0.0);
-                _print2(l_divideSize, l_divideRate);
-                break;
-            // what is type of enhancement
-            case (CV_BUTTON_1):
-                l_estFlag = false;
-                l_calcPrjFlag = false;
-                l_currentColor = CV_SCALAR_D_WHITE;
-                l_prjLuminance = 255.0 / 2.0;
-                break;
-            case (CV_BUTTON_2):
-                l_estFlag = true;
-                l_calcPrjFlag = true;
-                l_enhanceType = 0;
-                l_enhanceRate = 1.3;
-                break;
-            case (CV_BUTTON_3):
-                l_estFlag = true;
-                l_calcPrjFlag = true;
-                l_enhanceType = 0;
-                l_enhanceRate = -1.0;
-                break;
-            case (CV_BUTTON_4):
-                l_estFlag = true;
-                l_calcPrjFlag = true;
-                l_enhanceType = 1;
-                break;
-            case (CV_BUTTON_5):
-                l_estFlag = true;
-                l_calcPrjFlag = true;
-                if (l_desireFType == 0) {
-                    l_desireFType = 1;
-                } else {
-                    l_desireFType = 0;
-                }
-                _print(l_desireFType);
-                break;
-//            case (CV_BUTTON_9):
-//                l_procam->saveRelationI2C();
-//                break;
-            // check calibration
-            case (CV_BUTTON_t):
-                l_procam->test_colorCalibration();
-                break;
-            case (CV_BUTTON_T):
-                l_procam->test_linearizeOfProjector();
-                break;
-            case (CV_BUTTON_q):
-                cout << "check estimate K start" << endl;
-                test_estimateK(l_answerK, l_CMax, l_CMin);
-                cout << "check estimate K finish" << endl;
-                break;
-            case (CV_BUTTON_Q):
-                cout << "check estimate KF start" << endl;
-                test_estimateKFByAmanoModel(l_answerK);
-                cout << "check estimate KF finish" << endl;
-                break;
-            case (CV_BUTTON_w):
-                if (l_calcPrjFlag) {
-                    l_answerK = Scalar(1.0, 1.0, 1.0, 0.0);
-                    l_answerF = Scalar(0, 0, 0, 0);
-                    test_calcNextProjectionImage(l_answerK, l_answerF, l_CMax, l_CMin);
-                } else {
+                    break;
+                case (CV_BUTTON_k):
                     l_currentColor = CV_SCALAR_D_WHITE;
-                    _print(l_currentColor);
-                }
-                break;
-            case (CV_BUTTON_W):
-                if (l_calcPrjFlag) {
-                    cout << "check CMax and CMin" << endl;
-                    test_CMaxMin(l_CMax, l_CMin);
-                } else {
-                    l_currentColor = CV_SCALAR_D_WHITE;
-                    l_prjLuminance = 255.0 / 2.0;
+                    l_prjLuminance = 0.0;
                     _print2(l_currentColor, l_prjLuminance);
-                }
-                break;
-            // set next projection color
-            case (CV_BUTTON_G):
-                l_currentColor = CV_SCALAR_D_RED;
-                l_prjLuminance = 255.0 / 2.0;
-                _print2(l_currentColor, l_prjLuminance);
-                break;
-            case (CV_BUTTON_b):
-                l_currentColor = CV_SCALAR_D_BLUE;
-                _print(l_currentColor);
-                break;
-            case (CV_BUTTON_B):
-                l_currentColor = CV_SCALAR_D_BLUE;
-                l_prjLuminance = 255.0 / 2.0;
-                _print2(l_currentColor, l_prjLuminance);
-                break;
-            case (CV_BUTTON_k):
-                l_currentColor = CV_SCALAR_D_WHITE;
-                l_prjLuminance = 0.0;
-                _print2(l_currentColor, l_prjLuminance);
-                break;
-            // other
-            case (CV_BUTTON_s):
-                if (l_stopTime == -1) {
-                    l_stopTime = 30;
-                } else {
-                    l_stopTime = -1;
-                }
-                break;
-            case (CV_BUTTON_S):
-                l_procam->settingProjectorAndCamera();
-                break;
-            case (CV_BUTTON_d):
-                // denoise flag
-                l_procam->switchDenoiseFlag();
-                break;
-            case (CV_BUTTON_P):
-                l_calcPrjFlag = !l_calcPrjFlag;
-                if (l_calcPrjFlag) {
-                    cout << "l_calcNextPrj on" << endl;
-                } else {
-                    cout << "l_calcNextPrj off" << endl;
-                }
-                break;
-            case (CV_BUTTON_m): // mode switching
-                switchMode();
-                break;
-            case (CV_BUTTON_DELETE):
-                cout << "all clean" << endl;
-                initK(l_camSize);
-                initF(l_camSize);
-//                l_projectionImage = Mat(l_camSize, CV_8UC3, CV_SCALAR_WHITE);
-//                l_projectionImage = Scalar(g_maxPrjLuminance);
-                l_projectionImage = Scalar(125, 125, 125);
-//                l_projectionImage2 = Scalar(g_maxPrjLuminance);
-//                l_projectionImageBefore2 = Scalar(g_minPrjLuminance);
-                l_projectionImage2 = Scalar(200, 200, 200);
-                l_projectionImageBefore2 = Scalar(50, 50, 50);
-                l_procam->captureOfProjecctorColorFromLinearLightOnProjectorDomain(&l_captureImage, l_projectionImage, l_bDenoise);
-//                l_targetImage = Mat(l_camSize, CV_64FC3, CV_SCALAR_WHITE);
-                l_desireK = CV_SCALAR_D_WHITE;
-                l_answerK = CV_SCALAR_D_WHITE;
-                l_answerF = CV_SCALAR_D_BLACK;
-                prj = 255;
-                break;
-            case (CV_BUTTON_ESC):
-                l_loopFlag = false;
-                break;
-            default:
-                cout << "you push " << (int)l_key << " key" << endl;
-                break;
+                    break;
+                    // other
+                case (CV_BUTTON_s):
+                    if (l_stopTime == -1) {
+                        l_stopTime = 30;
+                    } else {
+                        l_stopTime = -1;
+                    }
+                    break;
+                case (CV_BUTTON_S):
+                    l_procam->settingProjectorAndCamera();
+                    break;
+                case (CV_BUTTON_d):
+                    // denoise flag
+                    l_procam->switchDenoiseFlag();
+                    break;
+                case (CV_BUTTON_P):
+                    l_calcPrjFlag = !l_calcPrjFlag;
+                    if (l_calcPrjFlag) {
+                        cout << "l_calcNextPrj on" << endl;
+                    } else {
+                        cout << "l_calcNextPrj off" << endl;
+                    }
+                    break;
+                case (CV_BUTTON_m): // mode switching
+                    switchMode();
+                    break;
+                case (CV_BUTTON_DELETE):
+                    cout << "all clean" << endl;
+                    initK(l_camSize);
+                    initF(l_camSize);
+//                    l_projectionImage = Mat(l_camSize, CV_8UC3, CV_SCALAR_WHITE);
+//                    l_projectionImage = Scalar(g_maxPrjLuminance);
+                    l_projectionImage = Scalar(125, 125, 125);
+//                    l_projectionImage2 = Scalar(g_maxPrjLuminance);
+//                    l_projectionImageBefore2 = Scalar(g_minPrjLuminance);
+                    l_projectionImage2 = Scalar(200, 200, 200);
+                    l_projectionImageBefore2 = Scalar(50, 50, 50);
+                    l_procam->captureOfProjecctorColorFromLinearLightOnProjectorDomain(&l_captureImage, l_projectionImage, l_bDenoise);
+                    //                l_targetImage = Mat(l_camSize, CV_64FC3, CV_SCALAR_WHITE);
+                    l_desireK = CV_SCALAR_D_WHITE;
+                    l_answerK = CV_SCALAR_D_WHITE;
+                    l_answerF = CV_SCALAR_D_BLACK;
+                    prj = 255;
+                    break;
+                case (CV_BUTTON_ENTER):
+                    l_keyLoopFlag = false;
+                    break;
+                case (CV_BUTTON_ESC):
+                    l_loopFlag = false;
+                    break;
+                default:
+                    cout << "you push " << (int)l_key << " key" << endl;
+                    break;
+            }
         }
-        
+       
         l_frameNum ++;
     }
     
