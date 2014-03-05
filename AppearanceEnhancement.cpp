@@ -515,6 +515,7 @@ bool AppearanceEnhancement::calcTargetImage(cv::Mat* const _desireK, cv::Mat* co
     }
     for (int y = 0; y < rows; ++ y) {
         Vec3d* l_pDesireK = _desireK->ptr<Vec3d>(y);
+        Vec3d* l_pDesireF = _desireF->ptr<Vec3d>(y);
         const Vec3d* l_pK = _estK.ptr<Vec3d>(y);
         const Vec3d* l_pF = _estF.ptr<Vec3d>(y);
         const Vec3d* l_pCMin = _CMin.ptr<Vec3d>(y);
@@ -522,40 +523,53 @@ bool AppearanceEnhancement::calcTargetImage(cv::Mat* const _desireK, cv::Mat* co
         
         for (int x = 0; x < cols; ++ x) {
             for (int c = 0; c < 3; ++ c) {
-                // calc desire C
-                calcTargetImageAtPixel(&(l_pDesireK[x][c]), l_pK[x][c], l_pF[x][c], l_pCMin[x][c], l_pGrayCest[x], _s, _enhanceType);
+                // calc desired K
+                calcDesireKAtPixel(&(l_pDesireK[x][c]), l_pK[x][c], l_pGrayCest[x], _s, _enhanceType);
+                
+                // calc desired F
+                calcDesireFAtPixel(&(l_pDesireF[x][c]), l_pF[x][c], _desireFType);
+                
+                // calc desired C
             }
         }
     }
     
     // make desire F
-    if (_desireFType == 0) {
-        *_desireF = _estF;
-    } else {
-        Scalar l_mean, l_stddev;
-        meanStdDev(_estF, l_mean, l_stddev);
-        const Scalar l_max = l_mean + l_stddev;
-        const double l_lum = std::max(l_max[0], std::max(l_max[1], l_max[2]));
-        *_desireF = Scalar(l_lum, l_lum, l_lum);
-    }
+//    if (_desireFType == 0) {
+//        *_desireF = _estF;
+//    } else {
+//        Scalar l_mean, l_stddev;
+//        meanStdDev(_estF, l_mean, l_stddev);
+//        const Scalar l_max = l_mean + l_stddev;
+//        const double l_lum = std::max(l_max[0], std::max(l_max[1], l_max[2]));
+//        *_desireF = Scalar(l_lum, l_lum, l_lum);
+//    }
     return true;
 }
-bool AppearanceEnhancement::calcTargetImageAtPixel(double* const _targetImage, const double& _K, const double& _F, const double& _CMin, const double& _KGray, const double& _s, const int _enhanceType){
-    double l_targetImageNum = 0;
+
+// calc desired Reflectance at pixel
+bool AppearanceEnhancement::calcDesireKAtPixel(double* const _desireK, const double& _estK, const double& _estKGray, const double& _s, const int _enhanceType){
+    double l_desireK = 0;
     switch (_enhanceType) {
         case 0:
-            l_targetImageNum = ((1 + _s) * _K - _s * _KGray) * 255;
+            l_desireK = ((1 + _s) * _estK - _s * _estKGray) * 255;
             break;
         case 1:
-            l_targetImageNum = 256 / 2;
+            l_desireK = 256 / 2;
             break;
         default:
             break;
     }
-//    double l_targetImageNum = ((1 + _s) * _K - _s * _KGray) * (128 + _F + _CMin);
-//    roundXtoY(&l_targetImageNum, 0, 255);
-//    l_pTargetImage[x][c] = (uchar)l_targetImageNum;
-    *_targetImage = l_targetImageNum;
+    *_desireK = l_desireK;
+    return true;
+}
+// calc desired Ambient Light at pixel
+bool AppearanceEnhancement::calcDesireFAtPixel(double* const _desireF, const double& _estF, const int _desireType){
+    if (_desireType == 0) {
+        *_desireF = _estF;
+    } else {
+        *_desireF = 0;
+    }
 
     return true;
 }
