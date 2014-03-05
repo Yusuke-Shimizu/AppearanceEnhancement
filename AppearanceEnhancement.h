@@ -95,9 +95,11 @@ public:
     bool calcCameraAddedFixNoise(cv::Mat* const _C, const cv::Mat& _K, const cv::Mat& _F, const cv::Mat& _P, const double& noise);
     bool calcNextProjection(cv::Mat* const _P, const cv::Mat& _C, const cv::Mat& _K, const cv::Mat& _F);
     bool calcRangeOfDesireC(cv::Mat* const _rangeTop, cv::Mat* const _rangeDown, const cv::Mat& _K, const cv::Mat& _F);
-    bool calcTargetImage(cv::Mat* const _desireK, cv::Mat* const _desireF, const cv::Mat& _estK, const cv::Mat& _F, const cv::Mat& _CMin, const double& _s = 1.3, const int _enhanceType = 0, const int _desireFType = 0);
+    bool calcTargetImage(cv::Mat* const _desireC, cv::Mat* const _desireK, cv::Mat* const _desireF, const cv::Mat& _estK, const cv::Mat& _F, const cv::Mat& _CMin, const double& _s = 1.3, const int _enhanceType = 0, const int _desireFType = 0);
     bool calcDesireKAtPixel(double* const _desireK, const double& _K, const double& _KGray, const double& _s = 1.3, const int _enhanceType = 0);
     bool calcDesireFAtPixel(double* const _desireF, const double& _estF, const int _desireType = 0);
+    bool calcDesireCAtPixel(double* const _desiredC, const double& _desiredK, const double& _desiredF, const double& _Trate, const double& _Tdiff, const double& _Pbase = 0.5);
+    bool calcDesireCAtPixel(double* const _desiredC, const double& _desiredK, const double& _desiredF, const double& _CMax, const double& _CMin, const double& _PMax, const double& _PMin, const double& _Pbase = 0.5);
     bool calcNextProjectionImage(cv::Mat* const _nextP, cv::Mat* const _error, cv::Mat* const _Cr, cv::Mat* const _vrC, cv::Mat* const _desireC, const cv::Mat& _desireK, const cv::Mat& _desireKBefore, const cv::Mat& _desireF, const cv::Mat& _C, const cv::Mat& _P, const cv::Mat& _estK, const cv::Mat& _estF, const cv::Mat& _estFBefore, const cv::Mat& _CMax, const cv::Mat& _CMin, const double& _alpha = 0.1);
     bool test_calcNextProjectionImage(const cv::Mat& _answerK, const cv::Mat& _answerF, const cv::Mat& _CMax, const cv::Mat& _CMin, const cv::Scalar& _mask = cv::Scalar(1, 1, 1, 0));
     bool calcNextProjectionImageAtPixel(uchar* const _nextP, double* const _error, double* const _Cr, double* const _vrC, double* const _desireC, const double& _desireK, const double& _desireKBefore, const double& _desireF, const double& _C, const double& _P, const double& _estK, const double& _estF, const double& _FBefore, const double& _CMax, const double& _CMin, const double& _PMax, const double& _PMin, const double& _alpha = 0.1);
@@ -129,6 +131,7 @@ public:
     bool divideImage2(cv::Mat* const _dst1, cv::Mat* const _dst2, const cv::Mat& _src, const double& _distance=10);
     bool divideImage3(cv::Mat* const _dst1, cv::Mat* const _dst2, const cv::Mat& _src, const cv::Scalar& _rate);
     bool divideImage3(cv::Mat* const _dst1, cv::Mat* const _dst2, const cv::Mat& _src, const double& _rate = 1.0);
+    bool convertMaxmin2Trd(double* const _Trate, double* const _Tdiff, const double& _CMax, const double& _CMin, const double& _PMax, const double& _PMin);
     bool test_CMaxMin(const cv::Mat& _CMax, const cv::Mat& _CMin);
     bool doAppearanceEnhancementByAmano(void);
 };
