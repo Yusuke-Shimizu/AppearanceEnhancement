@@ -121,61 +121,6 @@ bool divideImage3_(cv::Mat* const _dst1, cv::Mat* const _dst2, const cv::Mat& _s
 // main method
 int main(int argc, const char * argv[])
 {
-#ifdef MAC
-    std::vector<cv::Mat> imgV;
-    imgV.push_back(imread("./img/estimateKF/divide/02/mono/l_answerK.png"));
-    imgV.push_back(imread("./img/estimateKF/divide/02/mono/l_errorOfEstimateK.png"));
-    imgV.push_back(imread("./img/estimateKF/divide/02/mono/l_errorOfEstimateF.png"));
-    imgV.push_back(imread("./img/estimateKF/divide/02/compensation/l_errorOfEstimateK.png"));
-    imgV.push_back(imread("./img/estimateKF/divide/02/compensation/l_errorOfEstimateF.png"));
-    
-    Mat l_image = imread("./img/picture.JPG");
-    const float l_rate = -0.7;
-    l_image.convertTo(l_image, CV_32FC3, 1.0 / 255.0);
-    Mat l_imageProcess(l_image.size(), l_image.type(), 0);
-    cvtColor(l_image, l_imageProcess, CV_BGR2HSV);
-    for (int y = 0; y < l_imageProcess.rows; ++ y) {
-        Vec3f* l_pImg = l_imageProcess.ptr<Vec3f>(y);
-        for (int x = 0; x < l_imageProcess.cols; ++ x) {
-            float l_base = 0;
-            if (l_rate > 0) {
-                l_base = 255.0;
-            }
-            l_pImg[x][0] = l_pImg[x][0] * l_rate + (1 - l_rate) * l_base;
-        }
-    }
-    Mat l_image2(l_image.size(), l_image.type(), 0);
-    cvtColor(l_imageProcess, l_image2, CV_HSV2BGR);
-    
-    MY_IMSHOW2(l_image, l_image2);
-    MY_WAIT_KEY();
-    // bgr -> lab
-//    for (vector<Mat>::iterator itr = imgV.begin();
-//         itr != imgV.end();
-//         ++ itr) {
-//        cvtColor(*itr, *itr, CV_BGR2HSV);
-//    }
-    
-    // 8bit -> 64bit
-    for (vector<Mat>::iterator itr = imgV.begin();
-         itr != imgV.end();
-         ++ itr) {
-        itr->convertTo(*itr, CV_64FC3, 1.0 / 255.0);
-    }
-    
-    MouseParam mparam;
-	mparam.x = 0; mparam.y = 0; mparam.event = 0; mparam.flags = 0;
-    mparam.image = &imgV[0]; mparam.color = Vec3b(0,0,0);
-    mparam.v_image = &imgV;
-    
-	//ウインドウの作成
-	namedWindow( "l_answerK", CV_WINDOW_AUTOSIZE );
-	//ウインドウへコールバック関数とコールバック関数からイベント情報を受け取る変数を渡す。
-	setMouseCallback( "l_answerK", &mfunc, &mparam );
-    imshow("l_answerK", imgV[0]);
-    MY_WAIT_KEY();
-    
-#endif
     
 #ifdef EXPERIMENT_FLAG
     // experimentation

@@ -67,6 +67,8 @@ bool ProCam::init(const cv::Size& projectorSize){
     if ( !initProjectorSize(projectorSize) ) return false;
     if ( !initProjectorResponseI2P() ) return false;
     if ( !initProjectorResponseP2I() ) return false;
+    if ( !initSimpleProjectorResponseI2P() ) return false;
+    if ( !initSimpleProjectorResponseP2I() ) return false;
     
     // アクセスマップの初期化
     if ( !initAccessMapCam2Prj() ) return false;
@@ -180,8 +182,8 @@ bool ProCam::initCameraResponse(const int camResSize){
 // return   : 成功したかどうか
 bool ProCam::initProjectorResponseI2P(void){
     // init
-    const cv::Size* prjSize = getProjectorSize();
-    const cv::Size prjResSize(prjSize->width * 256, prjSize->height);
+    const cv::Size prjSize = getProjectorSize_();
+    const cv::Size prjResSize(prjSize.width * 256, prjSize.height);
     
     // set projector response
     m_projectorResponseI2P = cv::Mat_<cv::Vec3b>(prjResSize);
@@ -212,6 +214,26 @@ bool ProCam::initProjectorResponse(cv::Mat* const _prjRes){
             l_pPrjResP2I[x * 256 + 0] = CV_VEC3B_BLACK;
             l_pPrjResP2I[x * 256 + 255] = CV_VEC3B_WHITE;
         }
+    }
+    return true;
+}
+
+// 簡易プロジェクタ応答特性の初期化
+// return   : 成功したかどうか
+bool ProCam::initSimpleProjectorResponseI2P(void){
+    // init
+    m_simpleProjectorResponseI2P = new cv::Vec3b[256];
+    for (int i = 0; i < 256; ++ i) {
+        m_simpleProjectorResponseI2P[i] = CV_VEC3B_FLAT_GRAY(i);
+    }
+    return true;
+}
+
+bool ProCam::initSimpleProjectorResponseP2I(void){
+    // init
+    m_simpleProjectorResponseP2I = new cv::Vec3b[256];
+    for (int i = 0; i < 256; ++ i) {
+        m_simpleProjectorResponseP2I[i] = CV_VEC3B_FLAT_GRAY(i);
     }
     return true;
 }
@@ -358,6 +380,25 @@ bool ProCam::setImageProjectorResponseP2I(const cv::Mat& _responseImage, const i
     setImageProjectorResponseP2I(&m_projectorResponseP2I, _responseImage, _index);
     return true;
 }
+
+// set simple Projector Response
+bool ProCam::setSimpleProjectorResponseP2I(const cv::Vec3b _num, const int _index){
+    m_simpleProjectorResponseP2I[_index] = _num;
+    return true;
+}
+bool ProCam::setSimpleProjectorResponseI2P(const cv::Vec3b _num, const int _index){
+    m_simpleProjectorResponseI2P[_index] = _num;
+    return true;
+}
+bool ProCam::setSimpleProjectorResponseP2I(const uchar _num, const int _index, const int _channel){
+    m_simpleProjectorResponseP2I[_index][_channel] = _num;
+    return true;
+}
+bool ProCam::setSimpleProjectorResponseI2P(const uchar _num, const int _index, const int _channel){
+    m_simpleProjectorResponseI2P[_index][_channel] = _num;
+    return true;
+}
+
 
 // Vのセッティング
 bool ProCam::setV(const cv::Mat& _diffBB, const cv::Mat& _diffGB, const cv::Mat& _diffRB){
@@ -592,6 +633,25 @@ const cv::Mat* ProCam::getProjectorResponseI2P(void){
 }
 const cv::Mat* ProCam::getProjectorResponseP2I(void){
     return &m_projectorResponseP2I;
+}
+
+const cv::Vec3b* ProCam::getSimpleProjectorResponseI2P(void){
+    return m_simpleProjectorResponseI2P;
+}
+const cv::Vec3b* ProCam::getSimpleProjectorResponseP2I(void){
+    return m_simpleProjectorResponseP2I;
+}
+const cv::Vec3b ProCam::getSimpleProjectorResponseI2P(const int _index){
+    return m_simpleProjectorResponseI2P[_index];
+}
+const cv::Vec3b ProCam::getSimpleProjectorResponseP2I(const int _index){
+    return m_simpleProjectorResponseP2I[_index];
+}
+const uchar ProCam::getSimpleProjectorResponseI2P(const int _index, const int _channel){
+    return m_simpleProjectorResponseI2P[_index][_channel];
+}
+const uchar ProCam::getSimpleProjectorResponseP2I(const int _index, const int _channel){
+    return m_simpleProjectorResponseP2I[_index][_channel];
 }
 
 // 引数で与えられた応答特性マップのある輝度の画像を取得
@@ -1551,9 +1611,11 @@ bool ProCam::showAccessMapCam2Prj(void){
         MY_IMSHOW2(l_capImage, l_capImage_);
 
         int pushKey = waitKey(-1);
+        _print2(pushKey, CV_BUTTON_ESC);
         switch (pushKey) {
             case (CV_BUTTON_ESC):
                 flag = false;
+                _print(flag);
                 break;
             case (CV_BUTTON_UP):
                 pt.y -= 10;
@@ -1578,6 +1640,7 @@ bool ProCam::showAccessMapCam2Prj(void){
             default:
                 break;
         }
+        _print(flag);
     }
     cout << "finish show access map" << endl;
 
@@ -1732,6 +1795,35 @@ bool ProCam::captureFromLight(cv::Mat* const _captureImage, const uchar& _projec
     const Vec3b l_projectionColor(_projectionNum, _projectionNum, _projectionNum);
     return captureFromLight(_captureImage, l_projectionColor, _denoiseFlag, _waitTimeNum);
 }
+bool ProCam::captureFromLight(cv::Vec3b* const _captureColor, const cv::Mat& _projectionImage, const bool _denoiseFlag, const int _waitTimeNum){
+    // 撮影画像用変数を作成
+    const Size* l_camSize = getCameraSize();    // カメラサイズの取得
+    cv::Mat l_captureImage(*l_camSize, CV_8UC3);
+    //
+    captureFromLight(&l_captureImage, _projectionImage, _denoiseFlag, _waitTimeNum);
+    MY_IMSHOW(l_captureImage);
+    // 平均値の取得
+    return calcAverageOfImage(_captureColor, l_captureImage);
+}
+bool ProCam::captureFromLight(cv::Vec3b* const _captureColor, const cv::Vec3b& _projectionColor, const bool _denoiseFlag, const int _waitTimeNum){
+    const Size* l_camSize = getCameraSize();    // カメラサイズの取得
+    const Mat l_projectionImage(*l_camSize, CV_8UC3, Scalar(_projectionColor)); // 投影画像
+    return captureFromLight(_captureColor, l_projectionImage, _denoiseFlag, _waitTimeNum);
+}
+bool ProCam::captureFromLight(cv::Vec3b* const _captureColor, const uchar _projectionNumber, const bool _denoiseFlag, const int _waitTimeNum){
+    const Vec3b l_projectionColor(_projectionNumber, _projectionNumber, _projectionNumber);
+    return captureFromLight(_captureColor, l_projectionColor, _denoiseFlag, _waitTimeNum);
+}
+void ProCam::captureFromLightTest(void){
+    Vec3b l_input(0,0,0), l_output(0,0,0);
+    captureFromLight(&l_output, l_input);
+    const Size l_capSize = getCameraSize_();
+    const Scalar l_color(l_output);
+    Mat l_outputImage(l_capSize, CV_8UC3, l_color);
+    _print(l_color);
+    MY_IMSHOW(l_outputImage);
+    MY_WAIT_KEY();
+}
 
 // 幾何変換を行ったものを投影・撮影
 bool ProCam::captureFromLightOnProjectorDomain(cv::Mat* const _captureImage, const cv::Mat& _projectionImage, const bool _denoiseFlag, const int _waitTimeNum){
@@ -1757,6 +1849,24 @@ bool ProCam::captureFromLightOnProjectorDomain(cv::Mat* const _captureImage, con
 bool ProCam::captureFromLightOnProjectorDomain(cv::Mat* const _captureImage, const uchar _projectionNumber, const bool _denoiseFlag, const int _waitTimeNum){
     const Vec3b l_projectionColor(_projectionNumber, _projectionNumber, _projectionNumber);
     return captureFromLightOnProjectorDomain(_captureImage, l_projectionColor, _denoiseFlag, _waitTimeNum);
+}
+bool ProCam::captureFromLightOnProjectorDomain(cv::Vec3b* const _captureColor, const cv::Mat& _projectionImage, const bool _denoiseFlag, const int _waitTimeNum){
+    // 撮影画像用変数を作成
+    const Size* l_camSize = getCameraSize();    // カメラサイズの取得
+    cv::Mat l_captureImage(*l_camSize, CV_8UC3);
+    //
+    captureFromLightOnProjectorDomain(&l_captureImage, _projectionImage, _denoiseFlag, _waitTimeNum);
+    // 平均値の取得
+    return calcAverageOfImage(_captureColor, l_captureImage);
+}
+bool ProCam::captureFromLightOnProjectorDomain(cv::Vec3b* const _captureColor, const cv::Vec3b& _projectionColor, const bool _denoiseFlag, const int _waitTimeNum){
+    const Size* l_camSize = getCameraSize();    // カメラサイズの取得
+    const Mat l_projectionImage(*l_camSize, CV_8UC3, Scalar(_projectionColor)); // 投影画像
+    return captureFromLightOnProjectorDomain(_captureColor, l_projectionImage, _denoiseFlag, _waitTimeNum);
+}
+bool ProCam::captureFromLightOnProjectorDomain(cv::Vec3b* const _captureColor, const uchar _projectionNumber, const bool _denoiseFlag, const int _waitTimeNum){
+    const Vec3b l_projectionColor(_projectionNumber, _projectionNumber, _projectionNumber);
+    return captureFromLightOnProjectorDomain(_captureColor, l_projectionColor, _denoiseFlag, _waitTimeNum);
 }
 
 // 線形化したプロジェクタを用いて投影・撮影を行う
@@ -1890,7 +2000,7 @@ bool ProCam::interpolationProjectorResponseP2I(cv::Mat* const _prjRes){
 bool ProCam::test_interpolationProjectorResponseP2I(void){
     Mat m1(2, 256, CV_8UC3, Scalar(INIT_RES_NUM, INIT_RES_NUM, INIT_RES_NUM));
 //    m1.at<Vec3b>(0, 255) = Vec3b(127, 127, 127);
-//    m1.at<Vec3b>(1, 255) = Vec3b(0, 0, 0);ls
+//    m1.at<Vec3b>(1, 255) = Vec3b(0, 0, 0);
     for (int i = 0; i < 256; i += 5) {
         m1.at<Vec3b>(0, i) = Vec3b(i, i, i);
         m1.at<Vec3b>(1, i) = Vec3b(0, 0, 0);

@@ -28,8 +28,8 @@ const std::string EST_C_DATA_PATH = LIN_DATA_PATH + "estC";
 const int PROJECTION_LUMINANCE_STEP = 1;
 
 // 最初に線形化を計算するかどうか
-const bool CALC_LINEAR_FLAG_AT_INIT = false;
-const bool SHOW_LINEAR_FLAG_AT_INIT = false;
+const bool CALC_LINEAR_FLAG_AT_INIT = true;
+const bool SHOW_LINEAR_FLAG_AT_INIT = true;
 const bool USE_LOOK_LIKE_ANOTHER_FLAG = true;
 
 // 先攻宣言
@@ -38,8 +38,6 @@ class ProCam;
 class LinearizerOfProjector{
 private:
     ProCam* m_procam;
-//    cv::Mat** m_aColorMixingMatrix;  // 全カメラ画素分のC=VPのV, プロジェクタからカメラへの色変換行列
-//    std::vector<cv::Mat> m_aColorMixingMatrix;  // 全カメラ画素分のC=VPのV, プロジェクタからカメラへの色変換行列
     // こいつはRGB色空間
     cv::Mat_<Vec9d> m_colorMixingMatrixMap;     // 全カメラ画素分のC=VPのV, プロジェクタからカメラへの色変換行列（サイズ：カメラと同じ）
     cv::Mat m_allCImages;                       // ０から２５５を投影し撮影したものを全て格納している場所
@@ -53,8 +51,8 @@ public:
     ///////////////////////////////  set method ///////////////////////////////
     bool setProCam(ProCam* procam);
     bool setColorMixMatMap(const cv::Mat_<Vec9d>& _aMat);
-//    bool setResponseMap(cv::Mat_<cv::Vec3b>* const _responseMap, const cv::Mat_<cv::Vec3b>& _response, const int _depth, const int _maxDepth);
     bool setResponseMap(cv::Mat_<cv::Vec3b>* const _responseMapP2I, cv::Mat_<cv::Vec3b>* const _responseMapI2P, const cv::Mat_<cv::Vec3b>& _CImage, const uchar _INum);
+    bool setSimpleResponseMap(const cv::Vec3b& _averageColor, const uchar _INum);
     bool setAllCImages(const cv::Mat& _allCImages);
     bool setCImages(const cv::Mat& _CImage, const int _luminance);
     ///////////////////////////////  get method ///////////////////////////////
@@ -95,6 +93,7 @@ public:
     bool createVMap(const cv::Mat& _normalR2BL, const cv::Mat& _normalG2BL, const cv::Mat& _normalB2BL);
     bool test_createVMap(void);
     bool calcResponseFunction(cv::Mat_<cv::Vec3b>* const _responseMap, cv::Mat_<cv::Vec3b>* const _responseMapP2I);
+    bool calcSimpleResponseFunction(void);
     void test_responseFunction(void);
     bool convertCImage2PImage(cv::Mat_<cv::Vec3b>* const _PImageOnCameraDomain, const cv::Mat_<cv::Vec3b>& _CImage);
     bool calcP(cv::Vec3b* const _response, const cv::Vec3b& _C, const cv::Mat& _V);

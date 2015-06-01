@@ -9,8 +9,9 @@
 #ifndef cameraBase03_myOpenCV_h
 #define cameraBase03_myOpenCV_h
 
-#include <opencv2/opencv.hpp>
-#include <opencv/highgui.h>
+#include </opt/local/include/opencv2/opencv.hpp>
+//#include <opencv/highgui.h>
+//#include <opencv
 #include "common.h"
 
 #define OPENCV_VERSION(a,b,c) (((a) << 16) + ((b) << 8) + (c))
@@ -103,16 +104,26 @@ const int CV_BUTTON_a      = 97;
 const int CV_BUTTON_0      = 48;
 #endif
 #ifdef LINUX
-const int CV_BUTTON_ESC     = 1048603;
-const int CV_BUTTON_ENTER   = 1048586;
-const int CV_BUTTON_LEFT    = 1113937;
-const int CV_BUTTON_UP      = CV_BUTTON_LEFT + 1;
-const int CV_BUTTON_RIGHT   = CV_BUTTON_LEFT + 2;
-const int CV_BUTTON_DOWN    = CV_BUTTON_LEFT + 3;
-const int CV_BUTTON_DELETE  = 1113864;
-const int CV_BUTTON_SMALL_TO_CAPITAL = 65504;
-const int CV_BUTTON_a       = 1048673;
-const int CV_BUTTON_0       = 1048624;
+const int CV_BUTTON_SMALL_TO_CAPITAL = -32;
+const int CV_BUTTON_ESC    = 27;
+const int CV_BUTTON_ENTER   = 13;
+const int CV_BUTTON_UP     = 63232;
+const int CV_BUTTON_DOWN   = CV_BUTTON_UP + 1;
+const int CV_BUTTON_LEFT   = CV_BUTTON_UP + 2;
+const int CV_BUTTON_RIGHT  = CV_BUTTON_UP + 3;
+const int CV_BUTTON_DELETE = 127;
+const int CV_BUTTON_a      = 97;
+const int CV_BUTTON_0      = 48;
+//const int CV_BUTTON_ESC     = 1048603;
+//const int CV_BUTTON_ENTER   = 1048586;
+//const int CV_BUTTON_LEFT    = 1113937;
+//const int CV_BUTTON_UP      = CV_BUTTON_LEFT + 1;
+//const int CV_BUTTON_RIGHT   = CV_BUTTON_LEFT + 2;
+//const int CV_BUTTON_DOWN    = CV_BUTTON_LEFT + 3;
+//const int CV_BUTTON_DELETE  = 1113864;
+//const int CV_BUTTON_SMALL_TO_CAPITAL = 65504;
+//const int CV_BUTTON_a       = 1048673;
+//const int CV_BUTTON_0       = 1048624;
 #endif
 const int CV_BUTTON_A       = CV_BUTTON_a + CV_BUTTON_SMALL_TO_CAPITAL;
 const int CV_BUTTON_b       = CV_BUTTON_a + 1;
@@ -163,6 +174,7 @@ const int CV_BUTTON_8       = CV_BUTTON_0 + 8;
 const int CV_BUTTON_9       = CV_BUTTON_0 + 9;
 
 // define based Color
+#define CV_VEC3B_FLAT_GRAY(NUM) cv::Vec3b(NUM,NUM,NUM)
 const cv::Vec3b CV_VEC3B_RED(0, 0, 255);
 const cv::Vec3b CV_VEC3B_GREEN(0, 255, 0);
 const cv::Vec3b CV_VEC3B_BLUE(255, 0, 0);

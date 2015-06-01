@@ -1525,12 +1525,12 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
             int l_key = waitKey(l_stopTime);
             switch (l_key) {
                 // what does calibrate
-//                case (CV_BUTTON_p):
-//                    cout << "本当にプロジェクタを線形化しますか？(y/n)" << endl;
-//                    if (yes_no()) {
-//                        l_procam->linearizeOfProjector(true, false);
-//                    }
-//                    break;
+                case (CV_BUTTON_p):
+                    cout << "本当にプロジェクタを線形化しますか？(y/n)" << endl;
+                    if (yes_no()) {
+                        l_procam->linearizeOfProjector(true, false);
+                    }
+                    break;
                 case (CV_BUTTON_g):
                     if (l_calcPrjFlag) {
                         l_procam->geometricCalibration();
@@ -1664,9 +1664,9 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
                 case (CV_BUTTON_t):
                     l_procam->test_colorCalibration();
                     break;
-                case (CV_BUTTON_T):
-                    l_procam->test_linearizeOfProjector();
-                    break;
+//                case (CV_BUTTON_T):
+//                    l_procam->test_linearizeOfProjector();
+//                    break;
                 case (CV_BUTTON_q):
                     cout << "check estimate K start" << endl;
                     test_estimateK(l_answerK, l_CMax, l_CMin);
@@ -1678,14 +1678,14 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
                     cout << "check estimate KF finish" << endl;
                     break;
                 case (CV_BUTTON_w):
-                    if (l_calcPrjFlag) {
-                        l_answerK = Scalar(1.0, 1.0, 1.0, 0.0);
-                        l_answerF = Scalar(0, 0, 0, 0);
-                        test_calcNextProjectionImage(l_answerK, l_answerF, l_CMax, l_CMin);
-                    } else {
+//                    if (l_calcPrjFlag) {
+//                        l_answerK = Scalar(1.0, 1.0, 1.0, 0.0);
+//                        l_answerF = Scalar(0, 0, 0, 0);
+//                        test_calcNextProjectionImage(l_answerK, l_answerF, l_CMax, l_CMin);
+//                    } else {
                         l_currentColor = CV_SCALAR_D_WHITE;
                         _print(l_currentColor);
-                    }
+//                    }
                     break;
                 case (CV_BUTTON_W):
                     if (l_calcPrjFlag) {
@@ -1718,20 +1718,20 @@ bool AppearanceEnhancement::doAppearanceEnhancementByAmano(void){
                     _print2(l_currentColor, l_prjLuminance);
                     break;
                     // other
-                case (CV_BUTTON_s):
-                    if (l_stopTime == -1) {
-                        l_stopTime = 30;
-                    } else {
-                        l_stopTime = -1;
-                    }
-                    break;
+//                case (CV_BUTTON_s):
+//                    if (l_stopTime == -1) {
+//                        l_stopTime = 30;
+//                    } else {
+//                        l_stopTime = -1;
+//                    }
+//                    break;
                 case (CV_BUTTON_S):
                     l_procam->settingProjectorAndCamera();
                     break;
-                case (CV_BUTTON_d):
-                    // denoise flag
-                    l_procam->switchDenoiseFlag();
-                    break;
+//                case (CV_BUTTON_d):
+//                    // denoise flag
+//                    l_procam->switchDenoiseFlag();
+//                    break;
                 case (CV_BUTTON_P):
                     l_calcPrjFlag = !l_calcPrjFlag;
                     if (l_calcPrjFlag) {

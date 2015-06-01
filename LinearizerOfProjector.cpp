@@ -102,13 +102,12 @@ bool LinearizerOfProjector::setResponseMap(cv::Mat_<cv::Vec3b>* const _responseM
     // convert P on Camera Space to Projector Space
     Mat l_PImageOnProjectorSpace(*l_prjSize, CV_8UC3, CV_SCALAR_BLACK);    // カメラ座標系におけるP（=V^{-1}C）
     l_procam->convertProjectorDomainToCameraOne(&l_PImageOnProjectorSpace, l_PImageOnCameraSpace);
-//    MY_IMSHOW(l_PImageOnProjectorSpace);
     
     // create check mat
     const Mat l_whiteCameraImage(l_camSize->height, l_camSize->width, CV_8UC3, CV_SCALAR_WHITE);
     Mat l_whiteImageOnProjectorDomain(l_prjSize->height, l_prjSize->width, CV_8UC3, CV_SCALAR_BLACK);
     l_procam->convertProjectorDomainToCameraOne(&l_whiteImageOnProjectorDomain, l_whiteCameraImage);
-    Vec3b l_nonProjectionColor(0, 0, 0);
+    const Vec3b l_nonProjectionColor(0, 0, 0);
     
     // setting
     int PRows = l_prjSize->height, PCols = l_prjSize->width, PCh = _responseMapP2I->channels();
@@ -133,11 +132,37 @@ bool LinearizerOfProjector::setResponseMap(cv::Mat_<cv::Vec3b>* const _responseM
                 if (l_pPImageOnPS[x][ch] == 255 || l_pResponseMapP2I[responseIndex][ch] == 0) { // 文字が被り，別の値で変更をしないようにする
                     l_pResponseMapP2I[responseIndex][ch] = _INum;
                 }
-
+                
                 // setting I2P
                 const int responseIndexI2P = x * 256 + _INum;   // l_pResponseMapI2Pのインデックス
                 l_pResponseMapI2P[responseIndexI2P][ch] = l_pPImageOnPS[x][ch];
             }
+        }
+    }
+    
+    return true;
+}
+
+// 応答特性マップを設定
+// @input / _averageColor   : 設定するPの色
+// @input / _INum           : 設定するIの値
+// output / _responseMap    : 応答特性マップ
+// return                   : 成功したかどうか
+// ProjectorResponseの設定メソッドの為、ProCamクラスに移動すべき
+bool LinearizerOfProjector::setSimpleResponseMap(const cv::Vec3b& _averageColor, const uchar _INum){
+    // error
+    ProCam* l_procam = getProCam();
+    const int l_channel = 3;
+    
+    // set response map at red, green, and blue
+    for (int ch = 0; ch < l_channel; ++ ch) {
+        // setting I2P
+        l_procam->setSimpleProjectorResponseI2P(_averageColor[ch], _INum, ch);
+
+        // setting P2I
+        const uchar l_responseNum = l_procam->getSimpleProjectorResponseP2I(_averageColor[ch], ch);
+        if (_averageColor[ch] == 255 || l_responseNum == 0) { // 文字が被り，別の値で変更をしないようにする
+            l_procam->setSimpleProjectorResponseP2I(_INum, _averageColor[ch], ch);
         }
     }
     
@@ -633,7 +658,8 @@ bool LinearizerOfProjector::doLinearlize(cv::Mat_<cv::Vec3b>* const _responseOfP
     ///////////////// create projector response function /////////////////
     // プロジェクタの応答特性を計算
     cout << "creating response function..." << endl;
-    if ( !calcResponseFunction(_responseOfProjector, _responseMapP2I)) return false;
+//    if ( !calcResponseFunction(_responseOfProjector, _responseMapP2I)) return false;
+    if ( !calcSimpleResponseFunction()) return false;
     cout << "created response function" << endl;
     
     cout << "linealize is finish" << endl;
@@ -914,28 +940,25 @@ bool LinearizerOfProjector::calcResponseFunction(cv::Mat_<cv::Vec3b>* const _res
     ProCam* l_procam = getProCam();     // ProCamへのポインタ
     const Size* const l_cameraSize = l_procam->getCameraSize();         // カメラサイズ
     const Size* const l_projectorSize = l_procam->getProjectorSize();   // プロジェクタサイズ
-    Mat camColor = Mat::zeros(3, 1, CV_64FC1);
     Mat camImage = Mat::zeros(*l_cameraSize, CV_8UC3), prjImage = Mat::zeros(*l_projectorSize, CV_8UC3);
-    Mat_<cv::Vec3b> l_responseImage(*l_cameraSize);
     Mat_<Vec3b> l_responseMap = _responseMap->clone(); // _responseMapの一時的な置き場
     Mat_<Vec3b> l_responseMapP2I = _responseMap->clone();
-
+    
     // projection RGB * luminance
     // scanning all luminance[0-255] of projector
     int prjLuminance = 0;
     _print(prjLuminance);
     Mat l_blackImage(*l_cameraSize, CV_8UC3, CV_SCALAR_BLACK);
     l_procam->captureFromLightOnProjectorDomain(&l_blackImage, prjLuminance, true, SLEEP_TIME * 2);
-    l_procam->switchOnDenoiseFlag();
     for (prjLuminance = 0; prjLuminance < 256; prjLuminance += PROJECTION_LUMINANCE_STEP) {
         _print(prjLuminance);
-
+        
         // capture from projection image
         l_procam->captureFromLightOnProjectorDomain(&camImage, prjLuminance, true);
         if (USE_LOOK_LIKE_ANOTHER_FLAG) {
             camImage -= l_blackImage;
         }
-        MY_IMSHOW(camImage);
+        //        MY_IMSHOW(camImage);
         ostringstream oss;
         oss << PROJECTOR_RESPONSE_C_IMAGE_PATH << prjLuminance << ".png" << endl;
         imwrite(oss.str().c_str(), camImage);
@@ -947,8 +970,7 @@ bool LinearizerOfProjector::calcResponseFunction(cv::Mat_<cv::Vec3b>* const _res
         // set all C images
         setCImages(camImage, prjLuminance);
     }
-    l_procam->switchOffDenoiseFlag();
-
+    
     // interpolation projector response P to I
     l_procam->interpolationProjectorResponseP2I(&l_responseMapP2I);
     l_procam->interpolateProjectorResponseP2IAtOutOfCameraArea(&l_responseMapP2I);
@@ -964,8 +986,6 @@ bool LinearizerOfProjector::calcResponseFunction(cv::Mat_<cv::Vec3b>* const _res
     l_procam->saveProjectorResponseForByte(PROJECTOR_RESPONSE_I2P_FILE_NAME_BYTE);
     // all C images
     saveAllCImages();
-    // estimated C
-//    saveEstimatedC();
     
     // deep copy
     *_responseMap = l_responseMap.clone();          // I2P
@@ -973,7 +993,72 @@ bool LinearizerOfProjector::calcResponseFunction(cv::Mat_<cv::Vec3b>* const _res
     cout << "finished saving response function" << endl;
     
     //test
-//    test_responseFunction();
+    //    test_responseFunction();
+    
+    return true;
+}
+
+// 応答特性を計算する
+// output / _responseOfProjector    : 計算した応答特性を入れる変数
+// return                           : 成功したかどうか
+bool LinearizerOfProjector::calcSimpleResponseFunction(void){
+    // init
+    ProCam* l_procam = getProCam();     // ProCamへのポインタ
+    const Size* const l_cameraSize = l_procam->getCameraSize();         // カメラサイズ
+    const Size* const l_projectorSize = l_procam->getProjectorSize();   // プロジェクタサイズ
+    Vec3b l_cameraImageColor(0,0,0);
+    Mat_<Vec3b> l_responseMap = _responseMap->clone(); // _responseMapの一時的な置き場
+    Mat_<Vec3b> l_responseMapP2I = _responseMap->clone();
+    
+    // projection RGB * luminance
+    // scanning all luminance[0-255] of projector
+    int prjLuminance = 0;
+    Vec3b l_blackImageColor(0,0,0);
+    l_procam->captureFromLightOnProjectorDomain(&l_blackImageColor, prjLuminance, true, SLEEP_TIME * 2);
+    for (prjLuminance = 0; prjLuminance < 256; prjLuminance += PROJECTION_LUMINANCE_STEP) {
+        _print(prjLuminance);
+        
+        // capture from projection image
+        l_procam->captureFromLightOnProjectorDomain(&l_cameraImageColor, prjLuminance, true);
+        if (USE_LOOK_LIKE_ANOTHER_FLAG) {
+            l_cameraImageColor -= l_blackImageColor;
+        }
+//        ostringstream oss;
+//        oss << PROJECTOR_RESPONSE_C_IMAGE_PATH << prjLuminance << ".png" << endl;
+//        imwrite(oss.str().c_str(), camImage);
+//        waitKey(1);
+        
+        // set inverce response function(P2I and I2P)
+        setSimpleResponseMap(l_cameraImageColor, prjLuminance);
+        
+        // set all C images
+        // 多分いらん？
+//        setCImages(camImage, prjLuminance);
+    }
+    
+    // interpolation projector response P to I
+    l_procam->interpolationProjectorResponseP2I(&l_responseMapP2I);
+    l_procam->interpolateProjectorResponseP2IAtOutOfCameraArea(&l_responseMapP2I);
+    l_procam->medianBlurForProjectorResponseP2I(&l_responseMapP2I, l_responseMapP2I);
+    
+    // set and save
+    cout << "saving response function" << endl;
+    // P2I
+    l_procam->setProjectorResponseP2I(l_responseMapP2I);
+    l_procam->saveProjectorResponseP2IForByte(PROJECTOR_RESPONSE_P2I_FILE_NAME_BYTE);
+    // I2P
+    l_procam->setProjectorResponse(l_responseMap);
+    l_procam->saveProjectorResponseForByte(PROJECTOR_RESPONSE_I2P_FILE_NAME_BYTE);
+    // all C images
+    saveAllCImages();
+    
+    // deep copy
+    *_responseMap = l_responseMap.clone();          // I2P
+    *_responseMapP2I = l_responseMapP2I.clone();    // P2I
+    cout << "finished saving response function" << endl;
+    
+    //test
+    //    test_responseFunction();
     
     return true;
 }
