@@ -12,6 +12,154 @@
 
 using namespace cv;
 
+/**
+ * Vec3b method
+ */
+
+// cv::Vec3bの初期化
+inline void initVec3b(cv::Vec3b* const _src){
+    *_src = CV_VEC3B_BLACK;
+}
+
+/**
+ * @brief set Vec3b Array
+ */
+inline void setVec3bArray(cv::Vec3b* const _dst, const cv::Vec3b& _srcVec, const int _length, const int _start, const int _end, const int _step){
+    for (int i = _start; i < _end; i += _step) {
+        _dst[i] = _srcVec;
+    }
+}
+void setVec3bArray(cv::Vec3b* const _dst1, cv::Vec3b* const _dst2, const cv::Vec3b& _srcVec, const int _length, const int _start, const int _end, const int _step){
+    for (int i = _start; i < _end; i += _step) {
+        _dst1[i] = _srcVec;
+        _dst2[i] = _srcVec;
+    }
+}
+void setVec3bArray(cv::Vec3b* const _dst1, cv::Vec3b* const _dst2, cv::Vec3b* const _dst3, const cv::Vec3b& _srcVec, const int _length, const int _start, const int _end, const int _step){
+    for (int i = _start; i < _end; i += _step) {
+        _dst1[i] = _srcVec;
+        _dst2[i] = _srcVec;
+        _dst3[i] = _srcVec;
+    }
+}
+void setVec3bArray(cv::Vec3b* const _dst1, cv::Vec3b* const _dst2, cv::Vec3b* const _dst3, cv::Vec3b* const _dst4, const cv::Vec3b& _srcVec, const int _length, const int _start, const int _end, const int _step){
+    for (int i = _start; i < _end; i += _step) {
+        _dst1[i] = _srcVec;
+        _dst2[i] = _srcVec;
+        _dst3[i] = _srcVec;
+        _dst4[i] = _srcVec;
+    }
+}
+void setVec3bArray(cv::Vec3b* const _dst1, cv::Vec3b* const _dst2, cv::Vec3b* const _dst3, cv::Vec3b* const _dst4, cv::Vec3b* const _dst5, const cv::Vec3b& _srcVec, const int _length, const int _start, const int _end, const int _step){
+    for (int i = _start; i < _end; i += _step) {
+        _dst1[i] = _srcVec;
+        _dst2[i] = _srcVec;
+        _dst3[i] = _srcVec;
+        _dst4[i] = _srcVec;
+        _dst5[i] = _srcVec;
+    }
+}
+bool testSetVec3bArray(void){
+    // init
+    Vec3b* l_dst1 = new Vec3b[256];
+    Vec3b* l_dst2 = new Vec3b[256];
+    Vec3b l_setVec = Vec3b(255,255,255);
+    Vec3b* l_ans1 = new Vec3b[256];
+    Vec3b* l_ans2 = new Vec3b[256];
+    for (int i = 0; i < 256; ++ i) {
+        l_dst1[i] = CV_VEC3B_BLACK;
+        l_dst2[i] = CV_VEC3B_BLACK;
+        
+        l_ans1[i] = CV_VEC3B_WHITE;
+        l_ans2[i] = CV_VEC3B_FLAT_GRAY(128);
+    }
+    
+    for (int i = 0; i < 256; ++ i) {
+        _print2(i, l_dst1[i]);
+    }
+    
+    std::cout << "case 01 is ";
+    setVec3bArray(l_dst1, l_setVec, 256, 0, 256, 1);
+    if (isEqualVec3b(l_dst1, l_ans1, 256)) {
+        std::cout << "ok" << std::endl;
+    } else {
+        std::cout << "ng" << std::endl;
+    }
+    
+    std::cout << "case 02 is ";
+    l_setVec = Vec3b(128, 128, 128);
+    if (isEqualVec3b(l_dst1, l_ans1, 256)) {
+        std::cout << "ok" << std::endl;
+    } else {
+        std::cout << "ng" << std::endl;
+    }
+    
+    std::cout << "case 03 is ";
+    l_setVec = l_setVec.all(64);
+    if (isEqualVec3b(l_dst1, l_ans1, 256)) {
+        std::cout << "ok" << std::endl;
+    } else {
+        std::cout << "ng" << std::endl;
+    }
+    
+    std::cout << "case 04 is ";
+    setVec3bArray(l_dst1, l_dst2, CV_VEC3B_WHITE, 256, 0, 256, 1);
+    if (isEqualVec3b(l_dst1, l_dst2, l_ans1, 256)) {
+        std::cout << "ok" << std::endl;
+    } else {
+        std::cout << "ng" << std::endl;
+    }
+    
+    std::cout << "case 05 is ";
+    l_dst2[1] = CV_VEC3B_RED;
+    if (isEqualVec3b(l_dst1, l_ans1, 256)) {
+        std::cout << "ok" << std::endl;
+    } else {
+        std::cout << "ng" << std::endl;
+    }
+    
+    return true;
+}
+
+/**
+ @brief check to equal each Vec3b
+ */
+bool isEqualVec3b(const cv::Vec3b* const _v1, const cv::Vec3b* const _v2, const int _length){
+    for (int i = 0; i < _length; ++ i) {
+        if (*(_v1 + i) != *(_v2 + i)) {
+            _print3(i, (*(_v1 + i)), (*(_v2 + i)));
+            return false;
+        }
+    }
+    return true;
+}
+bool isEqualVec3b(const cv::Vec3b* const _v1, const cv::Vec3b* const _v2, const cv::Vec3b* const _v3, const int _length){
+    if (isEqualVec3b(_v1, _v2, _length) && isEqualVec3b(_v2, _v3, _length)) {
+        return true;
+    } else {
+        return false;
+    }
+}
+bool isEqualVec3b(const cv::Vec3b* const _v1, const cv::Vec3b* const _v2, const cv::Vec3b* const _v3, const cv::Vec3b* const _v4, const int _length){
+    if (isEqualVec3b(_v1, _v2, _v3, _length) && isEqualVec3b(_v3, _v4, _length)) {
+        return true;
+    } else {
+        return false;
+    }
+}
+bool isEqualVec3b(const cv::Vec3b* const _v1, const cv::Vec3b* const _v2, const cv::Vec3b* const _v3, const cv::Vec3b* const _v4, const cv::Vec3b* const _v5, const int _length){
+    if (isEqualVec3b(_v1, _v2, _v3, _v4, _length) && isEqualVec3b(_v4, _v5, _length)) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+/**
+ * Mat and other Area
+ */
+
 ///////////////////////////////  check method ///////////////////////////////
 // Matの大きさのチェック
 // return   : 大きさが同じならtrue，違うならfalse
@@ -474,6 +622,15 @@ void printVideoPropaty(cv::VideoCapture& _video){
     std::cout << "CV_CAP_PROP_RECTIFICATION = " << _video.get(CV_CAP_PROP_RECTIFICATION) << std::endl;
 }
 
+/**
+ * @brief print array of Vec3b
+ */
+void printVec3bArray(const cv::Vec3b* const _vec, const int _length){
+    for (int i = 0; i < _length; ++ i) {
+        _print(*(_vec + i));
+    }
+}
+
 ///////////////////////////////  save method ///////////////////////////////
 bool saveAndShowImage(const std::string& _wname, const cv::Mat& _image, const int _type){
     imshow(_wname, _image);
@@ -509,13 +666,6 @@ void initPoint(cv::Point* const p, const int size){
 void initMat(cv::Mat* const _aMat, const int _size){
     for (int i = 0; i < _size; ++ i) {
 //        *(_aMat + i) = Mat::zeros(3, 3, CV_64FC1);
-    }
-}
-
-// cv::Vec3bの初期化
-void initVec3b(cv::Vec3b* const _vector){
-    for (int i = 0; i < 3; ++ i) {
-        (*_vector)[i] = 0;
     }
 }
 
@@ -1433,3 +1583,5 @@ bool meanStddevOfLocalImage(cv::Scalar* const _mean, cv::Scalar* const _stddev, 
     meanStdDev(localImage, *_mean, *_stddev);
     return true;
 }
+
+
