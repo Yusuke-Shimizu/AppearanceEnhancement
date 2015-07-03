@@ -92,7 +92,7 @@ public:
     inline bool addTwoVector(std::vector<cv::Mat>* _dst1, std::vector<cv::Mat>* _dst2, const std::vector<cv::Mat>& _src, const int _ref1, const int _ref2);
     bool createVMap(const cv::Mat& _normalR2BL, const cv::Mat& _normalG2BL, const cv::Mat& _normalB2BL);
     bool test_createVMap(void);
-    bool calcResponseFunction(cv::Mat_<cv::Vec3b>* const _responseMap, cv::Mat_<cv::Vec3b>* const _responseMapP2I);
+    bool calcResponseFunction(cv::Mat_<cv::Vec3b>* const _responseMap);
     bool calcSimpleResponseFunction(void);
     void test_responseFunction(void);
     bool convertCImage2PImage(cv::Mat_<cv::Vec3b>* const _PImageOnCameraDomain, const cv::Mat_<cv::Vec3b>& _CImage);
@@ -103,6 +103,12 @@ public:
     bool doRadiometricCompensation(const uchar& _desiredColorNumber, const int _waitTimeNum = SLEEP_TIME);
     bool estimateC(cv::Mat* const _estC, const cv::Vec3b& _P);
     bool estimateC(cv::Mat* const _estC, const cv::Mat& _P);
+    bool interpolationProjectorResponseP2I(cv::Mat* const _prjRes);
+    bool test_interpolationProjectorResponseP2I(void);
+    bool interpolateSimpleProjectorResponseP2I(void);
+    bool interpolateSimpleProjectorResponseP2I(cv::Vec3b* const _dst, const cv::Vec3b* const _src);
+    bool test_interpolateSimpleProjectorResponseP2I(void);
+    bool interpolateProjectorResponseP2IAtOutOfCameraArea(cv::Mat* const _prjResP2I);
 };
 
 #endif /* defined(__cameraBase03__LinearizerOfProjector__) */
