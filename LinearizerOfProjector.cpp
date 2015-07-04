@@ -32,7 +32,7 @@ using namespace cv;
 
 ///////////////////////////////  constructor ///////////////////////////////
 LinearizerOfProjector::LinearizerOfProjector(ProCam* procam){
-    test_interpolateSimpleProjectorResponseP2I();
+//    test_interpolateSimpleProjectorResponseP2I();
     setProCam(procam);
     const cv::Size* cameraSize = procam->getCameraSize();
     initColorMixingMatrixMap(*cameraSize);
@@ -1044,7 +1044,6 @@ bool LinearizerOfProjector::calcSimpleResponseFunction(void){
 
     // interpolation projector response P to I
     interpolateSimpleProjectorResponseP2I();
-//    interpolateSimpleProjectorResponseP2IAtOutOfCameraArea();
     
 //    // set and save
 //    cout << "saving response function" << endl;
@@ -1060,11 +1059,8 @@ bool LinearizerOfProjector::calcSimpleResponseFunction(void){
 //    // deep copy
 //    *_responseMap = l_responseMap.clone();          // I2P
 //    *_responseMapP2I = l_responseMapP2I.clone();    // P2I
-//    cout << "finished saving response function" << endl;
-//    
-//    //test
-//    //    test_responseFunction();
-//    
+    cout << "finished saving response function" << endl;
+
     return true;
 }
 
@@ -1313,7 +1309,7 @@ bool LinearizerOfProjector::interpolateSimpleProjectorResponseP2I(void){
     // init
     ProCam* l_procam = getProCam();
     const Vec3b* l_srcPrjRes = l_procam->getSimpleProjectorResponseP2I();
-    Vec3b* l_dstPrjRes = new Vec3b[256];    // マジックコード（変えたい）
+    Vec3b* l_dstPrjRes = new Vec3b[256];
     
     // do
     interpolateSimpleProjectorResponseP2I(l_dstPrjRes, l_srcPrjRes);
@@ -1359,9 +1355,6 @@ bool LinearizerOfProjector::interpolateSimpleProjectorResponseP2I(cv::Vec3b* con
                     
                     // 抜けている箇所の修復
                     _dst[p_current][c] = i0 + (uchar)(alpha * (double)(i1 - i0));
-//                    _print3((int)i0, (int)i1, alpha);
-//                    _print3(p_current, c, _dst[p_current]);
-//                    _print2(_dst[p_current], p_current);
                 }
                 
                 // ポインタを修復箇所へ移動
@@ -1369,11 +1362,6 @@ bool LinearizerOfProjector::interpolateSimpleProjectorResponseP2I(cv::Vec3b* con
                 _dst[p][c] = _src[p][c];
             }
         }
-    }
-//    printVec3bArray(_dst, 256);
-    _print_name(_dst);
-    for (int i = 0; i < 256; ++ i) {
-        _print3(i, _src[i], _dst[i]);
     }
     cout << "finished interpolation" << endl;
     
@@ -1515,7 +1503,6 @@ bool LinearizerOfProjector::interpolateProjectorResponseP2IAtOutOfCameraArea(cv:
         }
         
         // get average
-        //        l_aveColor = (Vec3b)(l_sum / (l_camSize->area()));
         l_aveColor = (Vec3b)(l_sum / (double)cnt);
         
         // set response at out of camera area

@@ -240,6 +240,7 @@ public:
     bool printProjectorResponseP2I(const cv::Point& _pt);
     bool printProjectorResponse(const cv::Point& _pt, const cv::Mat& _prjRes);
     ///////////////////////////////  capture from light method ///////////////////////////////
+
     // normal method
     bool captureFromLight(cv::Mat* const _captureImage, const cv::Mat& _projectionImage, const bool _denoiseFlag = false, const int _waitTimeNum = SLEEP_TIME);
     bool captureFromLight(cv::Mat* const _captureImage, const cv::Vec3b& _projectionColor, const bool _denoiseFlag = false, const int _waitTimeNum = SLEEP_TIME);
@@ -248,6 +249,8 @@ public:
     bool captureFromLight(cv::Vec3b* const _captureColor, const cv::Vec3b& _projectionColor, const bool _denoiseFlag = false, const int _waitTimeNum = SLEEP_TIME);
     bool captureFromLight(cv::Vec3b* const _captureColor, const uchar _projectionNum, const bool _denoiseFlag = false, const int _waitTimeNum = SLEEP_TIME);
     void captureFromLightTest(void);
+    bool captureFromLight(std::vector<cv::Mat>* const _captureImages, const std::vector<cv::Mat>& _projectionImage, const bool _denoiseFlag = false, const int _waitTimeNum = SLEEP_TIME);
+    
     
     bool captureFromLightOnProjectorDomain(cv::Mat* const _captureImage,    const cv::Mat& _projectionImage,   const bool _denoiseFlag = false,    const int _waitTimeNum = SLEEP_TIME);
     bool captureFromLightOnProjectorDomain(cv::Mat* const _captureImage,    const cv::Vec3b& _projectionColor, const bool _denoiseFlag = false,    const int _waitTimeNum = SLEEP_TIME);
