@@ -652,8 +652,8 @@ bool LinearizerOfProjector::doLinearlize(cv::Mat_<cv::Vec3b>* const _responseOfP
     ///////////////// create V map /////////////////
     // 色変換行列の生成
     cout << "creating Color Mixing Matrix..." << endl;
-//    if( !calcColorMixingMatrix() ) return false;
-    calcMoreDetailColorMixingMatrix();
+    if( !calcColorMixingMatrix() ) return false;
+//    calcMoreDetailColorMixingMatrix();
     cout << "created Color Mixing Matrix" << endl;
     
     // show V map
@@ -662,8 +662,8 @@ bool LinearizerOfProjector::doLinearlize(cv::Mat_<cv::Vec3b>* const _responseOfP
     ///////////////// create projector response function /////////////////
     // プロジェクタの応答特性を計算
     cout << "creating response function..." << endl;
-    if ( !calcResponseFunction(_responseOfProjector)) return false;
-//    if ( !calcSimpleResponseFunction()) return false;
+//    if ( !calcResponseFunction(_responseOfProjector)) return false;
+    if ( !calcSimpleResponseFunction()) return false;
     cout << "created response function" << endl;
     
     cout << "linealize is finish" << endl;
@@ -700,10 +700,10 @@ bool LinearizerOfProjector::calcColorMixingMatrix(void){
         imshow("white_cap", white_cap);
         waitKey(30);
 
-        cout << "キャリブレーションは正しいですか？(y/n)" << endl;
-        if (yes_no()) {
+//        cout << "キャリブレーションは正しいですか？(y/n)" << endl;
+//        if (yes_no()) {
             break;
-        }
+//        }
     }
     
     // translate bit depth (uchar[0-255] -> double[0-1])
@@ -778,10 +778,10 @@ bool LinearizerOfProjector::calcMoreDetailColorMixingMatrix(void){
         }
 
         // 投影撮影出来てるなら抜ける
-        cout << "Is capture image true?" << endl;
-        if (yes_no()) {
-            break;
-        }
+//        cout << "Is capture image true?" << endl;
+//        if (yes_no()) {
+//            break;
+//        }
     }
     l_procam->switchOffDenoiseFlag();
     

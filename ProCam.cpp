@@ -222,30 +222,55 @@ bool ProCam::initProjectorResponse(cv::Mat* const _src){
 // return   : 成功したかどうか
 bool ProCam::initSimpleProjectorResponseI2P(void){
     // do
-    initSimpleProjectorResponse(m_simpleProjectorResponseI2P);
+//    _print(m_simpleProjectorResponseI2P);
+//    initSimpleProjectorResponse(m_simpleProjectorResponseI2P);
+//    _print(m_simpleProjectorResponseI2P);
+//    _print(*m_simpleProjectorResponseI2P);
+//    _print(m_simpleProjectorResponseI2P[0]);
+    
+    m_simpleProjectorResponseI2P = new cv::Vec3b[256];
+    for (int i = 0; i < 256; ++ i) {
+        m_simpleProjectorResponseI2P[i] = CV_VEC3B_FLAT_GRAY(INIT_RES_NUM);
+    }
+    m_simpleProjectorResponseI2P[0]     = CV_VEC3B_BLACK;
+    m_simpleProjectorResponseI2P[255]   = CV_VEC3B_WHITE;
+
     
     // output
     return true;
 }
 bool ProCam::initSimpleProjectorResponseP2I(void){
     // do
-    initSimpleProjectorResponse(m_simpleProjectorResponseP2I);
-    
+//    initSimpleProjectorResponse(m_simpleProjectorResponseP2I);
+
+    m_simpleProjectorResponseP2I = new cv::Vec3b[256];
+    for (int i = 0; i < 256; ++ i) {
+        m_simpleProjectorResponseP2I[i] = CV_VEC3B_FLAT_GRAY(INIT_RES_NUM);
+    }
+    m_simpleProjectorResponseP2I[0]     = CV_VEC3B_BLACK;
+    m_simpleProjectorResponseP2I[255]   = CV_VEC3B_WHITE;
+
     // output
     return true;
 }
 bool ProCam::initSimpleProjectorResponse(cv::Vec3b* _src){
     // init
-    cv::Vec3b* l_simpleProjectorResponse = _src;
-    
+//    cv::Vec3b* l_simpleProjectorResponse = _src;
+    _print(_src);
+    _print(m_simpleProjectorResponseI2P);
+
     // do
-    l_simpleProjectorResponse = new cv::Vec3b[256];
+    _src = new cv::Vec3b[256];
     for (int i = 0; i < 256; ++ i) {
-        l_simpleProjectorResponse[i] = CV_VEC3B_FLAT_GRAY(INIT_RES_NUM);
+        _src[i] = CV_VEC3B_FLAT_GRAY(INIT_RES_NUM);
     }
-    l_simpleProjectorResponse[0]     = CV_VEC3B_BLACK;
-    l_simpleProjectorResponse[255]   = CV_VEC3B_WHITE;
+    _src[0]     = CV_VEC3B_BLACK;
+    _src[255]   = CV_VEC3B_WHITE;
     
+    _print(_src);
+    _print(*_src);
+    _print(m_simpleProjectorResponseI2P);
+    _print(*m_simpleProjectorResponseI2P);
     // output
     return true;
 }
