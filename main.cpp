@@ -121,7 +121,6 @@ bool divideImage3_(cv::Mat* const _dst1, cv::Mat* const _dst2, const cv::Mat& _s
 // main method
 int main(int argc, const char * argv[])
 {
-    
 #ifdef EXPERIMENT_FLAG
     // experimentation
     AppearanceEnhancement ae(PRJ_SIZE);

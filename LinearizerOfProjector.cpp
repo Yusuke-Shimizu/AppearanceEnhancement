@@ -32,6 +32,7 @@ using namespace cv;
 
 ///////////////////////////////  constructor ///////////////////////////////
 LinearizerOfProjector::LinearizerOfProjector(ProCam* procam){
+//    test_interpolateSimpleProjectorResponseP2I();
     setProCam(procam);
     const cv::Size* cameraSize = procam->getCameraSize();
     initColorMixingMatrixMap(*cameraSize);
@@ -146,10 +147,10 @@ bool LinearizerOfProjector::setResponseMap(cv::Mat_<cv::Vec3b>* const _responseM
 // 応答特性マップを設定
 // @input / _averageColor   : 設定するPの色
 // @input / _INum           : 設定するIの値
-// output / _responseMap    : 応答特性マップ
-// return                   : 成功したかどうか
+// @output / _responseMap    : 応答特性マップ
+// @return                   : 成功したかどうか
 // ProjectorResponseの設定メソッドの為、ProCamクラスに移動すべき
-bool LinearizerOfProjector::setSimpleResponseMap(const cv::Vec3b& _averageColor, const uchar _INum){
+bool LinearizerOfProjector::setSimpleResponseMap(const cv::Vec3b& _setColor, const uchar _INum){
     // error
     ProCam* l_procam = getProCam();
     const int l_channel = 3;
@@ -157,12 +158,12 @@ bool LinearizerOfProjector::setSimpleResponseMap(const cv::Vec3b& _averageColor,
     // set response map at red, green, and blue
     for (int ch = 0; ch < l_channel; ++ ch) {
         // setting I2P
-        l_procam->setSimpleProjectorResponseI2P(_averageColor[ch], _INum, ch);
+        l_procam->setSimpleProjectorResponseI2P(_setColor[ch], _INum, ch);
 
         // setting P2I
-        const uchar l_responseNum = l_procam->getSimpleProjectorResponseP2I(_averageColor[ch], ch);
-        if (_averageColor[ch] == 255 || l_responseNum == 0) { // 文字が被り，別の値で変更をしないようにする
-            l_procam->setSimpleProjectorResponseP2I(_INum, _averageColor[ch], ch);
+        const uchar l_responseNum = l_procam->getSimpleProjectorResponseP2I(_setColor[ch], ch);
+        if (_setColor[ch] == 255 || l_responseNum == 0) { // 文字が被り，別の値で変更をしないようにする
+            l_procam->setSimpleProjectorResponseP2I(_INum, _setColor[ch], ch);
         }
     }
     
@@ -641,9 +642,12 @@ bool LinearizerOfProjector::convertColorSpaceUseV(cv::Mat* const _dst, const cv:
 }
 
 ///////////////////////////////  other method ///////////////////////////////
-// プロジェクタの線形化を行うメソッド
-// input / responseOfProjector  : 線形化のルックアップテーブルを入れる配列
-// return   : 成功したかどうか
+/**
+ * @brief プロジェクタの線形化を行うメソッド
+ * @output _responseOfProjector : 線形化ルックアップテーブルを入れる配列
+ * @output _responseMapP2I      : _responseMapの逆関数
+ * @return 成功したかどうか
+ */
 bool LinearizerOfProjector::doLinearlize(cv::Mat_<cv::Vec3b>* const _responseOfProjector, cv::Mat_<cv::Vec3b>* const _responseMapP2I){
     ///////////////// create V map /////////////////
     // 色変換行列の生成
@@ -658,8 +662,8 @@ bool LinearizerOfProjector::doLinearlize(cv::Mat_<cv::Vec3b>* const _responseOfP
     ///////////////// create projector response function /////////////////
     // プロジェクタの応答特性を計算
     cout << "creating response function..." << endl;
-//    if ( !calcResponseFunction(_responseOfProjector, _responseMapP2I)) return false;
-    if ( !calcSimpleResponseFunction()) return false;
+    if ( !calcResponseFunction(_responseOfProjector)) return false;
+//    if ( !calcSimpleResponseFunction()) return false;
     cout << "created response function" << endl;
     
     cout << "linealize is finish" << endl;
@@ -935,14 +939,22 @@ bool LinearizerOfProjector::test_createVMap(void){
 // 応答特性を計算する
 // output / _responseOfProjector    : 計算した応答特性を入れる変数
 // return                           : 成功したかどうか
-bool LinearizerOfProjector::calcResponseFunction(cv::Mat_<cv::Vec3b>* const _responseMap, cv::Mat_<cv::Vec3b>* const _responseMapP2I){
+/**
+ * @brief 応答特性を計算
+ * @output _responseMap    : 線形化ルックアップテーブルを入れる配列
+ * @output _responseMapP2I : _responseMapの逆関数
+ * @return 成功可否
+ */
+bool LinearizerOfProjector::calcResponseFunction(cv::Mat_<cv::Vec3b>* const _responseMap){
     // init
     ProCam* l_procam = getProCam();     // ProCamへのポインタ
     const Size* const l_cameraSize = l_procam->getCameraSize();         // カメラサイズ
     const Size* const l_projectorSize = l_procam->getProjectorSize();   // プロジェクタサイズ
-    Mat camImage = Mat::zeros(*l_cameraSize, CV_8UC3), prjImage = Mat::zeros(*l_projectorSize, CV_8UC3);
-    Mat_<Vec3b> l_responseMap = _responseMap->clone(); // _responseMapの一時的な置き場
-    Mat_<Vec3b> l_responseMapP2I = _responseMap->clone();
+    const Size l_prjResSize = l_procam->getProjectorResponseI2P()->size(); // プロジェクタ応答特性サイズ
+    Mat l_camImage = Mat::zeros(*l_cameraSize, CV_8UC3);
+    Mat prjImage = Mat::zeros(*l_projectorSize, CV_8UC3);
+    Mat_<Vec3b> l_responseMap(l_prjResSize); // _responseMapの一時的な置き場
+    Mat_<Vec3b> l_responseMapP2I(l_prjResSize);
     
     // projection RGB * luminance
     // scanning all luminance[0-255] of projector
@@ -954,26 +966,26 @@ bool LinearizerOfProjector::calcResponseFunction(cv::Mat_<cv::Vec3b>* const _res
         _print(prjLuminance);
         
         // capture from projection image
-        l_procam->captureFromLightOnProjectorDomain(&camImage, prjLuminance, true);
+        l_procam->captureFromLightOnProjectorDomain(&l_camImage, prjLuminance, true);
         if (USE_LOOK_LIKE_ANOTHER_FLAG) {
-            camImage -= l_blackImage;
+            l_camImage -= l_blackImage;
         }
         //        MY_IMSHOW(camImage);
         ostringstream oss;
         oss << PROJECTOR_RESPONSE_C_IMAGE_PATH << prjLuminance << ".png" << endl;
-        imwrite(oss.str().c_str(), camImage);
+        imwrite(oss.str().c_str(), l_camImage);
         waitKey(1);
         
         // set inverce response function(P2I and I2P)
-        setResponseMap(&l_responseMapP2I, &l_responseMap, camImage, prjLuminance);
+        setResponseMap(&l_responseMapP2I, &l_responseMap, l_camImage, prjLuminance);
         
         // set all C images
-        setCImages(camImage, prjLuminance);
+        setCImages(l_camImage, prjLuminance);
     }
     
     // interpolation projector response P to I
-    l_procam->interpolationProjectorResponseP2I(&l_responseMapP2I);
-    l_procam->interpolateProjectorResponseP2IAtOutOfCameraArea(&l_responseMapP2I);
+    interpolationProjectorResponseP2I(&l_responseMapP2I);
+    interpolateProjectorResponseP2IAtOutOfCameraArea(&l_responseMapP2I);
     l_procam->medianBlurForProjectorResponseP2I(&l_responseMapP2I, l_responseMapP2I);
     
     // set and save
@@ -988,8 +1000,8 @@ bool LinearizerOfProjector::calcResponseFunction(cv::Mat_<cv::Vec3b>* const _res
     saveAllCImages();
     
     // deep copy
-    *_responseMap = l_responseMap.clone();          // I2P
-    *_responseMapP2I = l_responseMapP2I.clone();    // P2I
+//    *_responseMap = l_responseMap.clone();          // I2P
+//    *_responseMapP2I = l_responseMapP2I.clone();    // P2I
     cout << "finished saving response function" << endl;
     
     //test
@@ -998,18 +1010,20 @@ bool LinearizerOfProjector::calcResponseFunction(cv::Mat_<cv::Vec3b>* const _res
     return true;
 }
 
-// 応答特性を計算する
-// output / _responseOfProjector    : 計算した応答特性を入れる変数
+// シンプルな応答特性を計算する
 // return                           : 成功したかどうか
+/**
+ * 流れ：投影・撮影・平均化・セッティング・補間
+ */
 bool LinearizerOfProjector::calcSimpleResponseFunction(void){
     // init
     ProCam* l_procam = getProCam();     // ProCamへのポインタ
     const Size* const l_cameraSize = l_procam->getCameraSize();         // カメラサイズ
     const Size* const l_projectorSize = l_procam->getProjectorSize();   // プロジェクタサイズ
-    Vec3b l_cameraImageColor(0,0,0);
-    Mat_<Vec3b> l_responseMap = _responseMap->clone(); // _responseMapの一時的な置き場
-    Mat_<Vec3b> l_responseMapP2I = _responseMap->clone();
-    
+    Vec3b l_captureImageColor(0,0,0);
+//    Vec3b* l_responseMap = new Vec3b[256]; // _responseMapの一時的な置き場
+//    Vec3b* l_responseMapP2I = new Vec3b[256];
+
     // projection RGB * luminance
     // scanning all luminance[0-255] of projector
     int prjLuminance = 0;
@@ -1019,47 +1033,34 @@ bool LinearizerOfProjector::calcSimpleResponseFunction(void){
         _print(prjLuminance);
         
         // capture from projection image
-        l_procam->captureFromLightOnProjectorDomain(&l_cameraImageColor, prjLuminance, true);
+        l_procam->captureFromLightOnProjectorDomain(&l_captureImageColor, prjLuminance, true);
         if (USE_LOOK_LIKE_ANOTHER_FLAG) {
-            l_cameraImageColor -= l_blackImageColor;
+            l_captureImageColor -= l_blackImageColor;
         }
-//        ostringstream oss;
-//        oss << PROJECTOR_RESPONSE_C_IMAGE_PATH << prjLuminance << ".png" << endl;
-//        imwrite(oss.str().c_str(), camImage);
-//        waitKey(1);
-        
+
         // set inverce response function(P2I and I2P)
-        setSimpleResponseMap(l_cameraImageColor, prjLuminance);
-        
-        // set all C images
-        // 多分いらん？
-//        setCImages(camImage, prjLuminance);
+        setSimpleResponseMap(l_captureImageColor, prjLuminance);
     }
-    
+
     // interpolation projector response P to I
-    l_procam->interpolationProjectorResponseP2I(&l_responseMapP2I);
-    l_procam->interpolateProjectorResponseP2IAtOutOfCameraArea(&l_responseMapP2I);
-    l_procam->medianBlurForProjectorResponseP2I(&l_responseMapP2I, l_responseMapP2I);
+    interpolateSimpleProjectorResponseP2I();
     
-    // set and save
-    cout << "saving response function" << endl;
-    // P2I
-    l_procam->setProjectorResponseP2I(l_responseMapP2I);
-    l_procam->saveProjectorResponseP2IForByte(PROJECTOR_RESPONSE_P2I_FILE_NAME_BYTE);
-    // I2P
-    l_procam->setProjectorResponse(l_responseMap);
-    l_procam->saveProjectorResponseForByte(PROJECTOR_RESPONSE_I2P_FILE_NAME_BYTE);
-    // all C images
-    saveAllCImages();
-    
-    // deep copy
-    *_responseMap = l_responseMap.clone();          // I2P
-    *_responseMapP2I = l_responseMapP2I.clone();    // P2I
+//    // set and save
+//    cout << "saving response function" << endl;
+//    // P2I
+//    l_procam->setProjectorResponseP2I(l_responseMapP2I);
+//    l_procam->saveProjectorResponseP2IForByte(PROJECTOR_RESPONSE_P2I_FILE_NAME_BYTE);
+//    // I2P
+//    l_procam->setProjectorResponse(l_responseMap);
+//    l_procam->saveProjectorResponseForByte(PROJECTOR_RESPONSE_I2P_FILE_NAME_BYTE);
+//    // all C images
+//    saveAllCImages();
+//    
+//    // deep copy
+//    *_responseMap = l_responseMap.clone();          // I2P
+//    *_responseMapP2I = l_responseMapP2I.clone();    // P2I
     cout << "finished saving response function" << endl;
-    
-    //test
-    //    test_responseFunction();
-    
+
     return true;
 }
 
@@ -1224,3 +1225,299 @@ bool LinearizerOfProjector::estimateC(cv::Mat* const _estC, const cv::Vec3b& _P)
 bool LinearizerOfProjector::estimateC(cv::Mat* const _estC, const cv::Mat& _P){
     return convertColorSpaceUseV(_estC, _P);
 }
+
+// projector responseの補間を行う
+// 要変更
+// 入力と出力が同じファイルなので、別々にすべき
+bool LinearizerOfProjector::interpolationProjectorResponseP2I(cv::Mat* const _prjRes){
+    cout << "interpolation now ..." << endl;
+    // initialize
+    int rows = _prjRes->rows, cols = _prjRes->cols / 256, channels = _prjRes->channels();
+    if (_prjRes->isContinuous()) {
+        cols *= rows;
+        rows = 1;
+    }
+    
+    // scan all pixel
+    for (int y = 0; y < rows; ++ y) {
+        Vec3b* l_pPrjRes = _prjRes->ptr<Vec3b>(y);
+        for (int x = 0; x < cols; ++ x) {
+            
+            // scan all color
+            for (int c = 0; c < channels; ++ c) {
+                // scan all luminance
+                for (int p = 1; p < 255; ++ p) {    // 最初と最後は初期化の時に決定済みである為，除外
+                    if (l_pPrjRes[x * 256 + p][c] == INIT_RES_NUM) {   // 抜けている箇所の特定
+                        uchar p0 = p - 1, i0 = l_pPrjRes[x * 256 + p0][c];  // 下端の値
+                        
+                        // 上端の検索
+                        uchar p1 = p + 1, i1 = 0;
+                        for (; ; ++ p1) {
+                            if (l_pPrjRes[x * 256 + p1][c] != INIT_RES_NUM || p1 == 255) {
+                                i1 = l_pPrjRes[x * 256 + p1][c];
+                                break;
+                            }
+                        }
+                        //                        if (p == 1 && p1 == 255) {
+                        //                            l_pPrjRes[x * 256 + p1][c] = INIT_RES_NUM;
+                        //                            break;
+                        //                        }
+                        
+                        // 抜けていた箇所全てを修復
+                        for (int p_current = p; p_current < p1; ++ p_current) {
+                            // set alpha
+                            const double alpha = (double)(p_current - p0)/(double)(p1 - p0);
+                            
+                            // 抜けている箇所の修復
+                            l_pPrjRes[x * 256 + p_current][c] = i0 + (uchar)(alpha * (double)(i1 - i0));
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    cout << "finished interpolation" << endl;
+    
+    return true;
+}
+// test of front method
+bool LinearizerOfProjector::test_interpolationProjectorResponseP2I(void){
+    Mat m1(2, 256, CV_8UC3, Scalar(INIT_RES_NUM, INIT_RES_NUM, INIT_RES_NUM));
+    //    m1.at<Vec3b>(0, 255) = Vec3b(127, 127, 127);
+    //    m1.at<Vec3b>(1, 255) = Vec3b(0, 0, 0);
+    for (int i = 0; i < 256; i += 5) {
+        m1.at<Vec3b>(0, i) = Vec3b(i, i, i);
+        m1.at<Vec3b>(1, i) = Vec3b(0, 0, 0);
+        if (i > 128) {
+            m1.at<Vec3b>(1, i) = CV_VEC3B_WHITE;
+        }
+    }
+    //    m1.at<Vec3b>(1, 255) = Vec3b(255, 255, 255);
+    _print(m1);
+    interpolationProjectorResponseP2I(&m1);
+    _print(m1);
+    
+    return true;
+}
+
+/**
+ * @brief interpolate m_simpleProjectorResponseP2I
+ * @output success or fail
+ */
+bool LinearizerOfProjector::interpolateSimpleProjectorResponseP2I(void){
+    // init
+    ProCam* l_procam = getProCam();
+    const Vec3b* l_srcPrjRes = l_procam->getSimpleProjectorResponseP2I();
+    Vec3b* l_dstPrjRes = new Vec3b[256];
+    
+    // do
+    interpolateSimpleProjectorResponseP2I(l_dstPrjRes, l_srcPrjRes);
+    
+    // output
+    l_procam->setSimpleProjectorResponseP2I(l_dstPrjRes);
+    return true;
+}
+
+bool LinearizerOfProjector::interpolateSimpleProjectorResponseP2I(cv::Vec3b* const _dst, const cv::Vec3b* const _src){
+    cout << "interpolation now ..." << endl;
+//    printVec3bArray(_src, 256);
+    // initialize
+    int channels = 3;
+    
+    // scan all color
+    for (int c = 0; c < channels; ++ c) {
+        // scan all luminance
+        for (int p = 0; p < 256; ++ p) {
+            // 最初と最後は初期化の時に決定済みである為，除外
+            if (p == 0 || p == 255) {
+                continue;
+            }
+            
+            if (_src[p][c] == INIT_RES_NUM) {   // 抜けている箇所の特定
+                // 下端の決定
+                uchar p0 = (uchar)(p - 1), i0 = _src[p0][c];
+                
+                // 上端の検索
+                uchar p1 = p + 1, i1 = 0;
+                for (; ; ++ p1) {
+                    if (_src[p1][c] != INIT_RES_NUM || p1 == 255) {
+                        i1 = _src[p1][c];
+                        break;
+                    }
+                }
+                
+                // 抜けていた箇所全てを修復
+                int p_current;
+                for (p_current = p; p_current < p1; ++ p_current) {
+                    // set alpha
+                    const double alpha = (double)(p_current - p0)/(double)(p1 - p0);
+                    
+                    // 抜けている箇所の修復
+                    _dst[p_current][c] = i0 + (uchar)(alpha * (double)(i1 - i0));
+                }
+                
+                // ポインタを修復箇所へ移動
+                p = p_current;
+                _dst[p][c] = _src[p][c];
+            }
+        }
+    }
+    cout << "finished interpolation" << endl;
+    
+    return true;
+}
+// test of front method
+bool LinearizerOfProjector::test_interpolateSimpleProjectorResponseP2I(void){
+    // init
+    Vec3b* l_src = new Vec3b[256];
+    Vec3b* l_dst = new Vec3b[256];
+    Vec3b* l_ans = new Vec3b[256];
+    setVec3bArray(l_src, l_dst, l_ans, CV_VEC3B_BLACK, 256, 0, 256, 1);
+    
+    // test case 01
+    std::cout << "test case 01 is";
+    setVec3bArray(l_src, l_dst, l_ans, CV_VEC3B_BLACK, 256, 0, 256, 1);
+    l_src[255] = CV_VEC3B_WHITE;
+    // create
+    for (int i = 0; i < 256; i += 5) {
+        l_src[i] = CV_VEC3B_FLAT_GRAY(i);
+        for (int j = i; j < i + 5 | j < 256; ++ j) {
+            l_ans[j] = CV_VEC3B_FLAT_GRAY(j);
+        }
+    }
+    interpolateSimpleProjectorResponseP2I(l_dst, l_src);
+    if(isEqualVec3b(l_ans, l_dst, 256)){
+        std::cout << "ok" << std::endl;
+    } else {
+        std::cout << "ng" << std::endl;
+        for (int i = 0; i < 256; ++ i) {
+            _print2(l_ans[i], l_dst[i]);
+        }
+    }
+    
+    // test case 02
+    _print("test case 02");
+    std::cout << "test case 01 is";
+    setVec3bArray(l_src, l_dst, l_ans, CV_VEC3B_BLACK, 256, 0, 256, 1);
+    l_src[255] = CV_VEC3B_WHITE;
+    // create
+    for (int i = 0; i < 256; i += 100) {
+        l_src[i] = CV_VEC3B_FLAT_GRAY(i);
+        for (int j = i; j < i + 100 | j < 256; ++ j) {
+            l_ans[j] = CV_VEC3B_FLAT_GRAY(j);
+        }
+    }
+    interpolateSimpleProjectorResponseP2I(l_dst, l_src);
+    if(isEqualVec3b(l_ans, l_dst, 256)){
+        std::cout << "l_answer = l_dst" << std::endl;
+    } else {
+        for (int i = 0; i < 256; ++ i) {
+            _print2(l_ans[i], l_dst[i]);
+        }
+        std::cout << "l_answer != l_dst" << std::endl;
+    }
+    
+    // test case 03
+    std::cout << "test case 01 is";
+    setVec3bArray(l_src, l_dst, l_ans, CV_VEC3B_BLACK, 256, 0, 256, 1);
+    l_src[255] = CV_VEC3B_WHITE;
+    // create
+    for (int i = 0, j = 0; i < 256; i += 10, ++ j) {
+        l_src[i] = CV_VEC3B_FLAT_GRAY(j);
+        for (int k = i; k < i + 10 | k < 256; ++ k) {
+            l_ans[k] = CV_VEC3B_FLAT_GRAY(j);
+        }
+    }
+    interpolateSimpleProjectorResponseP2I(l_dst, l_src);
+    if(isEqualVec3b(l_ans, l_dst, 256)){
+        std::cout << "l_answer = l_dst" << std::endl;
+    } else {
+        for (int i = 0; i < 256; ++ i) {
+            _print2(l_ans[i], l_dst[i]);
+        }
+        std::cout << "l_answer != l_dst" << std::endl;
+    }
+    
+    // test case 04
+    std::cout << "test case 01 is";
+    setVec3bArray(l_src, l_dst, l_ans, CV_VEC3B_BLACK, 256, 0, 256, 1);
+    l_src[255] = CV_VEC3B_WHITE;
+    // create
+    for (int i = 0, j = 0; i < 256; i += 10, ++ j) {
+        l_src[j] = CV_VEC3B_FLAT_GRAY(i);
+        l_ans[j] = CV_VEC3B_FLAT_GRAY(i);
+    }
+    for (int i = 26; i < 256; ++ i) {
+        l_ans[i] = CV_VEC3B_WHITE;
+    }
+    interpolateSimpleProjectorResponseP2I(l_dst, l_src);
+    if(isEqualVec3b(l_ans, l_dst, 256)){
+        std::cout << "l_answer = l_dst" << std::endl;
+    } else {
+        for (int i = 0; i < 256; ++ i) {
+            _print2(l_ans[i], l_dst[i]);
+        }
+        std::cout << "l_answer != l_dst" << std::endl;
+    }
+    
+    return true;
+}
+
+// カメラ撮影場所以外の応答特性を設定
+bool LinearizerOfProjector::interpolateProjectorResponseP2IAtOutOfCameraArea(cv::Mat* const _prjResP2I){
+    // init
+    ProCam* l_procam = getProCam();
+
+    // error handle
+    const Size* l_prjSize = l_procam->getProjectorSize();
+    if (_prjResP2I->rows != l_prjSize->height || _prjResP2I->cols != l_prjSize->width * 256) {
+        cerr << "different size from ["<<l_prjSize->height<<", "<<l_prjSize->height * 256<<"]" << endl;
+        _print_mat_propaty(*_prjResP2I);
+        exit(-1);
+    }
+    
+    // create non camera area flag
+    const Size* l_camSize = l_procam->getCameraSize();
+    const Mat whiteImage(*l_camSize, CV_8UC3, CV_SCALAR_WHITE);
+    Mat l_checkNonCameraAreaFlag(*l_prjSize, CV_8UC3, CV_SCALAR_BLACK);
+    l_procam->convertProjectorDomainToCameraOne(&l_checkNonCameraAreaFlag, whiteImage);
+    
+    // set non camera area
+    for (int P = 0; P < 256; ++ P) {
+        Vec3b l_aveColor(0, 0, 0);
+        Vec3d l_sum(0, 0, 0);
+        int cnt = 0;
+        
+        // calc sum color
+        for (int y = 0; y < l_prjSize->height; ++ y) {
+            const Vec3b* l_pCheckNonCameraAreaFlag = l_checkNonCameraAreaFlag.ptr<Vec3b>(y);
+            const Vec3b* l_pPrjResP2I = _prjResP2I->ptr<Vec3b>(y);
+            
+            for (int x = 0; x < l_prjSize->width; ++ x) {
+                if (l_pCheckNonCameraAreaFlag[x] == CV_VEC3B_WHITE) {
+                    l_sum += l_pPrjResP2I[x * 256 + P];
+                    ++ cnt;
+                }
+            }
+        }
+        
+        // get average
+        l_aveColor = (Vec3b)(l_sum / (double)cnt);
+        
+        // set response at out of camera area
+        for (int y = 0; y < l_prjSize->height; ++ y) {
+            const Vec3b* l_pCheckNonCameraAreaFlag = l_checkNonCameraAreaFlag.ptr<Vec3b>(y);
+            Vec3b* l_pPrjResP2I = _prjResP2I->ptr<Vec3b>(y);
+            
+            for (int x = 0; x < l_prjSize->width; ++ x) {
+                if (l_pCheckNonCameraAreaFlag[x] == CV_VEC3B_BLACK) {
+                    l_pPrjResP2I[x * 256 + P] = l_aveColor;
+                }
+            }
+        }
+    }
+    
+    return true;
+}
+

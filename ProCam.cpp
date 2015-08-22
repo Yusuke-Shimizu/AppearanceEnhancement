@@ -202,14 +202,14 @@ bool ProCam::initProjectorResponseP2I(void){
     return true;
 }
 
-bool ProCam::initProjectorResponse(cv::Mat* const _prjRes){
-    int rows = _prjRes->rows, cols = _prjRes->cols;
+bool ProCam::initProjectorResponse(cv::Mat* const _src){
+    int rows = _src->rows, cols = _src->cols;
     for (int y = 0; y < rows; ++ y) {
-        Vec3b* l_pPrjResP2I = _prjRes->ptr<Vec3b>(y);
+        Vec3b* l_pPrjResP2I = _src->ptr<Vec3b>(y);
         
         for (int x = 0; x < cols / 256; ++ x) {
             for (int i = 0; i < 256; ++ i) {
-                l_pPrjResP2I[x * 256 + i] = Vec3b(INIT_RES_NUM, INIT_RES_NUM, INIT_RES_NUM);
+                l_pPrjResP2I[x * 256 + i] = CV_VEC3B_FLAT_GRAY(INIT_RES_NUM);
             }
             l_pPrjResP2I[x * 256 + 0] = CV_VEC3B_BLACK;
             l_pPrjResP2I[x * 256 + 255] = CV_VEC3B_WHITE;
@@ -221,20 +221,32 @@ bool ProCam::initProjectorResponse(cv::Mat* const _prjRes){
 // 簡易プロジェクタ応答特性の初期化
 // return   : 成功したかどうか
 bool ProCam::initSimpleProjectorResponseI2P(void){
-    // init
-    m_simpleProjectorResponseI2P = new cv::Vec3b[256];
-    for (int i = 0; i < 256; ++ i) {
-        m_simpleProjectorResponseI2P[i] = CV_VEC3B_FLAT_GRAY(i);
-    }
+    // do
+    initSimpleProjectorResponse(m_simpleProjectorResponseI2P);
+    
+    // output
     return true;
 }
-
 bool ProCam::initSimpleProjectorResponseP2I(void){
+    // do
+    initSimpleProjectorResponse(m_simpleProjectorResponseP2I);
+    
+    // output
+    return true;
+}
+bool ProCam::initSimpleProjectorResponse(cv::Vec3b* _src){
     // init
-    m_simpleProjectorResponseP2I = new cv::Vec3b[256];
+    cv::Vec3b* l_simpleProjectorResponse = _src;
+    
+    // do
+    l_simpleProjectorResponse = new cv::Vec3b[256];
     for (int i = 0; i < 256; ++ i) {
-        m_simpleProjectorResponseP2I[i] = CV_VEC3B_FLAT_GRAY(i);
+        l_simpleProjectorResponse[i] = CV_VEC3B_FLAT_GRAY(INIT_RES_NUM);
     }
+    l_simpleProjectorResponse[0]     = CV_VEC3B_BLACK;
+    l_simpleProjectorResponse[255]   = CV_VEC3B_WHITE;
+    
+    // output
     return true;
 }
 
@@ -357,9 +369,6 @@ bool ProCam::setProjectorResponseP2I(const cv::Mat_<cv::Vec3b>& _response){
     m_projectorResponseP2I = _response;
     return true;
 }
-bool ProCam::setProjectorResponseP2IAtOutOfCameraArea(void){
-    return interpolateProjectorResponseP2IAtOutOfCameraArea(&m_projectorResponseP2I);
-}
 
 // 画像をプロジェクタ応答マップに挿入
 bool ProCam::setImageProjectorResponseP2I(cv::Mat* const _responseMap, const cv::Mat& _responseImage, const int _index){
@@ -382,6 +391,18 @@ bool ProCam::setImageProjectorResponseP2I(const cv::Mat& _responseImage, const i
 }
 
 // set simple Projector Response
+bool ProCam::setSimpleProjectorResponseP2I(const cv::Vec3b* const _src, const int _length){
+    for (int i = 0; i < _length; ++ i) {
+        setSimpleProjectorResponseP2I(_src[i], i);
+    }
+    return true;
+}
+bool ProCam::setSimpleProjectorResponseI2P(const cv::Vec3b* const _src, const int _length){
+    for (int i = 0; i < _length; ++ i) {
+        setSimpleProjectorResponseI2P(_src[i], i);
+    }
+    return true;
+}
 bool ProCam::setSimpleProjectorResponseP2I(const cv::Vec3b _num, const int _index){
     m_simpleProjectorResponseP2I[_index] = _num;
     return true;
@@ -589,6 +610,7 @@ const cv::Size& ProCam::getProjectorSize_(void){
 
 // m_videoから撮影画像を取得
 // output/image : 取得した画像を入れる行列
+
 // return       : 成功したかどうか
 bool ProCam::getCaptureImage(cv::Mat* const _image){
 #ifdef LIB_DC1394_FLAG  // libdc1394を用いる場合
@@ -1939,139 +1961,6 @@ bool ProCam::captureFromLinearLightOnProjectorDomainAndColor(cv::Mat* const _cap
 }
 
 ///////////////////////////////  other method ///////////////////////////////
-
-// projector responseの補間を行う
-bool ProCam::interpolationProjectorResponseP2I(cv::Mat* const _prjRes){
-    cout << "interpolation now ..." << endl;
-    // initialize
-    int rows = _prjRes->rows, cols = _prjRes->cols / 256, channels = _prjRes->channels();
-    if (_prjRes->isContinuous()) {
-        cols *= rows;
-        rows = 1;
-    }
-    
-    // scan all pixel
-    for (int y = 0; y < rows; ++ y) {
-        Vec3b* l_pPrjRes = _prjRes->ptr<Vec3b>(y);
-        for (int x = 0; x < cols; ++ x) {
-            
-            // scan all color
-            for (int c = 0; c < channels; ++ c) {
-                // scan all luminance
-                for (int p = 1; p < 255; ++ p) {    // 最初と最後は初期化の時に決定済みである為，除外
-                    if (l_pPrjRes[x * 256 + p][c] == INIT_RES_NUM) {   // 抜けている箇所の特定
-                        uchar p0 = p - 1, i0 = l_pPrjRes[x * 256 + p0][c];  // 下端の値
-
-                        // 上端の検索
-                        uchar p1 = p + 1, i1 = 0;
-                        for (; ; ++ p1) {
-//                            cout << (int)p1 << endl;
-                            if (l_pPrjRes[x * 256 + p1][c] != INIT_RES_NUM || p1 == 255) {
-                                i1 = l_pPrjRes[x * 256 + p1][c];
-//                                cout << "top is " << (int)p1 << endl;
-//                                cout << "bottom is " << (int)p << endl;
-                                break;
-                            }
-                        }
-//                        if (p == 1 && p1 == 255) {
-//                            l_pPrjRes[x * 256 + p1][c] = INIT_RES_NUM;
-//                            break;
-//                        }
-                        
-                        // 抜けていた箇所全てを修復
-                        for (int p_current = p; p_current < p1; ++ p_current) {
-                            // set alpha
-                            double alpha = (double)(p_current - p0)/(double)(p1 - p0);
-                            
-                            // 抜けている箇所の修復
-                            l_pPrjRes[x * 256 + p_current][c] = i0 + (uchar)(alpha * (double)(i1 - i0));
-                        }
-                    }
-                }
-            }
-        }
-    }
-    
-    cout << "finished interpolation" << endl;
-
-    return true;
-}
-// test of front method
-bool ProCam::test_interpolationProjectorResponseP2I(void){
-    Mat m1(2, 256, CV_8UC3, Scalar(INIT_RES_NUM, INIT_RES_NUM, INIT_RES_NUM));
-//    m1.at<Vec3b>(0, 255) = Vec3b(127, 127, 127);
-//    m1.at<Vec3b>(1, 255) = Vec3b(0, 0, 0);
-    for (int i = 0; i < 256; i += 5) {
-        m1.at<Vec3b>(0, i) = Vec3b(i, i, i);
-        m1.at<Vec3b>(1, i) = Vec3b(0, 0, 0);
-        if (i > 128) {
-            m1.at<Vec3b>(1, i) = CV_VEC3B_WHITE;
-        }
-    }
-//    m1.at<Vec3b>(1, 255) = Vec3b(255, 255, 255);
-    _print(m1);
-    interpolationProjectorResponseP2I(&m1);
-    _print(m1);
-    
-    return true;
-}
-
-// カメラ撮影場所以外の応答特性を設定
-bool ProCam::interpolateProjectorResponseP2IAtOutOfCameraArea(cv::Mat* const _prjResP2I){
-    // error handle
-    const Size* l_prjSize = getProjectorSize();
-    if (_prjResP2I->rows != l_prjSize->height || _prjResP2I->cols != l_prjSize->width * 256) {
-        cerr << "different size from ["<<l_prjSize->height<<", "<<l_prjSize->height * 256<<"]" << endl;
-        _print_mat_propaty(*_prjResP2I);
-        exit(-1);
-    }
-    
-    // create non camera area flag
-    const Size* l_camSize = getCameraSize();
-    const Mat whiteImage(*l_camSize, CV_8UC3, CV_SCALAR_WHITE);
-    Mat l_checkNonCameraAreaFlag(*l_prjSize, CV_8UC3, CV_SCALAR_BLACK);
-    convertProjectorDomainToCameraOne(&l_checkNonCameraAreaFlag, whiteImage);
-    
-    // set non camera area
-    for (int P = 0; P < 256; ++ P) {
-        Vec3b l_aveColor(0, 0, 0);
-        Vec3d l_sum(0, 0, 0);
-        int cnt = 0;
-        
-        // calc sum color
-        for (int y = 0; y < l_prjSize->height; ++ y) {
-            const Vec3b* l_pCheckNonCameraAreaFlag = l_checkNonCameraAreaFlag.ptr<Vec3b>(y);
-            const Vec3b* l_pPrjResP2I = _prjResP2I->ptr<Vec3b>(y);
-            
-            for (int x = 0; x < l_prjSize->width; ++ x) {
-                if (l_pCheckNonCameraAreaFlag[x] == CV_VEC3B_WHITE) {
-                    l_sum += l_pPrjResP2I[x * 256 + P];
-                    ++ cnt;
-                }
-            }
-        }
-        
-        // get average
-//        l_aveColor = (Vec3b)(l_sum / (l_camSize->area()));
-        l_aveColor = (Vec3b)(l_sum / (double)cnt);
-        
-        // set response at out of camera area
-        for (int y = 0; y < l_prjSize->height; ++ y) {
-            const Vec3b* l_pCheckNonCameraAreaFlag = l_checkNonCameraAreaFlag.ptr<Vec3b>(y);
-            Vec3b* l_pPrjResP2I = _prjResP2I->ptr<Vec3b>(y);
-            
-            for (int x = 0; x < l_prjSize->width; ++ x) {
-                if (l_pCheckNonCameraAreaFlag[x] == CV_VEC3B_BLACK) {
-                    l_pPrjResP2I[x * 256 + P] = l_aveColor;
-                }
-            }
-        }
-    }
-        
-    return true;
-}
-
-
 // カメラが線形であるかを確かめる
 bool ProCam::checkCameraLinearity(void){
     Mat image;

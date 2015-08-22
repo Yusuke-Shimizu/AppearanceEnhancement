@@ -90,6 +90,14 @@ const float DEPTH_S16BIT_MAX = 32767;
 #define _print_gnuplot_color9(output, var1, var2, var3, var4, var5, var6, var7, var8, var9) _print_gnuplot_color8(output, var1, var2, var3, var4, var5, var6, var7, var8);_print_gnuplot_color(output, var9)
 #define _print_gnuplot_color9_l(output, var1, var2, var3, var4, var5, var6, var7, var8, var9) _print_gnuplot_color9(output, var1, var2, var3, var4, var5, var6, var7, var8, var9);output<<std::endl
 
+// output mat
+#define _print_gnuplot_mat2(output, index, mat1, mat2) _print_gnuplot4(output, index, (mat1).at<double>(0, 0), (mat2).at<double>(0, 0))
+#define _print_gnuplot_mat3(output, index, mat1, mat2, mat3) _print_gnuplot4(output, index, (mat1).at<double>(0, 0), (mat2).at<double>(0, 0), (mat3).at<double>(0, 0))
+#define _print_gnuplot_mat4(output, index, mat1, mat2, mat3, mat4) _print_gnuplot5(output, index, (mat1).at<double>(0, 0), (mat2).at<double>(0, 0), (mat3).at<double>(0, 0), (mat4).at<double>(0, 0))
+#define _print_gnuplot_mat5(output, index, mat1, mat2, mat3, mat4, mat5) _print_gnuplot6(output, index, (mat1).at<double>(0, 0), (mat2).at<double>(0, 0), (mat3).at<double>(0, 0), (mat4).at<double>(0, 0), (mat5).at<double>(0, 0))
+#define _print_gnuplot_mat6(output, index, mat1, mat2, mat3, mat4, mat5, mat6) _print_gnuplot7(output, index, (mat1).at<double>(0, 0), (mat2).at<double>(0, 0), (mat3).at<double>(0, 0), (mat4).at<double>(0, 0), (mat5).at<double>(0, 0), (mat6).at<double>(0, 0))
+#define _print_gnuplot_mat7(output, index, mat1, mat2, mat3, mat4, mat5, mat6, mat7) _print_gnuplot8(output, index, (mat1).at<double>(0, 0), (mat2).at<double>(0, 0), (mat3).at<double>(0, 0), (mat4).at<double>(0, 0), (mat5).at<double>(0, 0), (mat6).at<double>(0, 0), (mat7).at<double>(0, 0))
+#define _print_gnuplot_mat8(output, index, mat1, mat2, mat3, mat4, mat5, mat6, mat7, mat8) _print_gnuplot9(output, index, (mat1).at<double>(0, 0), (mat2).at<double>(0, 0), (mat3).at<double>(0, 0), (mat4).at<double>(0, 0), (mat5).at<double>(0, 0), (mat6).at<double>(0, 0), (mat7).at<double>(0, 0), (mat8).at<double>(0, 0))
 
 #ifdef MAC
 const int CV_BUTTON_SMALL_TO_CAPITAL = -32;
@@ -173,8 +181,21 @@ const int CV_BUTTON_7       = CV_BUTTON_0 + 7;
 const int CV_BUTTON_8       = CV_BUTTON_0 + 8;
 const int CV_BUTTON_9       = CV_BUTTON_0 + 9;
 
+// size
+const cv::Size VGA_SIZE(640, 480);
+const cv::Size XGA_SIZE(1024, 768);
+const cv::Size HDTV_720P_SIZE(1280, 720);
+const cv::Size WSXGA_PLUS_SIZE(1680, 1050);
+
+/**
+ * Vec3b Area
+ */
+
 // define based Color
-#define CV_VEC3B_FLAT_GRAY(NUM) cv::Vec3b(NUM,NUM,NUM)
+//#define CV_VEC3B_FLAT_GRAY(NUM) cv::Vec3b(NUM,NUM,NUM)
+inline const cv::Vec3b CV_VEC3B_FLAT_GRAY(const uchar _num) {
+    return cv::Vec3b(_num, _num, _num);
+}
 const cv::Vec3b CV_VEC3B_RED(0, 0, 255);
 const cv::Vec3b CV_VEC3B_GREEN(0, 255, 0);
 const cv::Vec3b CV_VEC3B_BLUE(255, 0, 0);
@@ -216,11 +237,21 @@ typedef cv::Vec<double, 12> Vec12d;
 
 enum ColorName{CV_RED = 2, CV_GREEN = 1, CV_BLUE = 0};
 
-// size
-const cv::Size VGA_SIZE(640, 480);
-const cv::Size XGA_SIZE(1024, 768);
-const cv::Size HDTV_720P_SIZE(1280, 720);
-const cv::Size WSXGA_PLUS_SIZE(1680, 1050);
+void initVec3b(cv::Vec3b* const _src);
+void setVec3bArray(cv::Vec3b* const _dst, const cv::Vec3b& _srcVec, const int _length, const int _start, const int _end, const int _step);
+void setVec3bArray(cv::Vec3b* const _dst1, cv::Vec3b* const _dst2, const cv::Vec3b& _srcVec, const int _length, const int _start, const int _end, const int _step);
+void setVec3bArray(cv::Vec3b* const _dst1, cv::Vec3b* const _dst2, cv::Vec3b* const _dst3, const cv::Vec3b& _srcVec, const int _length, const int _start, const int _end, const int _step);
+void setVec3bArray(cv::Vec3b* const _dst1, cv::Vec3b* const _dst2, cv::Vec3b* const _dst3, cv::Vec3b* const _dst4, const cv::Vec3b& _srcVec, const int _length, const int _start, const int _end, const int _step);
+void setVec3bArray(cv::Vec3b* const _dst1, cv::Vec3b* const _dst2, cv::Vec3b* const _dst3, cv::Vec3b* const _dst4, cv::Vec3b* const _dst5, const cv::Vec3b& _srcVec, const int _length, const int _start, const int _end, const int _step);
+bool testSetVec3bArray(void);
+bool isEqualVec3b(const cv::Vec3b* const _v1, const cv::Vec3b* const _v2, const int _length);
+bool isEqualVec3b(const cv::Vec3b* const _v1, const cv::Vec3b* const _v2, const cv::Vec3b* const _v3, const int _length);
+bool isEqualVec3b(const cv::Vec3b* const _v1, const cv::Vec3b* const _v2, const cv::Vec3b* const _v3, const cv::Vec3b* const _v4, const int _length);
+bool isEqualVec3b(const cv::Vec3b* const _v1, const cv::Vec3b* const _v2, const cv::Vec3b* const _v3, const cv::Vec3b* const _v4, const cv::Vec3b* const _v5, const int _length);
+
+/**
+ * Mat and other Area
+ */
 
 ///////////////////////////////  check method ///////////////////////////////
 bool isEqualSize(const cv::Mat& m1, const cv::Mat& m2);
@@ -305,6 +336,9 @@ void printPropatyOfDiffImage(const cv::Mat& _m1, const cv::Mat& _m2, const doubl
 #define _print_diff_mat_content_propaty(rate, mat1, mat2) _print_mat_content_propaty2(rate, mat1, mat2);std::cout<<#mat1<<" - "<<#mat2<<std::endl;printPropatyOfDiffImage(mat1, mat2, rate)
 void printOpenCVVersion(void);
 void printVideoPropaty(cv::VideoCapture& _video);
+void printVec3bArray(const cv::Vec3b* const _vec, const int _length);
+#define _print_vec3b_array(length, vec_p) _print_name(vec_p);_print(vec_p)
+
 ///////////////////////////////  save method ///////////////////////////////
 bool saveAndShowImage(const std::string& _wname, const cv::Mat& _image, const int _type);
 #define _save_show_image1(type, m1) saveAndShowImage(#m1, m1, type)
@@ -320,7 +354,6 @@ bool saveAndShowImage(const std::string& _wname, const cv::Mat& _image, const in
 ///////////////////////////////  init method ///////////////////////////////
 void initPoint(cv::Point* const p, const int size);
 void initMat(cv::Mat* const _aMat, const int _size);
-void initVec3b(cv::Vec3b* const _vector);
 ///////////////////////////////  convert method ///////////////////////////////
 void mat2char(unsigned char c[], const cv::Mat *m);
 uchar convertNumber16sTo8u(const short src, const cv::Size* charRange, const cv::Size* intRange);
@@ -384,5 +417,4 @@ inline void MY_WAIT_KEY(const int key){
         if (pushKey == key) break;
     }
 }
-
 #endif
