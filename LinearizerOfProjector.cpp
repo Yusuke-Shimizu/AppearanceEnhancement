@@ -1018,11 +1018,7 @@ bool LinearizerOfProjector::calcResponseFunction(cv::Mat_<cv::Vec3b>* const _res
 bool LinearizerOfProjector::calcSimpleResponseFunction(void){
     // init
     ProCam* l_procam = getProCam();     // ProCamへのポインタ
-    const Size* const l_cameraSize = l_procam->getCameraSize();         // カメラサイズ
-    const Size* const l_projectorSize = l_procam->getProjectorSize();   // プロジェクタサイズ
     Vec3b l_captureImageColor(0,0,0);
-//    Vec3b* l_responseMap = new Vec3b[256]; // _responseMapの一時的な置き場
-//    Vec3b* l_responseMapP2I = new Vec3b[256];
 
     // projection RGB * luminance
     // scanning all luminance[0-255] of projector
@@ -1055,10 +1051,7 @@ bool LinearizerOfProjector::calcSimpleResponseFunction(void){
 //    l_procam->saveProjectorResponseForByte(PROJECTOR_RESPONSE_I2P_FILE_NAME_BYTE);
 //    // all C images
 //    saveAllCImages();
-//    
-//    // deep copy
-//    *_responseMap = l_responseMap.clone();          // I2P
-//    *_responseMapP2I = l_responseMapP2I.clone();    // P2I
+    
     cout << "finished saving response function" << endl;
 
     return true;

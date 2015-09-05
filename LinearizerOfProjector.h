@@ -29,7 +29,7 @@ const int PROJECTION_LUMINANCE_STEP = 1;
 
 // 最初に線形化を計算するかどうか
 const bool CALC_LINEAR_FLAG_AT_INIT = true;
-const bool SHOW_LINEAR_FLAG_AT_INIT = true;
+const bool SHOW_LINEAR_FLAG_AT_INIT = false;
 const bool USE_LOOK_LIKE_ANOTHER_FLAG = true;
 
 // 先攻宣言

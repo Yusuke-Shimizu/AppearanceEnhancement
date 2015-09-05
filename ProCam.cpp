@@ -256,8 +256,8 @@ bool ProCam::initSimpleProjectorResponseP2I(void){
 bool ProCam::initSimpleProjectorResponse(cv::Vec3b* _src){
     // init
 //    cv::Vec3b* l_simpleProjectorResponse = _src;
-    _print(_src);
-    _print(m_simpleProjectorResponseI2P);
+//    _print(_src);
+//    _print(m_simpleProjectorResponseI2P);
 
     // do
     _src = new cv::Vec3b[256];
@@ -267,10 +267,10 @@ bool ProCam::initSimpleProjectorResponse(cv::Vec3b* _src){
     _src[0]     = CV_VEC3B_BLACK;
     _src[255]   = CV_VEC3B_WHITE;
     
-    _print(_src);
-    _print(*_src);
-    _print(m_simpleProjectorResponseI2P);
-    _print(*m_simpleProjectorResponseI2P);
+//    _print(_src);
+//    _print(*_src);
+//    _print(m_simpleProjectorResponseI2P);
+//    _print(*m_simpleProjectorResponseI2P);
     // output
     return true;
 }
@@ -1533,35 +1533,39 @@ bool ProCam::convertPtoI(cv::Mat* const _I, const cv::Mat&  _P){
     return true;
 }
 
-
-// PからIに変換する
-bool ProCam::convertPtoIBySomePoint(cv::Mat* const _I, const cv::Mat&  _P, const cv::Point& _point){
+/**
+ * 簡易版線形化テーブルを用いて、非線形画像を線形画像に変換
+ * convertPtoIの簡易版
+ * @return 成功したかどうか
+ */
+bool ProCam::convertToSimpleLinearizedImage(cv::Mat* const _linearizedImage, const cv::Mat&  _nonLinearizedImage){
     // error processing
-    if (!isEqualSizeAndType(*_I, _P)) {
+    if (!isEqualSizeAndType(*_linearizedImage, _nonLinearizedImage)) {
         cerr << "different size or type" << endl;
-        _print_mat_propaty(*_I);
-        _print_mat_propaty(_P);
+        _print_mat_propaty(*_linearizedImage);
+        _print_mat_propaty(_nonLinearizedImage);
         exit(-1);
     }
     
     // scanning all pixel
-    const Mat* l_transP2I = getProjectorResponseP2I();
-    const int rows = _I->rows, cols = _I->cols, ch = _I->channels();
+    const Vec3b* l_projectorResponseP2I = getSimpleProjectorResponseP2I();
+    const int rows = _linearizedImage->rows, cols = _linearizedImage->cols, ch = _linearizedImage->channels();
     for (int y = 0; y < rows; ++ y) {
-        Vec3b* l_pI = _I->ptr<Vec3b>(y);
-        const Vec3b* l_pP = _P.ptr<Vec3b>(y);
-        
+        Vec3b* l_pLinear = _linearizedImage->ptr<Vec3b>(y);
+        const Vec3b* l_pNonLinear = _nonLinearizedImage.ptr<Vec3b>(y);
+
         for (int x = 0; x < cols; ++ x) {
             for (int c = 0; c < ch; ++ c) {
                 // convert
-                const Point l_P2IPoint(_point.x * 256 + (int)l_pP[x][c], _point.y);
-                l_pI[x][c] = (l_transP2I->at<Vec3b>(l_P2IPoint))[c];
+                const int index = x * 256 + (int)l_pNonLinear[x][c];
+                l_pLinear[x][c] = l_projectorResponseP2I[index][c];
             }
         }
     }
-    
+
     return true;
 }
+
 
 void ProCam::convertColorSpace(cv::Mat* const _dst, const cv::Mat& _src, const bool P2CFlag){
     const Mat_<Vec9d>* l_V = getV();
@@ -1928,7 +1932,8 @@ bool ProCam::captureFromLinearLightOnProjectorDomain(cv::Mat* const _captureImag
     
     // non linear image -> linear one
     // Pointの値を変えて，線形化LUTの参照ポイントを変更可能
-    convertPtoI(&l_linearProjectionImage, l_projectionImageOnProjectorSpace);
+//    convertPtoI(&l_linearProjectionImage, l_projectionImageOnProjectorSpace);
+    convertToSimpleLinearizedImage(&l_linearProjectionImage, l_projectionImageOnProjectorSpace);
     
     // 幾何変換後に投影
     return captureFromLight(_captureImage, l_linearProjectionImage, _denoiseFlag, _waitTimeNum);

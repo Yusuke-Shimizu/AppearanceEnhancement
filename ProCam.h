@@ -224,8 +224,7 @@ public:
     ///////////////////////////////  convert method ///////////////////////////////
     bool convertProjectorDomainToCameraOne(cv::Mat* const _psImg, const cv::Mat&  _csImg);
     bool convertPtoI(cv::Mat* const _I, const cv::Mat&  _P);
-    bool convertPtoIBySomePoint(cv::Mat* const _I, const cv::Mat&  _P, const cv::Point& _point);
-//    bool convertCameraImageToProjectorOne(cv::Mat* const _prjImg, const cv::Mat&  _camImg);
+    bool convertToSimpleLinearizedImage(cv::Mat* const _linearizedImage, const cv::Mat&  _nonLinearizedImage);
     void convertColorSpace(cv::Mat* const _imageOnPrj, const cv::Mat& _imageOnCam, const bool P2CFlag);
     void convertColorSpaceOfCameraToProjector(cv::Mat* const _imageOnPrj, const cv::Mat& _imageOnCam);
     void convertColorSpaceOfProjectorToCamera(cv::Mat* const _imageOnCam, const cv::Mat& _imageOnPrj);
