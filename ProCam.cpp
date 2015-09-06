@@ -60,6 +60,8 @@ ProCam::~ProCam(void){
 
 // ProCamクラスの初期化
 bool ProCam::init(const cv::Size& projectorSize){
+    test_convertToSimpleLinearizedImage();
+
     // カメラの初期化
     if ( !initCamera() ) return false;
     
@@ -1538,7 +1540,7 @@ bool ProCam::convertPtoI(cv::Mat* const _I, const cv::Mat&  _P){
  * convertPtoIの簡易版
  * @return 成功したかどうか
  */
-bool ProCam::convertToSimpleLinearizedImage(cv::Mat* const _linearizedImage, const cv::Mat&  _nonLinearizedImage){
+bool ProCam::convertToSimpleLinearizedImage(cv::Mat* const _linearizedImage, const cv::Mat&  _nonLinearizedImage, const cv::Vec3b* const _projectorResponse){
     // error processing
     if (!isEqualSizeAndType(*_linearizedImage, _nonLinearizedImage)) {
         cerr << "different size or type" << endl;
@@ -1548,7 +1550,6 @@ bool ProCam::convertToSimpleLinearizedImage(cv::Mat* const _linearizedImage, con
     }
     
     // scanning all pixel
-    const Vec3b* l_projectorResponseP2I = getSimpleProjectorResponseP2I();
     const int rows = _linearizedImage->rows, cols = _linearizedImage->cols, ch = _linearizedImage->channels();
     for (int y = 0; y < rows; ++ y) {
         Vec3b* l_pLinear = _linearizedImage->ptr<Vec3b>(y);
@@ -1557,15 +1558,102 @@ bool ProCam::convertToSimpleLinearizedImage(cv::Mat* const _linearizedImage, con
         for (int x = 0; x < cols; ++ x) {
             for (int c = 0; c < ch; ++ c) {
                 // convert
-                const int index = x * 256 + (int)l_pNonLinear[x][c];
-                l_pLinear[x][c] = l_projectorResponseP2I[index][c];
+                const int index = (int)l_pNonLinear[x][c];
+                l_pLinear[x][c] = _projectorResponse[index][c];
             }
         }
     }
 
     return true;
 }
+bool ProCam::test_convertToSimpleLinearizedImage(void){
+    // init
+    Mat l_input(16, 16, CV_8UC3, Scalar(0, 0, 0, 0));
+    Mat l_output = l_input.clone();
+    Mat l_result = l_input.clone();
+    Vec3b* l_res = new cv::Vec3b[256];
+    const int rows = l_input.rows, cols = l_input.cols;
+    for (int y = 0; y < rows; ++ y) {
+        Vec3b* l_pInput = l_input.ptr<Vec3b>(y);
+        const int l_ySum = y * cols;
+        for (int x = 0; x < cols; ++ x) {
+            l_pInput[x] = CV_VEC3B_FLAT_GRAY(x + l_ySum);;
+        }
+    }
 
+    cout << "------- case 01 -------" << endl;
+    for (int i = 0; i < 256; ++ i) {
+        l_res[i] = CV_VEC3B_FLAT_GRAY(INIT_RES_NUM);
+    }
+    convertToSimpleLinearizedImage(&l_output, l_input, l_res);
+    if (isEqualImage(l_result, l_output)) {
+        cout << "output = result" << endl;
+    } else {
+        cout << "output != result" << endl;
+        cout << "l_res = ";
+        for (int i = 0; i < 256; ++ i) cout << (int)l_res[i][0] << ", ";
+        cout << endl;
+        _print(l_input);
+        _print(l_result);
+        _print(l_output);
+        return false;
+    }
+    
+    cout << "------- case 02 -------" << endl;
+    for (int i = 0; i < 256; ++ i) {
+        l_res[i] = CV_VEC3B_FLAT_GRAY(i);
+    }
+    for (int y = 0; y < rows; ++ y) {
+        Vec3b* l_pInput = l_result.ptr<Vec3b>(y);
+        const int l_ySum = y * cols;
+        for (int x = 0; x < cols; ++ x) {
+            l_pInput[x] = CV_VEC3B_FLAT_GRAY(x + l_ySum);
+        }
+    }
+    convertToSimpleLinearizedImage(&l_output, l_input, l_res);
+    if (isEqualImage(l_result, l_output)) {
+        cout << "output = result" << endl;
+    } else {
+        cout << "output != result" << endl;
+        cout << "l_res = ";
+        for (int i = 0; i < 256; ++ i) cout << (int)l_res[i][0] << ", ";
+        cout << endl;
+        _print(l_input);
+        _print(l_result);
+        _print(l_output);
+        return false;
+    }
+    
+    cout << "------- case 03 -------" << endl;
+    for (int i = 0; i < 256; ++ i) {
+        int num = (int)(pow((double)i / 256.0, 2.0) * 256);
+        l_res[i] = CV_VEC3B_FLAT_GRAY(num);
+    }
+    for (int y = 0; y < rows; ++ y) {
+        Vec3b* l_pInput = l_result.ptr<Vec3b>(y);
+        const int l_ySum = y * cols;
+        for (int x = 0; x < cols; ++ x) {
+            const int l_sum = x + l_ySum;
+            const int l_num = (int)(pow((double)l_sum/256.0, 2.0)*256);
+            l_pInput[x] = CV_VEC3B_FLAT_GRAY(l_num);
+        }
+    }
+    convertToSimpleLinearizedImage(&l_output, l_input, l_res);
+    if (isEqualImage(l_result, l_output)) {
+        cout << "output = result" << endl;
+    } else {
+        cout << "output != result" << endl;
+        cout << "l_res = ";
+        for (int i = 0; i < 256; ++ i) cout << (int)l_res[i][0] << ", ";
+        cout << endl;
+        _print(l_input);
+        _print(l_result);
+        _print(l_output);
+        return false;
+    }
+    
+    return true;
+}
 
 void ProCam::convertColorSpace(cv::Mat* const _dst, const cv::Mat& _src, const bool P2CFlag){
     const Mat_<Vec9d>* l_V = getV();
@@ -1928,14 +2016,12 @@ bool ProCam::captureFromLinearLightOnProjectorDomain(cv::Mat* const _captureImag
     convertProjectorDomainToCameraOne(&l_projectionImageOnProjectorSpace, _projectionImage);
     
     // linearize
-    Mat l_linearProjectionImage(l_projectionImageOnProjectorSpace.rows, l_projectionImageOnProjectorSpace.cols, CV_8UC3, Scalar(0, 0, 0));    // プロジェクタ強度の線形化を行った後の投影像
-    
-    // non linear image -> linear one
-    // Pointの値を変えて，線形化LUTの参照ポイントを変更可能
+    Mat l_linearProjectionImage(l_projectionImageOnProjectorSpace.rows, l_projectionImageOnProjectorSpace.cols, CV_8UC3, Scalar(0, 0, 0));
 //    convertPtoI(&l_linearProjectionImage, l_projectionImageOnProjectorSpace);
-    convertToSimpleLinearizedImage(&l_linearProjectionImage, l_projectionImageOnProjectorSpace);
+    const Vec3b* const l_projectorResponseP2I = getSimpleProjectorResponseP2I();
+    convertToSimpleLinearizedImage(&l_linearProjectionImage, l_projectionImageOnProjectorSpace, l_projectorResponseP2I);
     
-    // 幾何変換後に投影
+    // projection
     return captureFromLight(_captureImage, l_linearProjectionImage, _denoiseFlag, _waitTimeNum);
 }
 bool ProCam::captureFromLinearLightOnProjectorDomain(cv::Mat* const _captureImage, const cv::Vec3b& _projectionColor, const bool _denoiseFlag, const int _waitTimeNum){

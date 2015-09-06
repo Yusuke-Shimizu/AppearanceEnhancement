@@ -182,12 +182,6 @@ bool isEqualSize(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const 
 bool isEqualSize(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4, const cv::Mat& m5, const cv::Mat& m6){
     return isEqualSize(m1, m2, m3, m4, m5) & isEqualSize(m5, m6);
 }
-bool isDifferentSize(const cv::Mat& m1, const cv::Mat& m2) { return !isEqualSize(m1, m2); }
-bool isDifferentSize(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3) { return !isEqualSize(m1, m2, m3); }
-bool isDifferentSize(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4) { return !isEqualSize(m1, m2, m3, m4); }
-bool isDifferentSize(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4, const cv::Mat& m5) { return !isEqualSize(m1, m2, m3, m4, m5); }
-bool isDifferentSize(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3, const cv::Mat& m4, const cv::Mat& m5, const cv::Mat& m6) { return !isEqualSize(m1, m2, m3, m4, m5, m6); }
-
 
 // 複数のMatの連続性の確認
 bool isContinuous(const cv::Mat& m1, const cv::Mat& m2){
@@ -271,6 +265,34 @@ bool isEqualSizeAndType(const cv::Mat& m1, const cv::Mat& m2, const cv::Mat& m3,
     return isEqualSizeAndType(m1, m2, m3, m4, m5) & isEqualSizeAndType(m5, m6);
 }
 
+/**
+ * 同じ画像かどうか判定
+ */
+bool isEqualImage(const cv::Mat& m1, const cv::Mat& m2){
+    // 画像のサイズとタイプを確認
+    if (!isEqualSizeAndType(m1, m2)) {
+        _print_mat_propaty(m1);
+        _print_mat_propaty(m2);
+        return false;
+    }
+    
+    // check
+    const int rows = m1.rows, cols = m1.cols;
+    for (int y = 0; y < rows; ++ y) {
+        const Vec3b* p_m1 = m1.ptr<Vec3b>(y);
+        const Vec3b* p_m2 = m2.ptr<Vec3b>(y);
+
+        for (int x = 0; x< cols; ++ x) {
+            if (p_m1[x] != p_m2[x]) {
+                _print2(x, y);
+                _print2(p_m1[x], p_m2[x]);
+                return false;
+            }
+        }
+    }
+    
+    return true;
+}
 
 // 正数かどうか
 bool isPosiNum(const cv::Mat& m1){
